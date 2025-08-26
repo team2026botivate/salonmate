@@ -6,10 +6,9 @@ import { useNavigate } from 'react-router-dom'
 import supabase from '@/dataBase/connectdb'
 
 const AuthPage = () => {
-  const { signIn, user, loading: authLoading } = useAuth()
+  const { login, user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   
-  console.log(authLoading)
   const [isSignIn, setIsSignIn] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -85,9 +84,11 @@ const AuthPage = () => {
     setLoading(true)
     try {
       if (isSignIn) {
-        // Use AuthContext signIn method
-        const { data, error } = await signIn(formData.email, formData.password)
-        console.log(data,"while login this is going the ")
+        // Sign in with Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        })
         
         if (error) {
           setErrors({ submit: error.message })
@@ -95,33 +96,28 @@ const AuthPage = () => {
         }
 
         if (data?.user) {
-          // Ensure profile exists for logged-in user
-          const { data: existingProfile, error: profileFetchError } =
-            await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', data.user.id)
-              .maybeSingle()
-
-          if (profileFetchError) {
-            console.error('Profile fetch error:', profileFetchError.message)
-          }
-
-          if (!existingProfile) {
-            const { error: profileCreateError } = await supabase
-              .from('profiles')
-              .insert([
-                {
-                  id: data.user.id,
-                  role: formData.role || 'staff',
-                },
-              ])
-            if (profileCreateError) {
-              console.error('Profile create (login) error:', profileCreateError.message)
-            }
-          }
+          // Store session in localStorage
+          localStorage.setItem('supabase_session', JSON.stringify(data.session))
           
-          // Navigation will be handled by useEffect when user state updates
+          // Get user profile
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single()
+
+          // Create user data for context
+          const userData = {
+            ...data.user,
+            role: profile?.role || 'staff',
+            profile: profile
+          }
+
+          // Use context login to store user data
+          login(userData)
+          
+          // Clear errors and navigate
+          setErrors({})
         }
       } else {
         // Signup flow
@@ -143,6 +139,7 @@ const AuthPage = () => {
 
         const user = data?.user
         if (user) {
+          // Create profile in database
           const { error: profileError } = await supabase.from('profiles').insert([
             {
               id: user.id,
@@ -153,10 +150,23 @@ const AuthPage = () => {
           if (profileError) {
             console.error('Profile insert error:', profileError.message)
           }
+
+          // Store session in localStorage
+          if (data.session) {
+            localStorage.setItem('supabase_session', JSON.stringify(data.session))
+          }
+
+          // Create user data for context
+          const userData = {
+            ...user,
+            role: formData.role || 'staff'
+          }
+
+          // Use context login to store user data
+          login(userData)
           
-          // Clear any previous errors
+          // Clear errors
           setErrors({})
-          // Note: User will be automatically logged in by Supabase and redirected by useEffect
         }
       }
     } catch (err) {
