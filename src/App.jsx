@@ -34,20 +34,7 @@ function App() {
             {/* Protected routes */}
             <Route element={<ProtectedRoute />}>
               <Route path="/admin-dashboard/*" element={<Dashboard />} />
-              <Route
-                path="/booking"
-                element={<Booking hideHistoryButton={false} />}
-              />
-              <Route
-                path="/daily-entry"
-                element={<DailyEntry hideHistoryButton={false} />}
-              />
-              <Route
-                path="/appointment-history"
-                element={<AppointmentHistory />}
-              />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/staff-management" element={<StaffManagement />} />
+
               {/* Add other routes for different sections */}
             </Route>
 

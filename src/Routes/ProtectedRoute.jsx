@@ -1,29 +1,25 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../Context/AuthContext.jsx';
+import { Navigate, Outlet } from 'react-router-dom'
+import { useAuth } from '../Context/AuthContext'
 
-// Protected route component that checks for authentication
-const ProtectedRoute = ({
-  redirectPath = '/auth', // Default redirect path
-  requiredPermission = null // Optional specific permission requirement
-}) => {
-  const { isAuthenticated, user } = useAuth();
+const ProtectedRoute = ({ redirectPath = '/auth', children }) => {
+  const { user, loading } = useAuth()
   
-  // First check if user is authenticated
-  if (!isAuthenticated()) {
-    return <Navigate to={redirectPath} replace />;
+  // Show loading spinner while checking auth state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-800"></div>
+      </div>
+    )
   }
   
-  // If a specific permission is required, check if user has that permission
-  if (requiredPermission && user?.permissions) {
-    const hasPermission = user.permissions.includes(requiredPermission);
-    if (!hasPermission) {
-      // Redirect to dashboard or another appropriate page if permission denied
-      return <Navigate to="/admin-dashboard" replace />;
-    }
+  // Redirect to auth page if not authenticated
+  if (!user) {
+    return <Navigate to={redirectPath} replace />
   }
   
-  // If authenticated and has required permissions, render the child routes
-  return <Outlet />;
-};
+  // Render children or outlet if authenticated
+  return children ? children : <Outlet />
+}
 
-export default ProtectedRoute;
+export default ProtectedRoute

@@ -1,9 +1,15 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, User, Mail, Lock, Chrome, Shield } from 'lucide-react'
+import { useAuth } from '@/Context/AuthContext'
+import { useNavigate } from 'react-router-dom'
 import supabase from '@/dataBase/connectdb'
 
 const AuthPage = () => {
+  const { signIn, user, loading: authLoading } = useAuth()
+  const navigate = useNavigate()
+  
+  console.log(authLoading)
   const [isSignIn, setIsSignIn] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -17,6 +23,14 @@ const AuthPage = () => {
   })
 
   const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (user && !authLoading) {
+      navigate('/admin-dashboard')
+    }
+  }, [user, navigate, authLoading])
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -68,24 +82,25 @@ const AuthPage = () => {
     e.preventDefault()
     if (!validateForm()) return
 
+    setLoading(true)
     try {
       if (isSignIn) {
-        // Login flow
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        })
+        // Use AuthContext signIn method
+        const { data, error } = await signIn(formData.email, formData.password)
+        console.log(data,"while login this is going the ")
+        
+        if (error) {
+          setErrors({ submit: error.message })
+          return
+        }
 
-        if (error) return
-
-        const user = data?.user
-        if (user) {
+        if (data?.user) {
           // Ensure profile exists for logged-in user
           const { data: existingProfile, error: profileFetchError } =
             await supabase
               .from('profiles')
               .select('*')
-              .eq('id', user.id)
+              .eq('id', data.user.id)
               .maybeSingle()
 
           if (profileFetchError) {
@@ -97,19 +112,16 @@ const AuthPage = () => {
               .from('profiles')
               .insert([
                 {
-                  id: user.id,
+                  id: data.user.id,
                   role: formData.role || 'staff',
                 },
               ])
             if (profileCreateError) {
-              console.error(
-                'Profile create (login) error:',
-                profileCreateError.message
-              )
-            } else {
-              console.log('Profile ensured on login')
+              console.error('Profile create (login) error:', profileCreateError.message)
             }
           }
+          
+          // Navigation will be handled by useEffect when user state updates
         }
       } else {
         // Signup flow
@@ -125,28 +137,33 @@ const AuthPage = () => {
         })
 
         if (signUpError) {
-          console.error('Signup error:', signUpError.message)
+          setErrors({ submit: signUpError.message })
           return
         }
 
         const user = data?.user
-        if (!user) return
+        if (user) {
+          const { error: profileError } = await supabase.from('profiles').insert([
+            {
+              id: user.id,
+              role: formData.role || 'staff',
+            },
+          ])
 
-        const { error: profileError } = await supabase.from('profiles').insert([
-          {
-            id: user.id,
-            role: formData.role || 'staff',
-          },
-        ])
-
-        if (profileError) {
-          console.error('Profile insert error:', profileError.message)
-        } else {
-          console.log('Profile created successfully')
+          if (profileError) {
+            console.error('Profile insert error:', profileError.message)
+          }
+          
+          // Clear any previous errors
+          setErrors({})
+          // Note: User will be automatically logged in by Supabase and redirected by useEffect
         }
       }
     } catch (err) {
       console.error('Auth handler error:', err)
+      setErrors({ submit: 'An unexpected error occurred' })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -490,15 +507,34 @@ const AuthPage = () => {
               </motion.div>
             </AnimatePresence>
 
+            {/* Submit Error */}
+            {errors.submit && (
+              <div className="text-center">
+                <p className="text-sm text-red-600">{errors.submit}</p>
+              </div>
+            )}
+
             {/* Submit Button */}
             <motion.button
               type="submit"
               variants={buttonVariants}
               whileHover="hover"
               whileTap="tap"
-              className="w-full rounded-lg bg-slate-800 px-4 py-3 font-medium text-white transition-colors hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none"
+              disabled={loading}
+              className={`w-full rounded-lg bg-slate-800 px-4 py-3 font-medium text-white transition-colors hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {isSignIn ? 'Sign In' : 'Create Account'}
+              {loading && (
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              )}
+              <span>
+                {loading
+                  ? isSignIn
+                    ? 'Signing in...'
+                    : 'Creating account...'
+                  : isSignIn
+                  ? 'Sign In'
+                  : 'Create Account'}
+              </span>
             </motion.button>
 
             {/* Google Sign In (Sign In only) */}
