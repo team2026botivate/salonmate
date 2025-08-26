@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .hideScrollBar::-webkit-scrollbar {
+    display: none;
+  }
+  .thickScrollBar::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+
+  }
+
+  .thickScrollBar::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 6px;
+  }
+
+}
+

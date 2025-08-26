@@ -1,0 +1,74 @@
+1. monday ko profile check krna hai functionality kaam nhi kr rha hai 
+usko fix krna hai 
+
+2. admin-dashboard me appointment me agr user new hai to uska data db me save krna hai ✅
+
+3 write do in addnewappointment component ✅
+
+4. Running appoitment ko daily entry me show krna hai 
+
+
+in staff history i have to put half_day on leave ke jagah pe 
+
+
+
+
+
+
+// kal ke liye 
+
+
+Build a Salon Admin Dashboard - Services Management Component.
+
+Requirements:
+Top Summary Section:
+
+Display Total Services (count of all active services).
+
+Services Table:
+
+Columns to display:
+
+Service Name (text)
+
+Time Duration (e.g., 30 min, 1 hour – dropdown or text input)
+
+Base Price (numeric input with currency formatting)
+
+Description (text input with max 30 characters)
+
+Delete Flag (toggle switch for soft delete)
+
+Created At (timestamp)
+
+Include search bar, sorting by columns, and filter for active/deleted services.
+
+Add New Service Section:
+
+Form fields:
+
+Service Name
+
+Time Duration
+
+Base Price
+
+Description (limit 30 characters, show character counter)
+
+Save button to add the new service to the list dynamically.
+
+UI Style & Tech Stack:
+
+Use React + TailwindCSS for styling.
+
+Use Framer Motion for smooth animations and transitions.
+
+Dashboard should be fully responsive (desktop, tablet, mobile).
+
+Extra Features (Optional):
+
+Confirmation modal before deleting a service.
+
+Export services list as CSV or Excel.
+
+Pagination if services exceed a certain count.
