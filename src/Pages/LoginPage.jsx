@@ -17,6 +17,7 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
+
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated()) {
@@ -42,6 +43,8 @@ const LoginPage = () => {
         password,
       })
 
+      console.log(data?.user)
+      console.log(supabaseError)
       if (supabaseError) {
         setError(supabaseError.message)
         setIsLoading(false)

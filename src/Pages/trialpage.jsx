@@ -1,20 +1,25 @@
-import React from 'react'
-import { useGetStaffData } from '../hook/dbOperation'
+import supabase from '@/dataBase/connectdb'
+import React, { useEffect } from 'react'
 
 const TrialPage = () => {
-  const { data } = useGetStaffData()
-  console.log(data, 'data')
-  return (
-    <div className="text-black">
-      
-      {data?.map((item) => (
-        <div key={item.id}>
-          <p>{item.staff_name}</p>
-          <p>{item.staff_number}</p>
-        </div>
-      ))}
+  const auth = async () => {
+    const { user, error } = await supabase.auth.signUp({
+      email: 'team1.interns@botivate.in',
+      password: 'mozammil@123',
+      options: {
+        role: 'admin',
+      },
+    })
+    console.log(user)
+    console.log(error)
+  }
 
-      {/* <h1>data</h1> */}
+  useEffect(() => {
+    auth()
+  }, [])
+  return (
+    <div className="flex h-screen w-full items-center justify-center bg-black text-white">
+      TrialPage
     </div>
   )
 }

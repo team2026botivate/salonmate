@@ -19,9 +19,8 @@ import './index.css'
 import TrialPage from './Pages/trialpage.jsx'
 import ProfilePage from './components/profile/profilePage.jsx'
 // import TrialPage from "./Pages/trialpage.jsx"
-import { Toaster } from 'react-hot-toast';
-
-
+import { Toaster } from 'react-hot-toast'
+import AuthPage from './components/AuthPage.jsx'
 function App() {
   return (
     <Router>
@@ -30,8 +29,8 @@ function App() {
           <Toaster />
           <Routes>
             {/* Public routes */}
-            <Route path="/login" element={<LoginPage />} />
-            
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/trial" element={<TrialPage />} />
 
             {/* Protected routes */}
             <Route element={<ProtectedRoute />}>
@@ -54,8 +53,8 @@ function App() {
             </Route>
 
             {/* Redirects */}
-            <Route path="/" element={<Navigate to="/login" />} />
-            <Route path="*" element={<Navigate to="/login" />} />
+            <Route path="/" element={<Navigate to="/auth" />} />
+            <Route path="*" element={<Navigate to="/auth" />} />
           </Routes>
         </AnimatePresence>
       </AuthProvider>
