@@ -15,6 +15,7 @@ const AuthPage = () => {
     rememberMe: false,
     role: 'admin',
   })
+
   const [errors, setErrors] = useState({})
 
   const handleInputChange = (e) => {
@@ -45,11 +46,10 @@ const AuthPage = () => {
       newErrors.password = 'Password must be at least 8 characters'
     }
 
-    if (!formData.role) {
-      newErrors.role = 'Please select a role'
-    }
-
     if (!isSignIn) {
+      if (!formData.role) {
+        newErrors.role = 'Please select a role'
+      }
       if (!formData.name) {
         newErrors.name = 'Name is required'
       }
@@ -64,18 +64,56 @@ const AuthPage = () => {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (validateForm()) {
+    if (!validateForm()) return
+
+    try {
       if (isSignIn) {
-        const { data, error } = supabase.auth.signInWithPassword({
+        // Login flow
+        const { data, error } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         })
-        console.log(data, 'while login ')
-        console.log(error)
+
+        if (error) return
+
+        const user = data?.user
+        if (user) {
+          // Ensure profile exists for logged-in user
+          const { data: existingProfile, error: profileFetchError } =
+            await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', user.id)
+              .maybeSingle()
+
+          if (profileFetchError) {
+            console.error('Profile fetch error:', profileFetchError.message)
+          }
+
+          if (!existingProfile) {
+            const { error: profileCreateError } = await supabase
+              .from('profiles')
+              .insert([
+                {
+                  id: user.id,
+                  role: formData.role || 'staff',
+                },
+              ])
+            if (profileCreateError) {
+              console.error(
+                'Profile create (login) error:',
+                profileCreateError.message
+              )
+            } else {
+              console.log('Profile ensured on login')
+            }
+          }
+        }
       } else {
-        const { data, error } = supabase.auth.signUp({
+        // Signup flow
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
@@ -85,11 +123,30 @@ const AuthPage = () => {
             },
           },
         })
-        console.log(data, 'while singup')
-        console.log(error)
-      }
 
-      // Handle authentication logic here
+        if (signUpError) {
+          console.error('Signup error:', signUpError.message)
+          return
+        }
+
+        const user = data?.user
+        if (!user) return
+
+        const { error: profileError } = await supabase.from('profiles').insert([
+          {
+            id: user.id,
+            role: formData.role || 'staff',
+          },
+        ])
+
+        if (profileError) {
+          console.error('Profile insert error:', profileError.message)
+        } else {
+          console.log('Profile created successfully')
+        }
+      }
+    } catch (err) {
+      console.error('Auth handler error:', err)
     }
   }
 
@@ -252,52 +309,54 @@ const AuthPage = () => {
                   )}
                 </div>
 
-                {/* Role Selection Field */}
-                <div>
-                  <label
-                    htmlFor="role"
-                    className="mb-2 block text-sm font-medium text-slate-700"
-                  >
-                    Role
-                  </label>
-                  <motion.div
-                    className="relative"
-                    variants={inputVariants}
-                    whileFocus="focus"
-                    whileTap="tap"
-                  >
-                    <Shield className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-slate-400" />
-                    <select
-                      id="role"
-                      name="role"
-                      value={formData.role}
-                      onChange={handleInputChange}
-                      className={`w-full appearance-none rounded-lg border bg-white py-3 pr-4 pl-11 transition-all focus:border-transparent focus:ring-2 focus:ring-indigo-500 ${
-                        errors.role ? 'border-red-300' : 'border-slate-300'
-                      }`}
+                {/* Role Selection Field (Sign Up only) */}
+                {!isSignIn && (
+                  <div>
+                    <label
+                      htmlFor="role"
+                      className="mb-2 block text-sm font-medium text-slate-700"
                     >
-                      <option value="admin">Admin</option>
-                      <option value="staff">Staff</option>
-                    </select>
-                    {/* Custom dropdown arrow */}
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                      <svg
-                        className="h-5 w-5 text-slate-400"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
+                      Role
+                    </label>
+                    <motion.div
+                      className="relative"
+                      variants={inputVariants}
+                      whileFocus="focus"
+                      whileTap="tap"
+                    >
+                      <Shield className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-slate-400" />
+                      <select
+                        id="role"
+                        name="role"
+                        value={formData.role}
+                        onChange={handleInputChange}
+                        className={`w-full appearance-none rounded-lg border bg-white py-3 pr-4 pl-11 transition-all focus:border-transparent focus:ring-2 focus:ring-indigo-500 ${
+                          errors.role ? 'border-red-300' : 'border-slate-300'
+                        }`}
                       >
-                        <path
-                          fillRule="evenodd"
-                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                  </motion.div>
-                  {errors.role && (
-                    <p className="mt-1 text-sm text-red-600">{errors.role}</p>
-                  )}
-                </div>
+                        <option value="admin">Admin</option>
+                        <option value="staff">Staff</option>
+                      </select>
+                      {/* Custom dropdown arrow */}
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                        <svg
+                          className="h-5 w-5 text-slate-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    </motion.div>
+                    {errors.role && (
+                      <p className="mt-1 text-sm text-red-600">{errors.role}</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Password Field */}
                 <div>

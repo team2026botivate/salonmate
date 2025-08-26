@@ -30,7 +30,6 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/auth" element={<AuthPage />} />
-            <Route path="/trial" element={<TrialPage />} />
 
             {/* Protected routes */}
             <Route element={<ProtectedRoute />}>

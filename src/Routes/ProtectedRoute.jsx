@@ -3,7 +3,7 @@ import { useAuth } from '../Context/AuthContext.jsx';
 
 // Protected route component that checks for authentication
 const ProtectedRoute = ({
-  redirectPath = '/login', // Default redirect path
+  redirectPath = '/auth', // Default redirect path
   requiredPermission = null // Optional specific permission requirement
 }) => {
   const { isAuthenticated, user } = useAuth();
