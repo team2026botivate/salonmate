@@ -1,9 +1,11 @@
-import React, { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, EyeOff, User, Mail, Lock, Chrome, Shield } from 'lucide-react'
 import { useAuth } from '@/Context/AuthContext'
-import { useNavigate } from 'react-router-dom'
 import supabase from '@/dataBase/connectdb'
+// eslint-disable-next-line no-unused-vars
+import { AnimatePresence, motion } from 'framer-motion'
+import { Chrome, Eye, EyeOff, Lock, Mail, Shield, User } from 'lucide-react'
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import toast, { Toaster } from 'react-hot-toast'
 
 const AuthPage = () => {
   const { login, user, loading: authLoading } = useAuth()
@@ -151,22 +153,28 @@ const AuthPage = () => {
             console.error('Profile insert error:', profileError.message)
           }
 
-          // Store session in localStorage
-          if (data.session) {
-            localStorage.setItem('supabase_session', JSON.stringify(data.session))
-          }
-
-          // Create user data for context
-          const userData = {
-            ...user,
-            role: formData.role || 'staff'
-          }
-
-          // Use context login to store user data
-          login(userData)
-          
-          // Clear errors
+          // Clear errors and form data
           setErrors({})
+          setFormData({
+            name: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+            rememberMe: false,
+            role: 'admin',
+          })
+          
+          // Switch to sign in page
+          setIsSignIn(true)
+          
+          // Show success toast
+          toast.success(
+            'Please check your email to confirm your account before signing in.',
+            {
+              duration: 6000,
+              position: 'top-center',
+            }
+          )
         }
       }
     } catch (err) {
@@ -627,6 +635,31 @@ const AuthPage = () => {
           />
         </div>
       </motion.div>
+      {/* React Hot Toast */}
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        gutter={8}
+        containerClassName=""
+        containerStyle={{}}
+        toastOptions={{
+          // Define default options
+          className: '',
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          // Default options for specific types
+          success: {
+            duration: 6000,
+            theme: {
+              primary: 'green',
+              secondary: 'black',
+            },
+          },
+        }}
+      />
     </div>
   )
 }

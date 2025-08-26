@@ -1,227 +1,254 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { useAuth } from "../Context/AuthContext.jsx"
-import Navbar from "./Navbar.jsx"
-import Sidebar from "./Sidebar.jsx"
-import Booking from "./Booking.jsx"
-import DailyEntry from "../DailyEntry.jsx"
-import StaffAttendance from "../StaffAttendance.jsx"
-import Inventory from "../Inventory.jsx"
-import Services from "../Services.jsx"
-import StaffDB from "../StaffDb.jsx"
-import StaffHistory from "../StaffHistory.jsx"
-import PaymentCommission from "../payment-commission.jsx"
-import DashboardHome from "./DashboardHome.jsx"
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { motion } from 'framer-motion'
+import { useAuth } from '../Context/AuthContext.jsx'
+import Navbar from './Navbar.jsx'
+import Sidebar from './Sidebar.jsx'
+import Booking from './Booking.jsx'
+import DailyEntry from '../DailyEntry.jsx'
+import StaffAttendance from '../StaffAttendance.jsx'
+import Inventory from '../Inventory.jsx'
+import Services from '../Services.jsx'
+import StaffDB from '../StaffDb.jsx'
+import StaffHistory from '../StaffHistory.jsx'
+import PaymentCommission from '../payment-commission.jsx'
+import DashboardHome from './DashboardHome.jsx'
 // Import the new components
-import CustomerDb from "../customer-db.jsx"
-import PromoCard from "../promo-card.jsx"
-import License from "../license.jsx"
-import AppointmentHistory from "../AppointmentHistory.jsx"
-import WhatsappTemplate from "../WhattsappTemplate.jsx"
+import CustomerDb from '../customer-db.jsx'
+import PromoCard from '../promo-card.jsx'
+import License from '../license.jsx'
+import AppointmentHistory from '../AppointmentHistory.jsx'
+import WhatsappTemplate from '../WhattsappTemplate.jsx'
 
 // Map component names to identifiers used in permissions
 const COMPONENT_PERMISSION_MAP = {
-  dashboardHome: "dashboard",
-  booking: "appointment",
-  dailyEntry: "runningappointment",
-  appointmentHistory: "appointmenthistory",
-  staff: "staff",
-  staffAttendance: "staffattendance",
-  staffDB: "staffdb",
-  staffHistory: "staffhistory",
-  inventory: "inventory",
-  services: "services",
-  paymentCommission: "paymentcommission",
-  customerDb: "customers",
-  promoCard: "promocards",
-  license: "license",
-  whatsappTemplate: "whatsapptemplate",
+  dashboardHome: 'dashboard',
+  booking: 'appointment',
+  dailyEntry: 'runningappointment',
+  appointmentHistory: 'appointmenthistory',
+  staff: 'staff',
+  staffAttendance: 'staffattendance',
+  staffDB: 'staffdb',
+  staffHistory: 'staffhistory',
+  inventory: 'inventory',
+  services: 'services',
+  paymentCommission: 'paymentcommission',
+  customerDb: 'customers',
+  promoCard: 'promocards',
+  license: 'license',
+  whatsappTemplate: 'whatsapptemplate',
 }
+
+// AccessDenied component moved outside for better performance
+const AccessDenied = ({ message }) => (
+  <div className="flex h-full flex-col items-center justify-center rounded-lg bg-red-50 p-6 text-center">
+    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-500">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-8 w-8"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+        />
+      </svg>
+    </div>
+    <h2 className="mb-2 text-xl font-semibold text-red-700">Access Denied</h2>
+    <p className="text-red-600">
+      {message || "You don't have permission to view this component."}
+    </p>
+    <p className="mt-4 text-sm text-gray-600">
+      Please contact your administrator if you believe this is a mistake.
+    </p>
+  </div>
+)
 
 export default function Dashboard() {
   const { user, isAuthenticated, hasPermission } = useAuth()
-  const [activeTab, setActiveTab] = useState("booking") // Changed default to booking
-  const [activeStaffTab, setActiveStaffTab] = useState("staffAttendance")
+
+  console.log(user,"permissions")
+  
+  // State management
+  const [activeTab, setActiveTab] = useState('')
+  const [activeStaffTab, setActiveStaffTab] = useState('staffAttendance')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [allowedTabs, setAllowedTabs] = useState([])
 
-  // Set initial active tab and allowed tabs based on user role and permissions
-  useEffect(() => {
-    // Function to check if a component is allowed based on user permissions
-    const isComponentAllowed = (componentId) => {
-      // Special case: if user has 'all' permission, allow everything
-      if (user?.permissions?.includes("all")) {
-        return true
-      }
-
-      // Map component ID to permission name
-      const permissionName = COMPONENT_PERMISSION_MAP[componentId]
-
-      // Check if user has this specific permission
-      return permissionName && user?.permissions?.includes(permissionName)
+  // Memoize permission checking function for better performance
+  const isComponentAllowed = useCallback((componentId) => {
+    if (!user?.permissions) return false
+    
+    // Special case: if user has 'all' permission, allow everything
+    if (user.permissions.includes('all')) {
+      return true
     }
 
-    // Calculate allowed tabs based on permissions in column H
-    const permissionBasedTabs = []
+    // Map component ID to permission name
+    const permissionName = COMPONENT_PERMISSION_MAP[componentId]
+    
+    // Check if user has this specific permission
+    return permissionName && user.permissions.includes(permissionName)
+  }, [user?.permissions])
 
-    // All possible tabs to check
+  // Memoize allowed tabs calculation
+  const allowedTabs = useMemo(() => {
+    if (!user?.permissions) return []
+
     const allPossibleTabs = [
-      "dashboardHome",
-      "booking",
-      "dailyEntry",
-      "appointmentHistory",
-      "staff",
-      "inventory",
-      "services",
-      "paymentCommission",
-      "customerDb",
-      "promoCard",
-      "license",
-      "whatsappTemplate",
+      'dashboardHome',
+      'booking',
+      'dailyEntry',
+      'appointmentHistory',
+      'staff',
+      'inventory',
+      'services',
+      'paymentCommission',
+      'customerDb',
+      'promoCard',
+      'license',
+      'whatsappTemplate',
     ]
 
-    // Check each tab against user permissions
-    allPossibleTabs.forEach((tab) => {
-      if (isComponentAllowed(tab)) {
-        permissionBasedTabs.push(tab)
-      }
-    })
+    return allPossibleTabs.filter(tab => isComponentAllowed(tab))
+  }, [isComponentAllowed])
 
-    setAllowedTabs(permissionBasedTabs)
+  // Set initial active tab based on user role and permissions
+  useEffect(() => {
+    if (allowedTabs.length === 0) return
 
-    // Set initial active tab - try to find the first allowed tab
-    if (permissionBasedTabs.length > 0) {
-      // Try to use booking as default for staff, dashboardHome for admin if available
-      if (user?.role === "staff" && permissionBasedTabs.includes("booking")) {
-        setActiveTab("booking")
-      } else if (user?.role === "admin" && permissionBasedTabs.includes("dashboardHome")) {
-        setActiveTab("dashboardHome")
-      } else {
-        // Otherwise use the first allowed tab
-        setActiveTab(permissionBasedTabs[0])
-      }
+    // Determine initial tab based on role and available permissions
+    let initialTab = allowedTabs[0] // fallback to first allowed tab
+
+    if (user?.role === 'staff' && allowedTabs.includes('booking')) {
+      initialTab = 'booking'
+    } else if (user?.role === 'admin' && allowedTabs.includes('dashboardHome')) {
+      initialTab = 'dashboardHome'
     }
-  }, [user])
+
+    setActiveTab(initialTab)
+  }, [allowedTabs, user?.role])
 
   // Handle tab change - only allow changing to permitted tabs
-  const handleTabChange = (tabName) => {
+  const handleTabChange = useCallback((tabName) => {
     if (allowedTabs.includes(tabName)) {
       setActiveTab(tabName)
     }
-  }
+  }, [allowedTabs])
 
   // Check if staff submenu items are allowed based on permissions
-  const isStaffSubmenuAllowed = (subTabName) => {
+  const isStaffSubmenuAllowed = useCallback((subTabName) => {
+    if (!user?.permissions) return false
+    
     const permissionName = COMPONENT_PERMISSION_MAP[subTabName]
     return (
       permissionName &&
-      (user?.permissions?.includes(permissionName) ||
-        user?.permissions?.includes("all") ||
-        user?.permissions?.includes("staff"))
+      (user.permissions.includes(permissionName) ||
+        user.permissions.includes('all') ||
+        user.permissions.includes('staff'))
     )
-  }
+  }, [user?.permissions])
 
-  // This function handles the main content rendering based on permissions
-  const renderContent = () => {
+  // Main content rendering function
+  const renderContent = useCallback(() => {
+    if (!activeTab) {
+      return <AccessDenied message="Loading..." />
+    }
+
     // For admin users with staff tab selected
-    if (activeTab === "staff") {
-      // Check if the specific staff submenu is allowed
+    if (activeTab === 'staff') {
       switch (activeStaffTab) {
-        case "staffAttendance":
-          return isStaffSubmenuAllowed("staffAttendance") ? <StaffAttendance /> : <AccessDenied />
-        case "staffDB":
-          return isStaffSubmenuAllowed("staffDB") ? <StaffDB /> : <AccessDenied />
-        case "staffHistory":
-          return isStaffSubmenuAllowed("staffHistory") ? <StaffHistory /> : <AccessDenied />
+        case 'staffAttendance':
+          return isStaffSubmenuAllowed('staffAttendance') ? (
+            <StaffAttendance />
+          ) : (
+            <AccessDenied />
+          )
+        case 'staffDB':
+          return isStaffSubmenuAllowed('staffDB') ? (
+            <StaffDB />
+          ) : (
+            <AccessDenied />
+          )
+        case 'staffHistory':
+          return isStaffSubmenuAllowed('staffHistory') ? (
+            <StaffHistory />
+          ) : (
+            <AccessDenied />
+          )
         default:
           return <AccessDenied />
       }
     }
 
-    // Handle other main tabs (available to both admin and staff where permitted)
-    // For each tab, check if user has appropriate permission
-    switch (activeTab) {
-      case "dashboardHome":
-        return allowedTabs.includes("dashboardHome") ? (
-          <DashboardHome isAdmin={user?.role === "admin"} setActiveTab={setActiveTab} />
-        ) : (
-          <AccessDenied />
-        )
-      case "booking":
-        return allowedTabs.includes("booking") ? (
-          <Booking hideHistoryButton={user?.role === "staff"} />
-        ) : (
-          <AccessDenied />
-        )
-      case "dailyEntry":
-        return allowedTabs.includes("dailyEntry") ? (
-          <DailyEntry hideHistoryButton={user?.role === "staff"} setActiveTab={setActiveTab} />
-        ) : (
-          <AccessDenied />
-        )
-      case "appointmentHistory":
-        return allowedTabs.includes("appointmentHistory") ? <AppointmentHistory /> : <AccessDenied />
-      case "inventory":
-        return allowedTabs.includes("inventory") ? (
-          <Inventory hideHistoryButton={user?.role === "staff"} />
-        ) : (
-          <AccessDenied />
-        )
-      case "services":
-        return allowedTabs.includes("services") ? <Services isAdmin={user?.role === "admin"} /> : <AccessDenied />
-      case "paymentCommission":
-        return allowedTabs.includes("paymentCommission") ? (
-          <PaymentCommission isAdmin={user?.role === "admin"} />
-        ) : (
-          <AccessDenied />
-        )
-      case "customerDb":
-        return allowedTabs.includes("customerDb") ? <CustomerDb /> : <AccessDenied />
-      case "promoCard":
-        return allowedTabs.includes("promoCard") ? <PromoCard /> : <AccessDenied />
-      case "license":
-        return allowedTabs.includes("license") ? <License /> : <AccessDenied />
-      case "whatsappTemplate":
-        return allowedTabs.includes("whatsappTemplate") ? <WhatsappTemplate /> : <AccessDenied />
-      default:
-        // Fallback to first allowed tab
-        return allowedTabs.length > 0 ? (
-          renderContent(allowedTabs[0])
-        ) : (
-          <AccessDenied message="No components available with your permissions" />
-        )
+    // Handle other main tabs
+    const componentMap = {
+      dashboardHome: () => (
+        <DashboardHome
+          isAdmin={user?.role === 'admin'}
+          setActiveTab={setActiveTab}
+        />
+      ),
+      booking: () => (
+        <Booking hideHistoryButton={user?.role === 'staff'} />
+      ),
+      dailyEntry: () => (
+        <DailyEntry
+          hideHistoryButton={user?.role === 'staff'}
+          setActiveTab={setActiveTab}
+        />
+      ),
+      appointmentHistory: () => <AppointmentHistory />,
+      inventory: () => (
+        <Inventory hideHistoryButton={user?.role === 'staff'} />
+      ),
+      services: () => <Services isAdmin={user?.role === 'admin'} />,
+      paymentCommission: () => (
+        <PaymentCommission isAdmin={user?.role === 'admin'} />
+      ),
+      customerDb: () => <CustomerDb />,
+      promoCard: () => <PromoCard />,
+      license: () => <License />,
+      whatsappTemplate: () => <WhatsappTemplate />,
     }
+
+    const ComponentRenderer = componentMap[activeTab]
+    
+    if (ComponentRenderer && allowedTabs.includes(activeTab)) {
+      return <ComponentRenderer />
+    }
+
+    return allowedTabs.length > 0 ? (
+      <AccessDenied message="Component not found or not accessible" />
+    ) : (
+      <AccessDenied message="No components available with your permissions" />
+    )
+  }, [
+    activeTab,
+    activeStaffTab,
+    user?.role,
+    allowedTabs,
+    isStaffSubmenuAllowed
+  ])
+
+  // Show loading or authentication check
+  if (!isAuthenticated) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="mb-4 text-lg">Please log in to continue</div>
+        </div>
+      </div>
+    )
   }
 
-  // AccessDenied component to show when user doesn't have permission
-  const AccessDenied = ({ message }) => (
-    <div className="flex flex-col items-center justify-center h-full p-6 text-center bg-red-50 rounded-lg">
-      <div className="w-16 h-16 mb-4 text-red-500 flex items-center justify-center rounded-full bg-red-100">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-8 h-8"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 15v2m0 0v2m0-2h2m-2 0H9m3-3V6a3 3 0 00-3-3H6a3 3 0 00-3 3v6a3 3 0 003 3h6a3 3 0 003-3z"
-          />
-        </svg>
-      </div>
-      <h2 className="mb-2 text-xl font-semibold text-red-700">Access Denied</h2>
-      <p className="text-red-600">{message || "You don't have permission to view this component."}</p>
-      <p className="mt-4 text-sm text-gray-600">Please contact your administrator if you believe this is a mistake.</p>
-    </div>
-  )
-
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex h-screen flex-col bg-gradient-to-br from-blue-50 to-indigo-100 md:flex-row">
       <Sidebar
         activeTab={activeTab}
         setActiveTab={handleTabChange}
@@ -232,10 +259,14 @@ export default function Dashboard() {
         allowedTabs={allowedTabs}
         userRole={user?.role}
       />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Navbar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} userRole={user?.role} />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Navbar
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          userRole={user?.role}
+        />
         <motion.main
-          key={activeTab === "staff" ? activeStaffTab : activeTab}
+          key={activeTab === 'staff' ? activeStaffTab : activeTab}
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
@@ -244,12 +275,12 @@ export default function Dashboard() {
         >
           {renderContent()}
         </motion.main>
-        <footer className="w-full py-1 px-3 text-center text-xs text-black bg-blue-300 border-t border-gray-200 shadow-sm">
+        <footer className="w-full border-t border-gray-200 bg-blue-300 px-3 py-1 text-center text-xs text-black shadow-sm">
           <a
             href="https://botivate.in/"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-blue-600 transition-colors duration-200"
+            className="transition-colors duration-200 hover:text-blue-600"
           >
             Powered By-Botivate
           </a>

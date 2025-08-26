@@ -1,3 +1,4 @@
+import { CircleParkingOff, CloudLightning } from 'lucide-react'
 import { createContext, useContext, useEffect, useState } from 'react'
 
 const AuthContext = createContext()
@@ -13,6 +14,9 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+
+
+  console.log(user,"form context")
 
   // Check for stored user data on initial load
   useEffect(() => {
