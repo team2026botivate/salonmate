@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error(`Failed to fetch client data: ${response.status}`)
       }
 
+      console.log("Client data fetched successfully",response)
       // Extract the JSON part from the response
       const text = await response.text()
       const jsonStart = text.indexOf("{")
@@ -47,6 +48,7 @@ export const AuthProvider = ({ children }) => {
       const jsonString = text.substring(jsonStart, jsonEnd + 1)
       const data = JSON.parse(jsonString)
 
+      console.log("Client data parsed successfully",data)
       // Process the client data
       if (!data.table || !data.table.rows) {
         throw new Error("Invalid client data format")
