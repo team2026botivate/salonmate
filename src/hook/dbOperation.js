@@ -995,3 +995,640 @@ export const useInventoryMutations = () => {
 
   return { addProduct, updateProduct, loading, error }
 }
+
+//* Service section started from here
+
+// Get all services from hair_service table
+export const useGetServices = () => {
+  const [services, setServices] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const fetchServices = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const { data, error: err } = await supabase
+        .from('hair_service')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (err) throw err
+      setServices(data || [])
+    } catch (e) {
+      console.error('fetchServices error:', e)
+      setError(e.message || 'Failed to fetch services')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchServices()
+  }, [fetchServices])
+
+  return { services, loading, error, refetch: fetchServices }
+}
+
+// Add new service
+export const useAddService = () => {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const addService = async (serviceData) => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const payload = {
+        service_name: serviceData.name,
+        service_description: serviceData.description,
+        base_price: parseFloat(serviceData.price),
+        time_duration: serviceData.duration,
+        delete_flag: false,
+        created_at: new Date().toISOString(),
+      }
+
+      const { data, error: err } = await supabase
+        .from('hair_service')
+        .insert(payload)
+        .select()
+        .single()
+
+      if (err) throw err
+      return data
+    } catch (e) {
+      console.error('addService error:', e)
+      setError(e.message || 'Failed to add service')
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return { addService, loading, error }
+}
+
+// Dashboard Home hooks
+export const useDashboardSummary = () => {
+  const [data, setData] = useState({
+    upcomingBookings: 0,
+    totalClients: 0,
+    weekRevenue: 0,
+    monthRevenue: 0,
+    weekGrowth: 0,
+    monthGrowth: 0,
+    activeServices: 0,
+    inactiveServices: 0,
+    totalStaff: 0,
+    absentStaff: 0
+  })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const fetchDashboardSummary = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Get today's date range
+      const today = new Date()
+      const todayStart = new Date(today)
+      todayStart.setHours(0, 0, 0, 0)
+      const todayEnd = new Date(today)
+      todayEnd.setHours(23, 59, 59, 999)
+
+      // Get week date range
+      const weekStart = new Date(today)
+      weekStart.setDate(today.getDate() - today.getDay())
+      weekStart.setHours(0, 0, 0, 0)
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekStart.getDate() + 6)
+      weekEnd.setHours(23, 59, 59, 999)
+
+      // Get month date range
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+      const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+      monthEnd.setHours(23, 59, 59, 999)
+
+      // Get previous week and month for growth calculation
+      const prevWeekStart = new Date(weekStart)
+      prevWeekStart.setDate(weekStart.getDate() - 7)
+      const prevWeekEnd = new Date(weekEnd)
+      prevWeekEnd.setDate(weekEnd.getDate() - 7)
+
+      const prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+      const prevMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0)
+      prevMonthEnd.setHours(23, 59, 59, 999)
+
+      // Fetch upcoming bookings (today and future)
+      const { data: upcomingBookings, error: bookingsError } = await supabase
+        .from('appointment')
+        .select('id')
+        .gte('Slot Date', todayStart.toISOString())
+        .in('Booking Status', ['confirmed', 'pending'])
+
+      if (bookingsError) throw bookingsError
+
+      // Fetch total unique clients
+      const { data: totalClients, error: clientsError } = await supabase
+        .from('customer_info')
+        .select('id')
+
+      if (clientsError) throw clientsError
+
+      // Fetch week revenue
+      const { data: weekRevenue, error: weekRevenueError } = await supabase
+        .from('appointment')
+        .select('transaction_final_amount')
+        .gte('transactions_date', weekStart.toISOString())
+        .lte('transactions_date', weekEnd.toISOString())
+        .eq('transactions_status', 'paid')
+        .not('transaction_final_amount', 'is', null)
+
+      if (weekRevenueError) throw weekRevenueError
+
+      // Fetch month revenue
+      const { data: monthRevenue, error: monthRevenueError } = await supabase
+        .from('appointment')
+        .select('transaction_final_amount')
+        .gte('transactions_date', monthStart.toISOString())
+        .lte('transactions_date', monthEnd.toISOString())
+        .eq('transactions_status', 'paid')
+        .not('transaction_final_amount', 'is', null)
+
+      if (monthRevenueError) throw monthRevenueError
+
+      // Fetch previous week revenue for growth calculation
+      const { data: prevWeekRevenue, error: prevWeekError } = await supabase
+        .from('appointment')
+        .select('transaction_final_amount')
+        .gte('transactions_date', prevWeekStart.toISOString())
+        .lte('transactions_date', prevWeekEnd.toISOString())
+        .eq('transactions_status', 'paid')
+        .not('transaction_final_amount', 'is', null)
+
+      if (prevWeekError) throw prevWeekError
+
+      // Fetch previous month revenue for growth calculation
+      const { data: prevMonthRevenue, error: prevMonthError } = await supabase
+        .from('appointment')
+        .select('transaction_final_amount')
+        .gte('transactions_date', prevMonthStart.toISOString())
+        .lte('transactions_date', prevMonthEnd.toISOString())
+        .eq('transactions_status', 'paid')
+        .not('transaction_final_amount', 'is', null)
+
+      if (prevMonthError) throw prevMonthError
+
+      // Fetch services
+      const { data: services, error: servicesError } = await supabase
+        .from('hair_service')
+        .select('id, delete_flag')
+
+      if (servicesError) throw servicesError
+
+      // Fetch staff
+      const { data: staff, error: staffError } = await supabase
+        .from('staff_info')
+        .select('id, status, delete_flag')
+        .neq('delete_flag', true)
+
+      if (staffError) throw staffError
+
+      // Fetch today's staff attendance
+      const { data: attendance, error: attendanceError } = await supabase
+        .from('staff_attendance')
+        .select('staff_id, status')
+        .eq('date', today.toISOString().split('T')[0])
+
+      if (attendanceError) throw attendanceError
+
+      // Calculate metrics
+      const weekRevenueTotal = (weekRevenue || []).reduce((sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0), 0)
+      const monthRevenueTotal = (monthRevenue || []).reduce((sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0), 0)
+      const prevWeekRevenueTotal = (prevWeekRevenue || []).reduce((sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0), 0)
+      const prevMonthRevenueTotal = (prevMonthRevenue || []).reduce((sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0), 0)
+
+      const weekGrowth = prevWeekRevenueTotal > 0 ? ((weekRevenueTotal - prevWeekRevenueTotal) / prevWeekRevenueTotal) * 100 : 0
+      const monthGrowth = prevMonthRevenueTotal > 0 ? ((monthRevenueTotal - prevMonthRevenueTotal) / prevMonthRevenueTotal) * 100 : 0
+
+      const activeServices = (services || []).filter(s => !s.delete_flag).length
+      const inactiveServices = (services || []).filter(s => s.delete_flag).length
+
+      const totalStaff = (staff || []).length
+      const attendanceMap = new Map((attendance || []).map(a => [a.staff_id, a.status]))
+      const absentStaff = (staff || []).filter(s => {
+        const attendanceStatus = attendanceMap.get(s.id)
+        return !attendanceStatus || attendanceStatus.toLowerCase() === 'absent'
+      }).length
+
+      setData({
+        upcomingBookings: (upcomingBookings || []).length,
+        totalClients: (totalClients || []).length,
+        weekRevenue: Math.round(weekRevenueTotal),
+        monthRevenue: Math.round(monthRevenueTotal),
+        weekGrowth: Math.round(weekGrowth * 10) / 10,
+        monthGrowth: Math.round(monthGrowth * 10) / 10,
+        activeServices,
+        inactiveServices,
+        totalStaff,
+        absentStaff
+      })
+    } catch (e) {
+      console.error('fetchDashboardSummary error:', e)
+      setError(e.message || 'Failed to fetch dashboard summary')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchDashboardSummary()
+  }, [fetchDashboardSummary])
+
+  return { data, loading, error, refetch: fetchDashboardSummary }
+}
+
+export const useRecentBookings = () => {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const fetchRecentBookings = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const today = new Date()
+      const threeDaysAgo = new Date(today)
+      threeDaysAgo.setDate(today.getDate() - 3)
+
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('appointment')
+        .select('id, "Customer Name", Services, "Slot Time", "Booking Status", "Service Price", "Slot Date"')
+        .gte('Slot Date', threeDaysAgo.toISOString())
+        .order('Slot Date', { ascending: false })
+        .limit(5)
+
+      if (bookingsError) throw bookingsError
+
+      const formattedBookings = (bookings || []).map(booking => ({
+        id: booking.id,
+        clientName: booking['Customer Name'] || 'Unknown',
+        service: booking.Services || 'No service',
+        time: booking['Slot Time'] || 'No time',
+        status: booking['Booking Status'] || 'pending',
+        amount: parseFloat(booking['Service Price']) || 0
+      }))
+
+      setData(formattedBookings)
+    } catch (e) {
+      console.error('fetchRecentBookings error:', e)
+      setError(e.message || 'Failed to fetch recent bookings')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchRecentBookings()
+  }, [fetchRecentBookings])
+
+  return { data, loading, error, refetch: fetchRecentBookings }
+}
+
+export const useRecentTransactions = () => {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const fetchRecentTransactions = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const { data: transactions, error: transactionsError } = await supabase
+        .from('appointment')
+        .select('transaction_id, "Customer Name", payment_method, transactions_status, transaction_final_amount')
+        .not('transaction_id', 'is', null)
+        .not('transactions_status', 'is', null)
+        .order('transactions_date', { ascending: false })
+        .limit(5)
+
+      if (transactionsError) throw transactionsError
+
+      const formattedTransactions = (transactions || []).map(transaction => ({
+        id: transaction.transaction_id || `TXN${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+        clientName: transaction['Customer Name'] || 'Unknown',
+        paymentMethod: transaction.payment_method || 'cash',
+        status: transaction.transactions_status === 'paid' ? 'completed' : transaction.transactions_status || 'pending',
+        amount: parseFloat(transaction.transaction_final_amount) || 0
+      }))
+
+      setData(formattedTransactions)
+    } catch (e) {
+      console.error('fetchRecentTransactions error:', e)
+      setError(e.message || 'Failed to fetch recent transactions')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchRecentTransactions()
+  }, [fetchRecentTransactions])
+
+  return { data, loading, error, refetch: fetchRecentTransactions }
+}
+
+// Staff Payment/Commission hooks
+export const useStaffPaymentData = () => {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const fetchStaffPaymentData = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Get current month for attendance calculation
+      const now = new Date()
+      const currentMonth = now.getMonth() + 1
+      const currentYear = now.getFullYear()
+      const monthStart = new Date(currentYear, currentMonth - 1, 1)
+      const monthEnd = new Date(currentYear, currentMonth, 0)
+
+      // Fetch all active staff
+      const { data: staffList, error: staffError } = await supabase
+        .from('staff_info')
+        .select('id, staff_name, mobile_number, position, base_salary, commission_rate, commission_type, payment_status')
+        .neq('delete_flag', true)
+        .order('staff_name', { ascending: true })
+
+      console.log(staffList)
+      if (staffError) throw staffError
+
+      // Fetch attendance data for current month for each staff member
+      const staffWithPaymentData = await Promise.all(
+        (staffList || []).map(async (staff) => {
+          try {
+            // Get attendance count for current month
+            const { data: attendanceData, error: attendanceError } = await supabase
+              .from('staff_attendance')
+              .select('status')
+              .eq('staff_id', staff.id)
+              .gte('date', monthStart.toISOString().split('T')[0])
+              .lte('date', monthEnd.toISOString().split('T')[0])
+              .in('status', ['present', 'active', 'p'])
+
+            if (attendanceError) {
+              console.warn(`Error fetching attendance for ${staff.staff_name}:`, attendanceError)
+            }
+
+            const totalPresent = (attendanceData || []).length
+
+            // Get total revenue generated by this staff member for commission calculation
+            const { data: revenueData, error: revenueError } = await supabase
+              .from('appointment')
+              .select('transaction_final_amount')
+              .eq('staff_id', staff.id)
+              .eq('transactions_status', 'paid')
+              .gte('transactions_date', monthStart.toISOString())
+              .lte('transactions_date', monthEnd.toISOString())
+              .not('transaction_final_amount', 'is', null)
+
+            if (revenueError) {
+              console.warn(`Error fetching revenue for ${staff.staff_name}:`, revenueError)
+            }
+
+            const totalRevenue = (revenueData || []).reduce(
+              (sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0), 0
+            )
+
+            // Get values from database columns
+            const baseSalary = parseFloat(staff.base_salary) || 25000
+            const commissionRate = parseFloat(staff.commission_rate) || 10
+            const commissionType = staff.commission_type || 'percentage'
+            
+            // Calculate pro-rated salary based on attendance
+            // Formula: (base_salary / total_days_in_month) * days_present
+            const totalDaysInMonth = monthEnd.getDate()
+            const proRatedSalary = (baseSalary / totalDaysInMonth) * totalPresent
+            
+            // Calculate commission based on type
+            let calculatedCommission = 0
+            if (commissionType === 'percentage') {
+              calculatedCommission = totalRevenue * (commissionRate / 100)
+            } else {
+              calculatedCommission = commissionRate
+            }
+
+            return {
+              id: staff.id,
+              name: staff.staff_name,
+              baseSalary: baseSalary,
+              proRatedSalary: Math.round(proRatedSalary), // Attendance-based salary
+              totalPresent: totalPresent,
+              totalDaysInMonth: totalDaysInMonth,
+              commission: commissionRate,
+              commissionType: commissionType,
+              calculatedCommission: calculatedCommission,
+              totalRevenue: totalRevenue,
+              paymentStatus: staff.payment_status || 'pending'
+            }
+          } catch (err) {
+            console.error(`Error processing staff ${staff.staff_name}:`, err)
+            const baseSalary = parseFloat(staff.base_salary) || 25000
+            const totalDaysInMonth = monthEnd.getDate()
+            const proRatedSalary = (baseSalary / totalDaysInMonth) * 0 // 0 days present in error case
+            
+            return {
+              id: staff.id,
+              name: staff.staff_name,
+              baseSalary: baseSalary,
+              proRatedSalary: Math.round(proRatedSalary),
+              totalPresent: 0,
+              totalDaysInMonth: totalDaysInMonth,
+              commission: 10, // Default fallback
+              commissionType: 'percentage',
+              calculatedCommission: 0,
+              totalRevenue: 0,
+              paymentStatus: 'pending'
+            }
+          }
+        })
+      )
+
+      setData(staffWithPaymentData)
+    } catch (e) {
+      console.error('fetchStaffPaymentData error:', e)
+      setError(e.message || 'Failed to fetch staff payment data')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchStaffPaymentData()
+  }, [fetchStaffPaymentData])
+
+  return { data, loading, error, refetch: fetchStaffPaymentData }
+}
+
+export const useUpdateStaffPaymentStatus = () => {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const updatePaymentStatus = async (staffData) => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const now = new Date()
+      const currentMonth = now.toISOString().slice(0, 7) // YYYY-MM format
+      const totalSalary = staffData.proRatedSalary + staffData.calculatedCommission
+
+      // Insert payment record into staff_payments table
+      const { data: paymentData, error: paymentError } = await supabase
+        .from('staff_payments')
+        .insert({
+          staff_id: staffData.id,
+          payment_date: now.toISOString().split('T')[0],
+          salary_month: currentMonth,
+          amount: totalSalary,
+          payment_method: 'Bank Transfer',
+          status: 'Paid',
+          notes: `Salary: ₹${staffData.proRatedSalary} (${staffData.totalPresent}/${staffData.totalDaysInMonth} days) + Commission: ₹${staffData.calculatedCommission}`
+        })
+        .select()
+        .single()
+
+      if (paymentError) throw paymentError
+
+      // Update payment status in staff_info table
+      const { error: statusError } = await supabase
+        .from('staff_info')
+        .update({ payment_status: 'paid' })
+        .eq('id', staffData.id)
+
+      if (statusError) throw statusError
+
+      console.log(`Payment processed successfully for ${staffData.name}`)
+      return paymentData
+    } catch (e) {
+      console.error('updatePaymentStatus error:', e)
+      setError(e.message || 'Failed to update payment status')
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return { updatePaymentStatus, loading, error }
+}
+
+// Update service
+export const useUpdateService = () => {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const updateService = async (id, serviceData) => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const payload = {
+        service_name: serviceData.name,
+        service_description: serviceData.description,
+        base_price: parseFloat(serviceData.price),
+        time_duration: serviceData.duration,
+        updated_at: new Date().toISOString(),
+      }
+
+      const { data, error: err } = await supabase
+        .from('hair_service')
+        .update(payload)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (err) throw err
+      return data
+    } catch (e) {
+      console.error('updateService error:', e)
+      setError(e.message || 'Failed to update service')
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return { updateService, loading, error }
+}
+
+// Soft delete/restore service
+export const useToggleServiceDelete = () => {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const toggleDelete = async (id, isDeleted) => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const { data, error: err } = await supabase
+        .from('hair_service')
+        .update({
+          delete_flag: isDeleted,
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (err) throw err
+      return data
+    } catch (e) {
+      console.error('toggleDelete error:', e)
+      setError(e.message || 'Failed to update service status')
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return { toggleDelete, loading, error }
+}
+
+// Permanently delete service
+export const useDeleteService = () => {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const deleteService = async (id) => {
+
+    console.log(id,"id")
+    try {
+      setLoading(true)
+      setError(null)
+
+      const { error: err } = await supabase
+        .from('hair_service')
+        .delete()
+        .eq('id', id)
+
+        console.log(err,"err")
+      if (err) throw err
+      return true
+    } catch (e) {
+      console.error('deleteService error:', e)
+      setError(e.message || 'Failed to delete service')
+      return false
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return { deleteService, loading, error }
+}

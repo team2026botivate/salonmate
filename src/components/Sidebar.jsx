@@ -184,6 +184,21 @@ export default function Sidebar({
       <nav className="p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {
+            // Additional UI rule: hide certain sections for staff regardless of permissions
+            const staffHidden = new Set([
+              'staff',
+              'services',
+              'paymentCommission',
+              'customerDb',
+              'promoCard',
+              'license',
+              'whatsappTemplate',
+            ])
+
+            if (user?.role === 'staff' && staffHidden.has(item.id)) {
+              return null
+            }
+
             // Skip items that are not in allowed tabs based on user permissions in column H
             if (!isComponentAllowed(item.id)) {
               return null;

@@ -125,10 +125,12 @@ export default function Dashboard() {
     // Determine initial tab based on role and available permissions
     let initialTab = allowedTabs[0] // fallback to first allowed tab
 
-    if (user?.role === 'staff' && allowedTabs.includes('booking')) {
-      initialTab = 'booking'
-    } else if (user?.role === 'admin' && allowedTabs.includes('dashboardHome')) {
+    // Prefer dashboardHome whenever it's permitted
+    if (allowedTabs.includes('dashboardHome')) {
       initialTab = 'dashboardHome'
+    } else if (user?.role === 'staff' && allowedTabs.includes('booking')) {
+      // Fall back to booking for staff if dashboardHome isn't allowed
+      initialTab = 'booking'
     }
 
     setActiveTab(initialTab)
@@ -248,7 +250,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-gradient-to-br from-blue-50 to-indigo-100 md:flex-row">
+    <div className="flex h-screen flex-col bg-gradient-to-br from-blue-50 to-indigo-100 md:flex-row ">
       <Sidebar
         activeTab={activeTab}
         setActiveTab={handleTabChange}

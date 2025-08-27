@@ -10,6 +10,9 @@ const ProfileCard = ({
   onImageChange,
   previewImage
 }) => {
+
+
+  console.log(profileData, 'profileData')
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       {/* Profile Header */}

@@ -108,11 +108,37 @@ const AuthPage = () => {
             .eq('id', data.user.id)
             .single()
 
+          // Ensure profile row exists and contains available fields
+          if (!profile) {
+            const payload = {
+              id: data.user.id,
+              email: data.user.email,
+              role: 'staff',
+            }
+            // Optional/available fields from user metadata
+            const meta = data.user.user_metadata || {}
+            if (meta.name) payload.full_name = meta.name
+            if (meta.phone_number) payload.phone_number = meta.phone_number
+            if (meta.address) payload.address = meta.address
+            if (meta.bio) payload.bio = meta.bio
+            if (meta.skills) payload.skills = Array.isArray(meta.skills) ? meta.skills.join(',') : String(meta.skills)
+            if (meta.profile_image) payload.profile_image = meta.profile_image
+
+            await supabase.from('profiles').upsert(payload, { onConflict: 'id' })
+          }
+
+          // Re-fetch profile after potential upsert
+          const { data: ensuredProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single()
+
           // Create user data for context
           const userData = {
             ...data.user,
-            role: profile?.role || 'staff',
-            profile: profile
+            role: (ensuredProfile || profile)?.role || 'staff',
+            profile: ensuredProfile || profile
           }
 
           // Use context login to store user data
@@ -141,16 +167,25 @@ const AuthPage = () => {
 
         const user = data?.user
         if (user) {
-          // Create profile in database
-          const { error: profileError } = await supabase.from('profiles').insert([
-            {
-              id: user.id,
-              role: formData.role || 'staff',
-            },
-          ])
+          // Create or update profile in database with available fields
+          const payload = {
+            id: user.id,
+            email: user.email,
+            role: formData.role || 'staff',
+          }
+          if (formData.name) payload.full_name = formData.name
+          if (formData.phone_number) payload.phone_number = formData.phone_number
+          if (formData.address) payload.address = formData.address
+          if (formData.bio) payload.bio = formData.bio
+          if (formData.skills) payload.skills = Array.isArray(formData.skills) ? formData.skills.join(',') : String(formData.skills)
+          if (formData.profile_image) payload.profile_image = formData.profile_image
+
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert(payload, { onConflict: 'id' })
 
           if (profileError) {
-            console.error('Profile insert error:', profileError.message)
+            console.error('Profile upsert error:', profileError.message)
           }
 
           // Clear errors and form data

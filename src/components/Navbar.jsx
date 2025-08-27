@@ -1,83 +1,89 @@
-"use client"
+'use client'
 
-import { useState, useEffect, useRef } from "react"
-import { Menu, LogOut, Globe, User } from "lucide-react"
-import { useAuth } from "../Context/AuthContext.jsx"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect, useRef } from 'react'
+import { Menu, LogOut, Globe, User, UserIcon } from 'lucide-react'
+import { useAuth } from '../Context/AuthContext.jsx'
+import { useNavigate } from 'react-router-dom'
 
 // Import the ImgWithFallback component from ProfilePage.jsx
 const ImgWithFallback = ({ src, alt, name }) => {
-  const [imgSrc, setImgSrc] = useState(src);
-  const [loadFailed, setLoadFailed] = useState(false);
-  
+  const [imgSrc, setImgSrc] = useState(src)
+  const [loadFailed, setLoadFailed] = useState(false)
+
   // Handle image load errors
   const handleError = () => {
     if (imgSrc === src) {
       // First failure - try to extract fileId and use a different format
-      let fileId = null;
-      if (imgSrc.includes('drive.google.com') || imgSrc.includes('googleusercontent.com')) {
-        const match = imgSrc.match(/\/d\/([^\/&=]+)|id=([^&=]+)/);
-        fileId = match ? (match[1] || match[2]) : null;
-        
+      let fileId = null
+      if (
+        imgSrc.includes('drive.google.com') ||
+        imgSrc.includes('googleusercontent.com')
+      ) {
+        const match = imgSrc.match(/\/d\/([^\/&=]+)|id=([^&=]+)/)
+        fileId = match ? match[1] || match[2] : null
+
         if (fileId) {
           // Try thumbnail format which often works with limited permissions
-          setImgSrc(`https://drive.google.com/thumbnail?id=${fileId}&sz=w800`);
-          return;
+          setImgSrc(`https://drive.google.com/thumbnail?id=${fileId}&sz=w800`)
+          return
         }
       }
       // If we can't extract a fileId or it's not a Google Drive URL
-      setLoadFailed(true);
+      setLoadFailed(true)
     } else {
       // Second failure - give up and use initials
-      setLoadFailed(true);
+      setLoadFailed(true)
     }
-  };
-  
+  }
+
   // If all image loading attempts failed, show a fallback with initials
   if (loadFailed) {
     // Extract initials from name
-    const initials = name ? name.split(' ')
-      .map(part => part.charAt(0))
-      .join('')
-      .toUpperCase()
-      .substring(0, 2) : 'U';
-    
+    const initials = name
+      ? name
+          .split(' ')
+          .map((part) => part.charAt(0))
+          .join('')
+          .toUpperCase()
+          .substring(0, 2)
+      : 'U'
+
     // Return a styled div with initials
     return (
-      <div className="h-full w-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-        <span className="text-white text-sm font-bold">{initials}</span>
+      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
+        <span className="text-sm font-bold text-white">{initials}</span>
       </div>
-    );
+    )
   }
-  
+
   // Return the image with error handling
   return (
-    <img 
-      src={imgSrc} 
-      alt={alt} 
+    <img
+      src={imgSrc}
+      alt={alt}
       className="h-full w-full object-cover"
       onError={handleError}
-      style={{objectFit: 'cover', width: '100%', height: '100%'}}
+      style={{ objectFit: 'cover', width: '100%', height: '100%' }}
     />
-  );
-};
+  )
+}
 
 // Enhanced Google Drive URL converter with multiple formats
 const convertGoogleDriveImageUrl = (originalUrl) => {
   if (!originalUrl || typeof originalUrl !== 'string') {
-    return null;
+    return null
   }
-  
+
   // If it's not a Google Drive URL, return as is
   if (!originalUrl.includes('drive.google.com')) {
-    return originalUrl;
+    return originalUrl
   }
 
   // Extract file ID from various Google Drive URL formats
-  const fileIdMatch = originalUrl.match(/\/d\/([^\/]+)|id=([^&]+)/);
-  const fileId = fileIdMatch ? (fileIdMatch[1] || fileIdMatch[2]) : null;
+  const fileIdMatch = originalUrl.match(/\/d\/([^\/]+)|id=([^&]+)/)
+  const fileId = fileIdMatch ? fileIdMatch[1] || fileIdMatch[2] : null
 
-  if (!fileId) return originalUrl;
+  if (!fileId) return originalUrl
 
   // Return an array of possible URLs to try
   return [
@@ -90,96 +96,99 @@ const convertGoogleDriveImageUrl = (originalUrl) => {
     // Alternative format
     `https://drive.google.com/uc?id=${fileId}`,
     // Original URL as fallback
-    originalUrl
-  ];
-};
+    originalUrl,
+  ]
+}
 
 const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const translateBtnRef = useRef(null)
   const [profileImage, setProfileImage] = useState(null)
-  const [profileName, setProfileName] = useState("")
+  const [profileName, setProfileName] = useState('')
 
   // Fetch profile data to get profile image
-  useEffect(() => {
-    if (user && user.email) {
-      fetchUserProfileImage(user.email)
-    }
-  }, [user])
 
+  console.log(user, 'from navbar')
   // Function to fetch just the profile image from the spreadsheet
   const fetchUserProfileImage = async (userEmail) => {
     try {
-      const sheetId = "1zEik6_I7KhRQOucBhk1FW_67IUEdcSfEHjCaR37aK_U"
-      const sheetName = "Clients"
-      
+      const sheetId = '1zEik6_I7KhRQOucBhk1FW_67IUEdcSfEHjCaR37aK_U'
+      const sheetName = 'Clients'
+
       // Fetch the Clients sheet data
       const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`
-      
+
       const response = await fetch(url)
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch data: ${response.status}`)
       }
-      
+
       // Extract the JSON part from the response
       const text = await response.text()
-      const jsonStart = text.indexOf("{")
-      const jsonEnd = text.lastIndexOf("}")
+      const jsonStart = text.indexOf('{')
+      const jsonEnd = text.lastIndexOf('}')
       const jsonString = text.substring(jsonStart, jsonEnd + 1)
       const data = JSON.parse(jsonString)
-      
+
       // Find the user's row by matching email (column C/index 2)
-      const userRow = data.table.rows.find(row => 
-        row.c && row.c[2] && row.c[2].v && row.c[2].v.toString().trim().toLowerCase() === userEmail.toLowerCase()
+      const userRow = data.table.rows.find(
+        (row) =>
+          row.c &&
+          row.c[2] &&
+          row.c[2].v &&
+          row.c[2].v.toString().trim().toLowerCase() === userEmail.toLowerCase()
       )
-      
+
       if (userRow) {
         const extractValue = (index) => {
-          return userRow.c[index] && userRow.c[index].v 
-            ? userRow.c[index].v.toString().trim() 
-            : ""
+          return userRow.c[index] && userRow.c[index].v
+            ? userRow.c[index].v.toString().trim()
+            : ''
         }
-        
+
         const fullName = extractValue(9)
         const driveImageUrl = extractValue(15)
-        
+
         // Set the profile name for fallback initials
         setProfileName(fullName)
-        
+
         // Process the image URL (if any)
         if (driveImageUrl && driveImageUrl.includes('drive.google.com')) {
-          const possibleUrls = convertGoogleDriveImageUrl(driveImageUrl);
+          const possibleUrls = convertGoogleDriveImageUrl(driveImageUrl)
           // Just use the first URL from the list - fallbacks will be handled by the component
-          const imageUrl = Array.isArray(possibleUrls) ? possibleUrls[0] : possibleUrls;
+          const imageUrl = Array.isArray(possibleUrls)
+            ? possibleUrls[0]
+            : possibleUrls
           setProfileImage(imageUrl)
         } else if (driveImageUrl) {
           setProfileImage(driveImageUrl)
         }
       }
     } catch (error) {
-      console.error("Error fetching profile image:", error)
+      console.error('Error fetching profile image:', error)
     }
   }
 
   // Function to handle logout
   const handleLogout = () => {
-    console.log("Logging out...")
+    console.log('Logging out...')
     logout()
-    navigate("/login")
+    navigate('/login')
   }
 
   const navigateToProfile = () => {
-    navigate("/profile")
+    navigate(`/profile/${user?.id}`)
   }
 
   // Initialize Google Translate Element
   useEffect(() => {
     // Add Google Translate script to the document
     const addScript = () => {
-      const script = document.createElement("script")
-      script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+      const script = document.createElement('script')
+      script.src =
+        '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
       script.async = true
       document.body.appendChild(script)
 
@@ -187,12 +196,13 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       window.googleTranslateElementInit = () => {
         new window.google.translate.TranslateElement(
           {
-            pageLanguage: "en",
-            includedLanguages: "en,hi", // Only include English and Hindi
-            layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+            pageLanguage: 'en',
+            includedLanguages: 'en,hi', // Only include English and Hindi
+            layout:
+              window.google.translate.TranslateElement.InlineLayout.SIMPLE,
             autoDisplay: false,
           },
-          "google_translate_element",
+          'google_translate_element'
         )
       }
     }
@@ -202,7 +212,7 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     }
 
     // Create a style to position the Google Translate element correctly
-    const style = document.createElement("style")
+    const style = document.createElement('style')
     style.textContent = `
       #google_translate_element {
         position: fixed;
@@ -231,7 +241,9 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     // Cleanup function
     return () => {
       delete window.googleTranslateElementInit
-      const script = document.querySelector('script[src*="translate.google.com"]')
+      const script = document.querySelector(
+        'script[src*="translate.google.com"]'
+      )
       if (script) {
         script.remove()
       }
@@ -246,14 +258,14 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     // Try different methods to trigger the Google Translate dropdown
 
     // Method 1: Find and click the translate button
-    const googleElement = document.getElementById("google_translate_element")
+    const googleElement = document.getElementById('google_translate_element')
 
     if (googleElement) {
       // Try to find the clickable element in Google Translate widget
       const translateButton =
-        googleElement.querySelector(".goog-te-gadget-simple") ||
-        googleElement.querySelector(".goog-te-menu-value") ||
-        googleElement.querySelector(".VIpgJd-ZVi9od-l4eHX-hSRGPd")
+        googleElement.querySelector('.goog-te-gadget-simple') ||
+        googleElement.querySelector('.goog-te-menu-value') ||
+        googleElement.querySelector('.VIpgJd-ZVi9od-l4eHX-hSRGPd')
 
       if (translateButton) {
         // Click the element to show the dropdown
@@ -266,18 +278,18 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       const buttonRect = translateBtnRef.current.getBoundingClientRect()
 
       // Position the Google element near our button temporarily
-      googleElement.style.position = "absolute"
+      googleElement.style.position = 'absolute'
       googleElement.style.top = `${buttonRect.bottom + window.scrollY}px`
       googleElement.style.right = `${window.innerWidth - buttonRect.right - window.scrollX}px`
-      googleElement.style.height = "auto"
-      googleElement.style.overflow = "visible"
-      googleElement.style.zIndex = "1000"
+      googleElement.style.height = 'auto'
+      googleElement.style.overflow = 'visible'
+      googleElement.style.zIndex = '1000'
 
       // Force Google Translate to create its dropdown
-      const select = googleElement.querySelector("select.goog-te-combo")
+      const select = googleElement.querySelector('select.goog-te-combo')
       if (select) {
         // Programmatically open the dropdown
-        const event = new MouseEvent("mousedown", {
+        const event = new MouseEvent('mousedown', {
           bubbles: true,
           cancelable: true,
           view: window,
@@ -286,11 +298,11 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
         // Reset position after a delay
         setTimeout(() => {
-          googleElement.style.position = "fixed"
-          googleElement.style.top = "-1000px"
-          googleElement.style.right = "-1000px"
-          googleElement.style.height = "0"
-          googleElement.style.overflow = "hidden"
+          googleElement.style.position = 'fixed'
+          googleElement.style.top = '-1000px'
+          googleElement.style.right = '-1000px'
+          googleElement.style.height = '0'
+          googleElement.style.overflow = 'hidden'
         }, 5000) // Hide it after 5 seconds
       }
     }
@@ -298,18 +310,20 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
   return (
     <>
-      <header className="bg-white border-b border-blue-200 shadow-sm">
+      <header className="border-b border-blue-200 bg-white shadow-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-3 md:px-6">
           <div className="flex items-center">
             <button
-              className="p-2 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-300 md:hidden"
+              className="rounded-md p-2 text-blue-600 transition-colors duration-300 hover:bg-blue-100 hover:text-blue-800 focus:ring-2 focus:ring-blue-500 focus:outline-none md:hidden"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Toggle menu"
             >
               <Menu size={20} />
             </button>
             {/* Title visible on all screen sizes, but styled differently */}
-            <h1 className="ml-2 text-xl font-semibold text-blue-800 md:text-2xl">Salon Dashboard</h1>
+            <h1 className="ml-2 text-xl font-semibold text-blue-800 md:text-2xl">
+              Salon Dashboard
+            </h1>
           </div>
 
           {/* Responsive button container */}
@@ -320,47 +334,46 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
             {/* Custom Translate Button - Text hidden on small screens */}
             <button
               ref={translateBtnRef}
-              className="flex items-center space-x-1 px-2 py-1.5 sm:px-3 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-100 border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-300"
+              className="flex items-center space-x-1 rounded-md border border-blue-200 px-2 py-1.5 text-blue-600 transition-colors duration-300 hover:bg-blue-100 hover:text-blue-800 focus:ring-2 focus:ring-blue-500 focus:outline-none sm:px-3"
               onClick={handleTranslateClick}
               aria-label="Change language"
             >
               <Globe size={16} />
-              <span className="hidden sm:inline text-sm">Language</span>
+              <span className="hidden text-sm sm:inline">Language</span>
             </button>
 
             {/* Profile Button with Profile Image - No Border */}
-            {user?.role === "admin" && (
+
             <button
-  className="flex items-center space-x-2 p-0 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-300"
-  onClick={navigateToProfile}
-  aria-label="View profile"
->
-  {/* Profile Image - Completely Borderless */}
-  <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
-    {profileImage ? (
-      <ImgWithFallback 
-        src={profileImage}
-        alt="Profile"
-        name={profileName}
-      />
-    ) : (
-      <div className="h-full w-full bg-gray-100 flex items-center justify-center">
-        <User size={18} className="text-gray-400" />
-      </div>
-    )}
-  </div>
-  <span className="hidden sm:inline text-sm pr-2">Profile</span>
-</button>
-            )}
+              className="flex items-center space-x-2 rounded-md p-0 transition-colors duration-300 hover:bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              onClick={navigateToProfile}
+              aria-label="View profile"
+            >
+              {/* Profile Image - Completely Borderless */}
+              <div className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-full">
+                {user?.profile.profile_image ? (
+                  <img
+                    src={user.profile.profile_image}
+                    alt="Profile"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gray-100">
+                    {user?.user_metadata?.name?.slice(0, 1)}
+                  </div>
+                )}
+              </div>
+              <span className="hidden pr-2 text-sm sm:inline">Profile</span>
+            </button>
 
             {/* Logout Button - Text hidden on extra small screens */}
             <button
-              className="flex items-center space-x-1 px-2 py-1.5 sm:px-3 rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors duration-300"
+              className="flex items-center space-x-1 rounded-md bg-red-600 px-2 py-1.5 text-white transition-colors duration-300 hover:cursor-pointer hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:outline-none sm:px-3"
               onClick={handleLogout}
               aria-label="Logout"
             >
               <LogOut size={16} />
-              <span className="hidden xs:inline sm:inline text-sm">Logout</span>
+              <span className="xs:inline hidden text-sm sm:inline">Logout</span>
             </button>
           </div>
         </div>
