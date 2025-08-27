@@ -1,10 +1,18 @@
 // supabaseClient.js
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = "https://rrazucbltvxhlpnqdnsi.supabase.co"
+// Read from Vite env (must be prefixed with VITE_)
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJyYXp1Y2JsdHZ4aGxwbnFkbnNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1NDgxNzcsImV4cCI6MjA3MDEyNDE3N30.Zc5XNLm5w8AJPMegN4h2vEzWIBnlXzYZ7C55yDvUlio"
+if (!supabaseUrl || !supabaseKey) {
+  // Helpful warning during development
+  // Ensure you create .env.local with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+  console.warn(
+    'Supabase env vars missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local.'
+  )
+}
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 export default supabase

@@ -299,16 +299,29 @@ export const useCreatenewAppointment = () => {
 export const useDoStaffStatusActive = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [activeTimeouts, setActiveTimeouts] = useState(new Map())
 
-  const dpApi = async (staff_id) => {
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      activeTimeouts.forEach(timeoutId => clearTimeout(timeoutId))
+    }
+  }, [activeTimeouts])
+
+  const updateStaffStatus = async (staff_id, newStatus) => {
     try {
       setLoading(true)
+      setError(null)
+      
       const { data, error } = await supabase
         .from('staff_info')
-        .update({ status: 'active' })
+        .update({ status: newStatus })
         .eq('id', staff_id)
         .select()
+      
       if (error) throw error
+      
+      console.log(`Staff ${staff_id} status updated to: ${newStatus}`)
       return data
     } catch (err) {
       console.error('Error updating staff status:', err)
@@ -319,19 +332,90 @@ export const useDoStaffStatusActive = () => {
     }
   }
 
-  const doStaffStatusActive = async (staff_id, time, staffStatus) => {
-    // Only proceed if staff is currently active and has a valid service time
-    if (staffStatus.toLowerCase() === 'active') {
-      const minutes = parseInt(time) || 0
-      const timeInMilliseconds = minutes * 60 * 1000
+  const doStaffStatusActive = async (staff_id, serviceTimeMinutes, currentStatus) => {
+    try {
+      // Input validation
+      if (!staff_id) {
+        throw new Error('Staff ID is required')
+      }
+      
+      const minutes = parseInt(serviceTimeMinutes) || 0
+      if (minutes <= 0) {
+        throw new Error('Service time must be greater than 0')
+      }
 
-      setTimeout(() => {
-        dpApi(staff_id)
-      }, timeInMilliseconds)
+      // Clear any existing timeout for this staff member
+      if (activeTimeouts.has(staff_id)) {
+        clearTimeout(activeTimeouts.get(staff_id))
+        setActiveTimeouts(prev => {
+          const newMap = new Map(prev)
+          newMap.delete(staff_id)
+          return newMap
+        })
+      }
+
+      // Only proceed if staff is currently busy/active with a service
+      if (currentStatus && currentStatus.toLowerCase() === 'active') {
+        const timeInMilliseconds = minutes * 60 * 1000
+        
+        console.log(`Setting timer for staff ${staff_id}: ${minutes} minutes`)
+        
+        // Set timeout to change status back to available
+        const timeoutId = setTimeout(async () => {
+          try {
+            await updateStaffStatus(staff_id, 'available')
+            // Remove timeout from active list
+            setActiveTimeouts(prev => {
+              const newMap = new Map(prev)
+              newMap.delete(staff_id)
+              return newMap
+            })
+          } catch (err) {
+            console.error('Error in timeout callback:', err)
+            setError(`Failed to update staff status after service completion: ${err.message}`)
+          }
+        }, timeInMilliseconds)
+
+        // Store timeout ID for cleanup
+        setActiveTimeouts(prev => new Map(prev).set(staff_id, timeoutId))
+        
+        return { success: true, timeoutId, minutes }
+      } else {
+        throw new Error(`Staff status must be 'active' to set timer. Current status: ${currentStatus}`)
+      }
+    } catch (err) {
+      console.error('doStaffStatusActive error:', err)
+      setError(err.message)
+      return { success: false, error: err.message }
     }
   }
 
-  return { doStaffStatusActive, loading, error }
+  const cancelStaffTimer = (staff_id) => {
+    if (activeTimeouts.has(staff_id)) {
+      clearTimeout(activeTimeouts.get(staff_id))
+      setActiveTimeouts(prev => {
+        const newMap = new Map(prev)
+        newMap.delete(staff_id)
+        return newMap
+      })
+      console.log(`Timer cancelled for staff ${staff_id}`)
+      return true
+    }
+    return false
+  }
+
+  const getActiveTimers = () => {
+    return Array.from(activeTimeouts.keys())
+  }
+
+  return { 
+    doStaffStatusActive, 
+    cancelStaffTimer, 
+    getActiveTimers,
+    updateStaffStatus,
+    loading, 
+    error 
+  }
 }
 
 //*  Running Appointment db operation starting form here
