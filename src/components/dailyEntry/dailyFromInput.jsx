@@ -36,15 +36,17 @@ const MultiServiceSelector = ({
   const [selectedServices, setSelectedServices] = useState([])
   const [status, setStatus] = useState('completed')
   const [filterdService, setfilterdService] = useState([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleServiceChange = (service) => {
-    if (selectedServices.some((s) => s.service_name === service.service_name)) {
-      setSelectedServices(
-        selectedServices.filter((s) => s.service_name !== service.service_name)
-      )
-    } else {
-      setSelectedServices([...selectedServices, service])
-    }
+    setSelectedServices(prev => {
+      const isSelected = prev.some((s) => s.service_name === service.service_name)
+      if (isSelected) {
+        return prev.filter((s) => s.service_name !== service.service_name)
+      } else {
+        return [...prev, service]
+      }
+    })
   }
 
   const getTotalPrice = () => {
@@ -56,22 +58,50 @@ const MultiServiceSelector = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    await createExtraService(
-      appointmentId,
-      selectedServices,
-      status === 'done' ? 'done' : null
-    )
-    if (!errorCreate) {
-      closeEditBox()
+    
+    if (!appointmentId) {
+      console.error('No appointment ID provided')
+      return
+    }
+    
+    if (isSubmitting) return // Prevent double submission
+    
+    setIsSubmitting(true)
+    try {
+      await createExtraService(
+        appointmentId,
+        selectedServices,
+        status === 'done' ? 'done' : null
+      )
+    } catch (error) {
+      console.error('Error submitting extra services:', error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
+  // Memoize filtered services to avoid unnecessary re-renders
   useEffect(() => {
     setStatus(bookingStatus)
-    const filteredService = (data || []).filter(
-      (s) => s.service_name !== service
-    )
-    setfilterdService(filteredService)
-  }, [bookingStatus, service, data])
+  }, [bookingStatus])
+
+  useEffect(() => {
+    if (data) {
+      const filteredService = data.filter(
+        (s) => s.service_name !== service
+      )
+      setfilterdService(filteredService)
+    }
+  }, [service, data])
+
+  // Close dialog when submission completes successfully
+  useEffect(() => {
+    if (!loadingCreate && isSubmitting && !errorCreate) {
+      setTimeout(() => {
+        closeEditBox(false)
+        setIsSubmitting(false)
+      }, 100) // Small delay to ensure state updates
+    }
+  }, [loadingCreate, isSubmitting, errorCreate, closeEditBox])
 
   if (loading) {
     return (
@@ -286,14 +316,15 @@ const MultiServiceSelector = ({
               <div className="mt-4">
                 <button
                   onClick={handleSubmit}
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center gap-4 justify-center"
+                  disabled={loadingCreate || isSubmitting}
+                  className={`w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg flex items-center gap-2 justify-center ${
+                    loadingCreate || isSubmitting
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 hover:shadow-xl transform hover:-translate-y-0.5'
+                  } text-white`}
                 >
-                  done
-                  {loadingCreate ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    ''
-                  )}
+                  {(loadingCreate || isSubmitting) ? 'Processing...' : 'Done'}
+                  {(loadingCreate || isSubmitting) && <Loader2 className="h-5 w-5 animate-spin" />}
                 </button>
               </div>
             </div>

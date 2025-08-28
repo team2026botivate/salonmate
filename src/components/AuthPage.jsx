@@ -259,12 +259,19 @@ const AuthPage = () => {
           {/* Logo/Brand */}
           <div className="mb-8 text-center">
             <motion.h1
-              className="mb-2 text-3xl font-bold text-slate-800"
+              className="mb-2 flex items-center justify-center gap-3 text-3xl font-extrabold"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              Salon Mate
+              <span className="bg-gradient-to-r from-slate-800 to-indigo-700 bg-clip-text text-transparent">
+                SaloonMate
+              </span>
+              <img
+                src="/4.png"
+                alt="SaloonMate logo"
+                className="h-9 w-9 rounded-md shadow-sm ring-1 ring-slate-200/60 dark:ring-white/10"
+              />
             </motion.h1>
             <motion.p
               className="text-slate-600"

@@ -1716,3 +1716,36 @@ export const useDeleteService = () => {
 
   return { deleteService, loading, error }
 }
+
+
+//* customer db operation starting from here
+
+
+
+export const useGetCustomerDataFetch = () => {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const getCustomerData = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('customer_info')
+        .select('*')
+      if (error) throw error
+      setData(data)
+    } catch (err) {
+      console.error('Error fetching customer data:', err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    getCustomerData()
+  }, [])
+
+  return { loading, error, data }
+}

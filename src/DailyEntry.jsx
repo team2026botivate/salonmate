@@ -100,6 +100,7 @@ const DailyEntry = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            onClick={() => SetIsEditBoxOpen(false)}
           >
             <motion.div
               className="absolute inset-0 flex items-start justify-center overflow-y-auto p-4 sm:p-6 hideScrollBar"
@@ -107,6 +108,7 @@ const DailyEntry = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 24, scale: 0.98 }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(e) => e.stopPropagation()}
             >
               <X
                 className="fixed size-10 hover:text-red-700 z-60 top-10 right-10 cursor-pointer sm:top-15 sm:right-15  text-red-700 lg:text-white"
