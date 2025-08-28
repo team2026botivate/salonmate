@@ -990,6 +990,182 @@ export const useStaffHistory = (selectedDate) => {
 
 //* inventory db operation starting from here
 
+// Promo Card database operations
+export const usePromoCardOperations = () => {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [promoCards, setPromoCards] = useState([])
+
+  // Fetch all promo cards
+  const fetchPromoCards = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const { data, error } = await supabase
+        .from('promo_card')
+        .select('*')
+        .eq('deleted', false)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setPromoCards(data || [])
+      return data || []
+    } catch (err) {
+      console.error('Error fetching promo cards:', err)
+      setError(err.message)
+      return []
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // Add new promo card
+  const addPromoCard = async (promoData) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const { data, error } = await supabase
+        .from('promo_card')
+        .insert({
+          code: promoData.code,
+          discount: parseInt(promoData.discount),
+          description: promoData.description,
+          start_date: promoData.startDate,
+          end_date: promoData.endDate,
+          created_at: new Date().toISOString(),
+          deleted: false
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+      
+      // Update local state
+      setPromoCards(prev => [data, ...prev])
+      return { success: true, data }
+    } catch (err) {
+      console.error('Error adding promo card:', err)
+      setError(err.message)
+      return { success: false, error: err.message }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Update promo card
+  const updatePromoCard = async (id, promoData) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const { data, error } = await supabase
+        .from('promo_card')
+        .update({
+          code: promoData.code,
+          discount: parseInt(promoData.discount),
+          description: promoData.description,
+          start_date: promoData.startDate,
+          end_date: promoData.endDate,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      
+      // Update local state
+      setPromoCards(prev => 
+        prev.map(promo => promo.id === id ? data : promo)
+      )
+      return { success: true, data }
+    } catch (err) {
+      console.error('Error updating promo card:', err)
+      setError(err.message)
+      return { success: false, error: err.message }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Soft delete promo card
+  const deletePromoCard = async (id) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const { error } = await supabase
+        .from('promo_card')
+        .update({ 
+          deleted: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+
+      if (error) throw error
+      
+      // Remove from local state
+      setPromoCards(prev => prev.filter(promo => promo.id !== id))
+      return { success: true }
+    } catch (err) {
+      console.error('Error deleting promo card:', err)
+      setError(err.message)
+      return { success: false, error: err.message }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Check if promo code exists
+  const checkPromoCodeExists = async (code, excludeId = null) => {
+    try {
+      let query = supabase
+        .from('promo_card')
+        .select('id')
+        .eq('code', code)
+        .eq('deleted', false)
+      
+      if (excludeId) {
+        query = query.neq('id', excludeId)
+      }
+      
+      const { data, error } = await query
+      if (error) throw error
+      
+      return data && data.length > 0
+    } catch (err) {
+      console.error('Error checking promo code:', err)
+      return false
+    }
+  }
+
+  // Get active promo cards
+  const getActivePromoCards = useCallback(() => {
+    const today = new Date()
+    return promoCards.filter(promo => {
+      if (!promo.start_date || !promo.end_date) return true
+      const startDate = new Date(promo.start_date)
+      const endDate = new Date(promo.end_date)
+      return today >= startDate && today <= endDate
+    })
+  }, [promoCards])
+
+  // Initialize data fetch
+  useEffect(() => {
+    fetchPromoCards()
+  }, [])
+
+  return {
+    promoCards,
+    loading,
+    error,
+    fetchPromoCards,
+    addPromoCard,
+    updatePromoCard,
+    deletePromoCard,
+    checkPromoCodeExists,
+    getActivePromoCards
+  }
+}
+
 export const useGetInventoryData = () => {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
