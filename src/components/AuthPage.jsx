@@ -270,7 +270,7 @@ const AuthPage = () => {
               <img
                 src="/4.png"
                 alt="SaloonMate logo"
-                className="h-9 w-9 rounded-md shadow-sm ring-1 ring-slate-200/60 dark:ring-white/10"
+                className="size-12 rounded-md shadow-sm ring-1 ring-slate-200/60 dark:ring-white/10"
               />
             </motion.h1>
             <motion.p
