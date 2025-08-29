@@ -513,8 +513,8 @@ const Booking = ({ hideHistoryButton = false }) => {
         {/* Modals */}
         <AnimatePresence>
           {uiState.showNewAppointmentForm && (
-            <motion.div className="fixed inset-0 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <motion.div className="fixed inset-0 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm flex items-center justify-center md:p-4 z-50">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
                 <div className="p-6 border-b">
                   <div className="flex justify-between items-center">
                     <h3 className="text-xl font-bold text-black">Add New Appointment</h3>
@@ -545,7 +545,7 @@ const Booking = ({ hideHistoryButton = false }) => {
         <AnimatePresence>
           {uiState.showEditAppointmentForm && (
             <motion.div className="fixed inset-0 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+              <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
                 <div className="p-6 border-b">
                   <div className="flex justify-between items-center">
                     <h3 className="text-xl font-bold text-black">Edit Appointment</h3>

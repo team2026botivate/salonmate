@@ -5,15 +5,10 @@ import {
   CreditCard,
   Phone,
   Save,
-  Tag,
   User,
 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
-import {
-  useGetStaffData,
-  useUpdateAppointmentById,
-  useUpdateStaffStatus,
-} from '../../hook/dbOperation'
+import { useGetStaffData, useUpdateAppointmentById } from '../../hook/dbOperation'
 
 const statusOptions = [
   {
@@ -144,58 +139,24 @@ const BookingForm = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* Basic Information */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <Tag className="w-5 h-5 mr-2" />
-          Basic Information
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Booking ID
-            </label>
-            <input
-              disabled
-              type="text"
-              value={formData.bookingId}
-              name="bookingId"
-              onChange={handleChange}
-              className={`w-full px-4 hover:cursor-not-allowed py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                errors.bookingId ? 'border-red-300' : 'border-gray-300'
-              }`}
-              placeholder="Enter booking ID"
-            />
-            {errors.bookingId && (
-              <p className="text-red-500 text-sm mt-1">{errors.bookingId}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Booking Status
-            </label>
-            <select
-              name="bookingStatus"
-              value={formData.bookingStatus}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 rounded-lg outline-none border-none  ${
-                statusOptions.find(
-                  (option) => option.value === formData.bookingStatus
-                )?.color || ''
-              }`}
-            >
-              {statusOptions.map((option) => (
-                <option
-                  className="bg-white rounded-md"
-                  key={option.value}
-                  value={option.value}
-                >
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+      {/* Booking Status */}
+      <div className="flex items-center justify-end">
+        <div className="w-full md:w-64">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Booking Status
+          </label>
+          <select
+            name="bookingStatus"
+            value={formData.bookingStatus}
+            onChange={handleChange}
+            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            {statusOptions.map((option) => (
+              <option className="bg-white rounded-md" key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -206,6 +167,30 @@ const BookingForm = ({
           Customer Information
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Mobile Number
+            </label>
+            <div className="relative">
+              <Phone className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <input
+                disabled
+                name="mobileNumber"
+                type="tel"
+                value={formData.mobileNumber}
+                onChange={handleChange}
+                maxLength="10"
+                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:cursor-not-allowed transition-all ${
+                  errors.mobileNumber ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="Enter mobile number"
+              />
+            </div>
+            {errors.mobileNumber && (
+              <p className="text-red-500 text-sm mt-1">{errors.mobileNumber}</p>
+            )}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Customer Name
@@ -225,29 +210,6 @@ const BookingForm = ({
               <p className="text-red-500 text-sm mt-1">{errors.customerName}</p>
             )}
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Mobile Number
-            </label>
-            <div className="relative">
-              <Phone className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-              <input
-                disabled
-                name="mobileNumber"
-                type="tel"
-                value={formData.mobileNumber}
-                onChange={handleChange}
-                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:cursor-not-allowed transition-all ${
-                  errors.mobileNumber ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="+1 234 567 8900"
-              />
-            </div>
-            {errors.mobileNumber && (
-              <p className="text-red-500 text-sm mt-1">{errors.mobileNumber}</p>
-            )}
-          </div>
         </div>
       </div>
 
@@ -257,7 +219,7 @@ const BookingForm = ({
           <Calendar className="w-5 h-5 mr-2" />
           Appointment Schedule
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Slot Date
@@ -276,20 +238,7 @@ const BookingForm = ({
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Slot Number
-            </label>
-            <input
-              name="slotNumber"
-              type="number"
-              value={formData.slotNumber}
-              onChange={handleChange}
-              min="1"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="1"
-            />
-          </div>
+          
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -358,24 +307,7 @@ const BookingForm = ({
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Staff Number
-            </label>
-            <input
-              name="staffNumber"
-              disabled
-              type="text"
-              value={formData.staffNumber}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:cursor-not-allowed transition-all ${
-                errors.staffNumber ? 'border-red-300' : 'border-gray-300'
-              }`}
-              placeholder="Enter staff number"
-            />
-            {errors.staffNumber && (
-              <p className="text-red-500 text-sm mt-1">{errors.staffNumber}</p>
-            )}
-          </div>
+          
         </div>
       </div>
 
@@ -404,27 +336,7 @@ const BookingForm = ({
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Service Price ($)
-            </label>
-            <input
-              disabled
-              name="servicePrice"
-              type="number"
-              value={formData.servicePrice}
-              onChange={handleChange}
-              min="0"
-              step="0.01"
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:cursor-not-allowed transition-all ${
-                errors.servicePrice ? 'border-red-300' : 'border-gray-300'
-              }`}
-              placeholder="0.00"
-            />
-            {errors.servicePrice && (
-              <p className="text-red-500 text-sm mt-1">{errors.servicePrice}</p>
-            )}
-          </div>
+          
         </div>
       </div>
 

@@ -2,15 +2,25 @@ import { useAuth } from '@/Context/AuthContext'
 import supabase from '@/dataBase/connectdb'
 // eslint-disable-next-line no-unused-vars
 import { AnimatePresence, motion } from 'framer-motion'
-import { Chrome, Eye, EyeOff, Lock, Mail, Shield, User } from 'lucide-react'
-import React, { useState } from 'react'
+import {
+  Chrome,
+  CircleGauge,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Shield,
+  User,
+} from 'lucide-react'
+import React, { use, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast, { Toaster } from 'react-hot-toast'
+import { createTrialLicense } from '@/utils/chekcLicence'
 
 const AuthPage = () => {
   const { login, user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
-  
+
   const [isSignIn, setIsSignIn] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -91,7 +101,7 @@ const AuthPage = () => {
           email: formData.email,
           password: formData.password,
         })
-        
+
         if (error) {
           setErrors({ submit: error.message })
           return
@@ -100,7 +110,7 @@ const AuthPage = () => {
         if (data?.user) {
           // Store session in localStorage
           localStorage.setItem('supabase_session', JSON.stringify(data.session))
-          
+
           // Get user profile
           const { data: profile } = await supabase
             .from('profiles')
@@ -121,10 +131,15 @@ const AuthPage = () => {
             if (meta.phone_number) payload.phone_number = meta.phone_number
             if (meta.address) payload.address = meta.address
             if (meta.bio) payload.bio = meta.bio
-            if (meta.skills) payload.skills = Array.isArray(meta.skills) ? meta.skills.join(',') : String(meta.skills)
+            if (meta.skills)
+              payload.skills = Array.isArray(meta.skills)
+                ? meta.skills.join(',')
+                : String(meta.skills)
             if (meta.profile_image) payload.profile_image = meta.profile_image
 
-            await supabase.from('profiles').upsert(payload, { onConflict: 'id' })
+            await supabase
+              .from('profiles')
+              .upsert(payload, { onConflict: 'id' })
           }
 
           // Re-fetch profile after potential upsert
@@ -134,18 +149,32 @@ const AuthPage = () => {
             .eq('id', data.user.id)
             .single()
 
+          // Check license status
+          console.log()
+          const licenseStatus = await checkLicense(data.user.id)
+
+          // If license is expired or inactive, show warning but allow login
+          if (!licenseStatus.active) {
+            console.warn('License inactive:', licenseStatus.reason)
+            toast.error(
+              'Your license has expired. You will be redirected to renew.'
+            )
+            // Allow login but LicenseGuard will handle the redirect
+          }
+
           // Create user data for context
           const userData = {
             ...data.user,
             role: (ensuredProfile || profile)?.role || 'staff',
-            profile: ensuredProfile || profile
+            profile: ensuredProfile || profile,
           }
 
           // Use context login to store user data
           login(userData)
-          
-          // Clear errors and navigate
+
+          // Clear errors and navigate to dashboard
           setErrors({})
+          navigate('/admin-dashboard')
         }
       } else {
         // Signup flow
@@ -160,6 +189,7 @@ const AuthPage = () => {
           },
         })
 
+        
         if (signUpError) {
           setErrors({ submit: signUpError.message })
           return
@@ -174,11 +204,16 @@ const AuthPage = () => {
             role: formData.role || 'staff',
           }
           if (formData.name) payload.full_name = formData.name
-          if (formData.phone_number) payload.phone_number = formData.phone_number
+          if (formData.phone_number)
+            payload.phone_number = formData.phone_number
           if (formData.address) payload.address = formData.address
           if (formData.bio) payload.bio = formData.bio
-          if (formData.skills) payload.skills = Array.isArray(formData.skills) ? formData.skills.join(',') : String(formData.skills)
-          if (formData.profile_image) payload.profile_image = formData.profile_image
+          if (formData.skills)
+            payload.skills = Array.isArray(formData.skills)
+              ? formData.skills.join(',')
+              : String(formData.skills)
+          if (formData.profile_image)
+            payload.profile_image = formData.profile_image
 
           const { error: profileError } = await supabase
             .from('profiles')
@@ -186,6 +221,23 @@ const AuthPage = () => {
 
           if (profileError) {
             console.error('Profile upsert error:', profileError.message)
+          }
+
+          // Create trial license for new user (7 days)
+
+          console.log(user, 'user')
+          try {
+            const trialLicense = await createTrialLicense(user.id)
+
+            console.log(trialLicense, 'trialLicense')
+            if (trialLicense) {
+              console.log('Trial license created:', trialLicense)
+            } else {
+              console.warn('Failed to create trial license')
+            }
+          } catch (licenseError) {
+            console.error('Trial license creation error:', licenseError)
+            // Don't block signup if license creation fails
           }
 
           // Clear errors and form data
@@ -198,15 +250,15 @@ const AuthPage = () => {
             rememberMe: false,
             role: 'admin',
           })
-          
+
           // Switch to sign in page
           setIsSignIn(true)
-          
+
           // Show success toast
           toast.success(
-            'Please check your email to confirm your account before signing in.',
+            'Account created successfully! You have a 7-day trial. Please check your email to confirm your account.',
             {
-              duration: 6000,
+              duration: 8000,
               position: 'top-center',
             }
           )
@@ -581,7 +633,7 @@ const AuthPage = () => {
               whileHover="hover"
               whileTap="tap"
               disabled={loading}
-              className={`w-full rounded-lg bg-slate-800 px-4 py-3 font-medium text-white transition-colors hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`flex w-full items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-3 font-medium text-white transition-colors hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none ${loading ? 'cursor-not-allowed opacity-70' : ''}`}
             >
               {loading && (
                 <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -592,8 +644,8 @@ const AuthPage = () => {
                     ? 'Signing in...'
                     : 'Creating account...'
                   : isSignIn
-                  ? 'Sign In'
-                  : 'Create Account'}
+                    ? 'Sign In'
+                    : 'Create Account'}
               </span>
             </motion.button>
 

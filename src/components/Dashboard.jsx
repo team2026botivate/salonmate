@@ -250,44 +250,44 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-gradient-to-br from-blue-50 to-indigo-100 md:flex-row ">
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={handleTabChange}
-        activeStaffTab={activeStaffTab}
-        setActiveStaffTab={setActiveStaffTab}
-        isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-        allowedTabs={allowedTabs}
-        userRole={user?.role}
-      />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Navbar
+      <div className="flex h-screen flex-col bg-gradient-to-br from-blue-50 to-indigo-100 md:flex-row ">
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={handleTabChange}
+          activeStaffTab={activeStaffTab}
+          setActiveStaffTab={setActiveStaffTab}
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
+          allowedTabs={allowedTabs}
           userRole={user?.role}
         />
-        <motion.main
-          key={activeTab === 'staff' ? activeStaffTab : activeTab}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 20 }}
-          transition={{ duration: 0.3 }}
-          className="flex-1 overflow-y-auto p-4 md:p-6"
-        >
-          {renderContent()}
-        </motion.main>
-        <footer className="w-full border-t border-gray-200 bg-blue-300 px-3 py-1 text-center text-xs text-black shadow-sm">
-          <a
-            href="https://botivate.in/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition-colors duration-200 hover:text-blue-600"
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <Navbar
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+            userRole={user?.role}
+          />
+          <motion.main
+            key={activeTab === 'staff' ? activeStaffTab : activeTab}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1 overflow-y-auto p-4 md:p-6"
           >
-            Powered By-Botivate
-          </a>
-        </footer>
+            {renderContent()}
+          </motion.main>
+          <footer className="w-full border-t border-gray-200 bg-blue-300 px-3 py-1 text-center text-xs text-black shadow-sm">
+            <a
+              href="https://botivate.in/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors duration-200 hover:text-blue-600"
+            >
+              Powered By-Botivate
+            </a>
+          </footer>
+        </div>
       </div>
-    </div>
   )
 }

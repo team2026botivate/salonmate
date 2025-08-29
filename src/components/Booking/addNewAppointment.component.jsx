@@ -5,7 +5,6 @@ import {
   Clock,
   CreditCard,
   Phone,
-  Tag,
   User,
 } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
@@ -14,16 +13,10 @@ import {
   useGetServicesList,
   useGetStaffData,
   usegetUserByPhoneNumber,
-  useUpdateAppointmentById,
-  useUpdateStaffStatus,
   useDoStaffStatusActive,
 } from '../../hook/dbOperation'
 import { generateBookingId } from '../../utils/generateBookingId'
-const statusOptions = {
-  value: 'pending',
-  label: 'Pending',
-  color: 'bg-yellow-100 text-yellow-800',
-}
+
 
 const AddNewAppointment = ({
   tableHeaders,
@@ -60,9 +53,6 @@ const AddNewAppointment = ({
   const { data: serviceslist, loading: servicesLoading } = useGetServicesList()
   const { data, loading } = useGetStaffData()
   const [isNewUser, setisNewUser] = useState(false)
-
-  const { updateStaffStatusByName, loading: updatingStaff } =
-    useUpdateStaffStatus()
 
   const { getUserByPhoneNumber } = usegetUserByPhoneNumber()
 
@@ -204,55 +194,39 @@ const AddNewAppointment = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* Basic Information */}
-      <div>
-        <h3 className="mb-4 flex items-center text-lg font-semibold text-gray-900">
-          <Tag className="mr-2 h-5 w-5" />
-          Basic Information
-        </h3>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
-              Booking ID
-            </label>
-            <input
-              disabled
-              type="text"
-              value={formData.bookingId}
-              name="bookingId"
-              onChange={handleChange}
-              className={`w-full rounded-lg border px-4 py-3 transition-all hover:cursor-not-allowed focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
-                errors.bookingId ? 'border-red-300' : 'border-gray-300'
-              }`}
-              placeholder="Enter booking ID"
-            />
-            {errors.bookingId && (
-              <p className="mt-1 text-sm text-red-500">{errors.bookingId}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
-              Booking Status
-            </label>
-            <input
-              name="bookingStatus"
-              value={formData.bookingStatus}
-              onChange={handleChange}
-              disabled
-              className={`w-full rounded-lg border-none bg-yellow-100 px-4 py-3 outline-none hover:cursor-not-allowed`}
-            />
-          </div>
-        </div>
-      </div>
-
+      
       {/* Customer Information */}
       <div>
         <h3 className="mb-4 flex items-center text-lg font-semibold text-gray-900">
           <User className="mr-2 h-5 w-5" />
           Customer Information
         </h3>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-1">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              Mobile Number
+            </label>
+            <div className="relative">
+              <Phone className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
+              <input
+                name="mobileNumber"
+                type="tel"
+                value={formData.mobileNumber}
+                onChange={handleChange}
+                pattern="[0-9]{10}"
+                maxLength="10"
+                className={`w-full rounded-lg border py-3 pr-4 pl-12 transition-all focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
+                  errors.mobileNumber ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="12345-67890"
+                required
+              />
+            </div>
+            {errors.mobileNumber && (
+              <p className="mt-1 text-sm text-red-500">{errors.mobileNumber}</p>
+            )}
+          </div>
+
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Customer Name
@@ -271,31 +245,6 @@ const AddNewAppointment = ({
               <p className="mt-1 text-sm text-red-500">{errors.customerName}</p>
             )}
           </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
-              Mobile Number
-            </label>
-            <div className="relative">
-              <Phone className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
-              <input
-                name="mobileNumber"
-                type="tel"
-                value={formData.mobileNumber}
-                onChange={handleChange}
-                pattern="[0-9]{10}"
-                maxlength="10"
-                className={`w-full rounded-lg border py-3 pr-4 pl-12 transition-all focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
-                  errors.mobileNumber ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="12345-67890"
-                required
-              />
-            </div>
-            {errors.mobileNumber && (
-              <p className="mt-1 text-sm text-red-500">{errors.mobileNumber}</p>
-            )}
-          </div>
         </div>
       </div>
 
@@ -305,7 +254,7 @@ const AddNewAppointment = ({
           <Calendar className="mr-2 h-5 w-5" />
           Appointment Schedule
         </h3>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Slot Date
@@ -322,21 +271,6 @@ const AddNewAppointment = ({
             {errors.slotDate && (
               <p className="mt-1 text-sm text-red-500">{errors.slotDate}</p>
             )}
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
-              Slot Number
-            </label>
-            <input
-              name="slotNumber"
-              type="number"
-              value={formData.slotNumber}
-              onChange={handleChange}
-              min="1"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-blue-500"
-              placeholder="1"
-            />
           </div>
 
           <div>
@@ -368,7 +302,7 @@ const AddNewAppointment = ({
           <User className="mr-2 h-5 w-5" />
           Staff Information
         </h3>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-1">
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Staff Name
@@ -404,24 +338,6 @@ const AddNewAppointment = ({
               <p className="mt-1 text-sm text-red-500">{errors.staffName}</p>
             )}
           </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
-              Staff Number
-            </label>
-            <input
-              name="staffNumber"
-              type="text"
-              value={formData.staffNumber}
-              className={`w-full rounded-lg border px-4 py-3 transition-all hover:cursor-not-allowed focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
-                errors.staffNumber ? 'border-red-300' : 'border-gray-300'
-              }`}
-              placeholder="Enter staff number"
-            />
-            {errors.staffNumber && (
-              <p className="mt-1 text-sm text-red-500">{errors.staffNumber}</p>
-            )}
-          </div>
         </div>
       </div>
 
@@ -431,7 +347,7 @@ const AddNewAppointment = ({
           <CreditCard className="mr-2 h-5 w-5" />
           Service Information
         </h3>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-1">
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Service
@@ -458,52 +374,6 @@ const AddNewAppointment = ({
 
             {errors.service && (
               <p className="mt-1 text-sm text-red-500">{errors.service}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
-              Service Time (minutes)
-            </label>
-            <div className="relative">
-              <Clock className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
-              <input
-                name="serviceTime"
-                disabled
-                type="number"
-                value={parseInt(formData.serviceTime)}
-                onChange={handleChange}
-                min="0"
-                className={`w-full rounded-lg border py-3 pr-4 pl-12 transition-all hover:cursor-not-allowed focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
-                  errors.serviceTime ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="30"
-              />
-            </div>
-            {errors.serviceTime && (
-              <p className="mt-1 text-sm text-red-500">{errors.serviceTime}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
-              Service Price ($)
-            </label>
-            <input
-              disabled
-              name="servicePrice"
-              type="number"
-              value={formData.servicePrice}
-              onChange={handleChange}
-              min="0"
-              step="0.01"
-              className={`w-full rounded-lg border px-4 py-3 transition-all hover:cursor-not-allowed focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
-                errors.servicePrice ? 'border-red-300' : 'border-gray-300'
-              }`}
-              placeholder="0.00"
-            />
-            {errors.servicePrice && (
-              <p className="mt-1 text-sm text-red-500">{errors.servicePrice}</p>
             )}
           </div>
         </div>
