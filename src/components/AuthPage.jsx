@@ -15,7 +15,7 @@ import {
 import React, { use, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast, { Toaster } from 'react-hot-toast'
-import { createTrialLicense } from '@/utils/chekcLicence'
+import { checkLicense, createTrialLicense } from '@/utils/chekcLicence'
 
 const AuthPage = () => {
   const { login, user, loading: authLoading } = useAuth()
@@ -150,12 +150,10 @@ const AuthPage = () => {
             .single()
 
           // Check license status
-          console.log()
           const licenseStatus = await checkLicense(data.user.id)
 
           // If license is expired or inactive, show warning but allow login
           if (!licenseStatus.active) {
-            console.warn('License inactive:', licenseStatus.reason)
             toast.error(
               'Your license has expired. You will be redirected to renew.'
             )
@@ -189,11 +187,12 @@ const AuthPage = () => {
           },
         })
 
-        
         if (signUpError) {
           setErrors({ submit: signUpError.message })
           return
         }
+
+        console.log(data, 'data the')
 
         const user = data?.user
         if (user) {
@@ -226,6 +225,7 @@ const AuthPage = () => {
           // Create trial license for new user (7 days)
 
           console.log(user, 'user')
+          console.log('done ')
           try {
             const trialLicense = await createTrialLicense(user.id)
 

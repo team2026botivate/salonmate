@@ -21,6 +21,7 @@ import ProfilePage from './components/profile/profilePage.jsx'
 // import TrialPage from "./Pages/trialpage.jsx"
 import { Toaster } from 'react-hot-toast'
 import AuthPage from './components/AuthPage.jsx'
+import LicenseGuard from './components/license/licenseGuard.jsx'
 function App() {
   return (
     <Router>
@@ -33,10 +34,10 @@ function App() {
 
             {/* Protected routes */}
             <Route element={<ProtectedRoute />}>
-              <Route path="/admin-dashboard/*" element={<Dashboard />} />
-              <Route path="/profile/:id" element={<ProfilePage />} />
-
-              {/* Add other routes for different sections */}
+              <Route element={<LicenseGuard />}>
+                <Route path="/admin-dashboard/*" element={<Dashboard />} />
+                <Route path="/profile/:id" element={<ProfilePage />} />
+              </Route>
             </Route>
 
             {/* Redirects */}

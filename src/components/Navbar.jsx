@@ -69,36 +69,6 @@ const ImgWithFallback = ({ src, alt, name }) => {
 }
 
 // Enhanced Google Drive URL converter with multiple formats
-const convertGoogleDriveImageUrl = (originalUrl) => {
-  if (!originalUrl || typeof originalUrl !== 'string') {
-    return null
-  }
-
-  // If it's not a Google Drive URL, return as is
-  if (!originalUrl.includes('drive.google.com')) {
-    return originalUrl
-  }
-
-  // Extract file ID from various Google Drive URL formats
-  const fileIdMatch = originalUrl.match(/\/d\/([^\/]+)|id=([^&]+)/)
-  const fileId = fileIdMatch ? fileIdMatch[1] || fileIdMatch[2] : null
-
-  if (!fileId) return originalUrl
-
-  // Return an array of possible URLs to try
-  return [
-    // Direct Google Drive CDN URLs
-    `https://lh3.googleusercontent.com/d/${fileId}`,
-    // Export view URLs (more likely to work with permissions)
-    `https://drive.google.com/uc?export=view&id=${fileId}`,
-    // Thumbnail URLs (often work even with limited permissions)
-    `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`,
-    // Alternative format
-    `https://drive.google.com/uc?id=${fileId}`,
-    // Original URL as fallback
-    originalUrl,
-  ]
-}
 
 const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { user, logout } = useAuth()
