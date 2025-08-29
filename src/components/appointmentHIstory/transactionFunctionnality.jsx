@@ -126,12 +126,12 @@ const TransactionFunctionality = ({
   ]
 
   return (
-    <div className="h-screen w-full  bg-gradient-to-br from-blue-50 to-indigo-50 p-6  relative">
+    <div className="h-screen   w-full  bg-gradient-to-br from-blue-50 to-indigo-50 p-6  relative">
       <X
         onClick={() => setIsEditModalOpen(false)}
         className="absolute top-8 right-5 hover:text-red-600 md:right-10 cursor-pointer"
       />
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto   h-full overflow-y-auto md:py-10 hideScrollBar">
         {/* Header */}
         <div className="text-center mb-5 ">
           <div className="flex items-center  md:justify-center justify-start mb-4 ">
@@ -142,9 +142,9 @@ const TransactionFunctionality = ({
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-5 gap-8">
+        <div className="grid lg:grid-cols-5 md:grid-cols-4 gap-8">
           {/* Left Column - Extra Services */}
-          <div className="lg:col-span-2 max-h-[calc(100vh-200px)] overflow-auto rounded-2xl ">
+          <div className="lg:col-span-2 max-h-[calc(100vh-200px)]  rounded-2xl ">
             <div className="bg-white  shadow-lg p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-6">
                 Extra Services
@@ -241,9 +241,9 @@ const TransactionFunctionality = ({
           </div>
 
           {/* Right Column - Summary */}
-          <div className="lg:col-span-2 h-[calc(100vh-100px)] flex flex-col">
-            <div className="bg-white rounded-2xl shadow-lg p-6 h-full flex flex-col">
-              <div className="flex-1 overflow-auto pr-2 -mr-2 thickScrollBar">
+          <div className="lg:col-span-2 h-[calc(100vh-100px)] flex flex-col  ">
+            <div className="rounded-2xl shadow-lg p-6 h-full flex flex-col bg-white   ">
+              <div className="flex-1 overflow-auto hideScrollBar pr-2 -mr-2 thickScrollBar">
                 <h3 className="text-xl font-semibold text-gray-800 mb-6">
                   Billing Summary
                 </h3>
@@ -272,7 +272,7 @@ const TransactionFunctionality = ({
                     <div className="space-y-2">
                       {selectedExtras.map((extra, index) => (
                         <div
-                          key={index}
+                          key={index} 
                           className="flex items-center justify-between p-3 bg-blue-50 rounded-lg"
                         >
                           <span className="text-sm text-gray-800">
@@ -407,7 +407,7 @@ const TransactionFunctionality = ({
                 </div>
 
                 {/* Notes */}
-                <div className="mb-6">
+                <div className="">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Notes (Optional)
                   </label>
@@ -422,7 +422,7 @@ const TransactionFunctionality = ({
               </div>
 
               {/* Submit Button - Sticky at bottom */}
-              <div className="pt-6 mt-6 border-t border-gray-200">
+              <div className=" border-t border-gray-200">
                 <button
                   onClick={handleSubmit}
                   disabled={!isFormValid()}
