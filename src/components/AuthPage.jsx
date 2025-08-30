@@ -331,7 +331,7 @@ const AuthPage = () => {
                 SaloonMate
               </span>
               <img
-                src="/4.png"
+                src="/3.png"
                 alt="SaloonMate logo"
                 className="size-12 rounded-md shadow-sm ring-1 ring-slate-200/60 dark:ring-white/10"
               />

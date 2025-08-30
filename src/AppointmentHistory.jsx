@@ -1,40 +1,32 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Calendar,
-  IndianRupee,
-  TrendingUp,
-  BarChart2,
-  CreditCard,
-  Scissors,
-  History,
-  X,
-  Search,
-  Edit,
-  Save,
-  CheckCircle2,
   AlertCircle,
+  Calendar,
+  CheckCircle2,
+  History,
   Plus,
+  Save,
+  Search,
+  X
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import {
-  BarChart,
   Bar,
-  XAxis,
-  YAxis,
+  BarChart,
   CartesianGrid,
-  Tooltip,
   Legend,
   ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts'
-import { useAuth } from './Context/AuthContext' // Import useAuth hook
-import { useGetallAppointmentData } from './hook/dbOperation'
-import TodayTransaction from './components/appointmentHIstory/todayTransaction'
-import DailyEntryHeader from './components/appointmentHIstory/headerAppointmentHistory'
-import Chart from './components/appointmentHIstory/chart'
-import ShowHistory from './components/appointmentHIstory/showHistory'
 import ChartParent from './components/appointmentHIstory/chartParent'
+import DailyEntryHeader from './components/appointmentHIstory/headerAppointmentHistory'
+import ShowHistory from './components/appointmentHIstory/showHistory'
+import TodayTransaction from './components/appointmentHIstory/todayTransaction'
+import { useAuth } from './Context/AuthContext'; // Import useAuth hook
 
 const DailyEntry = ({ hideHistoryButton = false }) => {
   // Get user data from AuthContext
@@ -74,14 +66,9 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
     type: '',
   })
 
-  // Add state for selected extra services
   const [selectedExtraServices, setSelectedExtraServices] = useState([])
 
-  // const { data, loading:appointmentLoading, error:appointmentError } = useGetallAppointmentData();
-  // console.log(data,
-  ;('this data comming from the appointment')
-  // )
-  // Google Sheet Details
+ 
   const sheetId =
     user?.sheetId || '1ghSQ9d2dfSotfnh8yrkiqIT00kg_ej7n0pnygzP0B9w'
   const scriptUrl =
@@ -2134,98 +2121,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
 }
 
 // Revenue Chart Component
-const RevenueChart = ({ transactions, tableHeaders }) => {
-  // Find field names in the data
-  const amountField =
-    tableHeaders.find(
-      (h) =>
-        h.label &&
-        (h.label.toLowerCase().includes('amount') ||
-          h.label.toLowerCase().includes('price') ||
-          h.label.toLowerCase().includes('revenue'))
-    )?.id || 'amount'
 
-  const serviceField =
-    tableHeaders.find(
-      (h) =>
-        h.label &&
-        (h.label.toLowerCase().includes('service') ||
-          h.label.toLowerCase().includes('item'))
-    )?.id || 'service'
-
-  // Process data for the chart - group transactions by service
-  const serviceData = transactions.reduce((acc, transaction) => {
-    const service = transaction[serviceField] || 'Other'
-    const amount = parseFloat(transaction[amountField]) || 0
-
-    if (!acc[service]) {
-      acc[service] = {
-        name: service,
-        value: 0,
-        count: 0,
-      }
-    }
-
-    acc[service].value += amount
-    acc[service].count += 1
-
-    return acc
-  }, {})
-
-  // Convert to array and sort by value (highest first)
-  const chartData = Object.values(serviceData)
-    .sort((a, b) => b.value - a.value)
-    .map((item) => ({
-      name: item.name,
-      revenue: parseFloat(item.value.toFixed(2)),
-      count: item.count,
-    }))
-
-  // Custom Tooltip
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-3 border border-gray-200 shadow-lg rounded">
-          <p className="font-bold">{label}</p>
-          <p className="text-green-600">
-            ₹{payload[0].value.toFixed(2)} revenue
-          </p>
-          <p className="text-gray-600">{payload[1].value} services</p>
-        </div>
-      )
-    }
-    return null
-  }
-
-  return (
-    <div className="h-64">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={chartData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-          <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          <Bar
-            yAxisId="left"
-            dataKey="revenue"
-            name="Revenue (₹)"
-            fill="#8884d8"
-          />
-          <Bar
-            yAxisId="right"
-            dataKey="count"
-            name="Number of Services"
-            fill="#82ca9d"
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  )
-}
 
 export default DailyEntry

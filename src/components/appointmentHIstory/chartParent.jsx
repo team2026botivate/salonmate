@@ -3,21 +3,20 @@ import Chart from './chart'
 import { useGetMonthlyEarnings } from '@/hook/dbOperation'
 const ChartParent = () => {
   const { data, loading, error } = useGetMonthlyEarnings()
-  console.log(data, 'data')
 
   if (loading)
     return (
-      <div className="bg-white rounded-lg shadow p-4 animate-pulse">
+      <div className="animate-pulse rounded-lg bg-white p-4 shadow">
         {/* Title skeleton */}
-        <div className="h-6 w-40 bg-gray-300 rounded mb-4"></div>
+        <div className="mb-4 h-6 w-40 rounded bg-gray-300"></div>
 
         {/* Chart skeleton */}
-        <div className="w-full h-[300px] flex items-end justify-between gap-2">
+        <div className="flex h-[300px] w-full items-end justify-between gap-2">
           {/* Simulated bars */}
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
-              className="flex-1 bg-gray-300 rounded-t"
+              className="flex-1 rounded-t bg-gray-300"
               style={{ height: `${Math.random() * (250 - 80) + 80}px` }}
             ></div>
           ))}

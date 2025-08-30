@@ -78,7 +78,6 @@ export default function Dashboard() {
   // State management
   const [activeTab, setActiveTab] = useState('')
 
-  console.log(activeTab,"active tab")
   const [activeStaffTab, setActiveStaffTab] = useState('staffAttendance')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
