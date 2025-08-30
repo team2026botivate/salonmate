@@ -187,7 +187,7 @@ export default function Sidebar({
       <nav className="p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {
-            // Additional UI rule: hide certain sections for staff regardless of permissions
+            // Additional UI rule: hide c"ertain sections for staff regardless of permissions
             const staffHidden = new Set([
               'staff',
               'services',
@@ -196,6 +196,9 @@ export default function Sidebar({
               'promoCard',
               'license',
               'whatsappTemplate',
+              "dashboardHome",
+
+              "appointmentHistory"
             ])
 
             if (user?.role === 'staff' && staffHidden.has(item.id)) {

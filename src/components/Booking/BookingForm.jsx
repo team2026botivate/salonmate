@@ -9,6 +9,8 @@ import {
 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { useGetStaffData, useUpdateAppointmentById } from '../../hook/dbOperation'
+import { useAuth } from '@/Context/AuthContext'
+import { cn } from '@/utils/cn'
 
 const statusOptions = [
   {
@@ -34,7 +36,9 @@ const BookingForm = ({
   // submitting: isLoading,
   isEdit = false,
   renderFormField,
+
 }) => {
+  const { user } = useAuth()
   const [errors, setErrors] = useState({})
   const [formData, setFormData] = useState({
     bookingId: appointment?.['Booking ID'] || '',
@@ -62,7 +66,7 @@ const BookingForm = ({
   const { data, loading } = useGetStaffData()
   // const { updateStaffStatusByName, loading: updatingStaff } =
   //   useUpdateStaffStatus()
-  //todo i have to check this useUpdateStaffStatus
+
 
   useEffect(() => {
     if (!data || !Array.isArray(data) || data.length === 0) return
@@ -229,9 +233,12 @@ const BookingForm = ({
               type="date"
               value={formData.slotDate}
               onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                errors.slotDate ? 'border-red-300' : 'border-gray-300'
-              }`}
+              disabled={user?.role === 'staff'}
+              className={cn(
+                'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all',
+                errors.slotDate ? 'border-red-300' : 'border-gray-300',
+                user?.role === 'staff' && 'cursor-not-allowed hover:cursor-not-allowed'
+              )}
             />
             {errors.slotDate && (
               <p className="text-red-500 text-sm mt-1">{errors.slotDate}</p>
@@ -251,9 +258,12 @@ const BookingForm = ({
                 name="slotTime"
                 value={formData.slotTime}
                 onChange={handleChange}
-                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                  errors.slotTime ? 'border-red-300' : 'border-gray-300'
-                }`}
+                disabled={user?.role === 'staff'}
+                className={cn(
+                  'w-full pl-12 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all',
+                  errors.slotTime ? 'border-red-300' : 'border-gray-300',
+                  user?.role === 'staff' && 'cursor-not-allowed hover:cursor-not-allowed'
+                )}
               />
             </div>
             {errors.slotTime && (
@@ -276,13 +286,15 @@ const BookingForm = ({
             </label>
             <select
               name="staffName"
-              disabled={loading}
+              disabled={loading || user?.role === 'staff'}
               type="text"
               value={formData.staffName}
               onChange={handleChange}
-              className={`w-full px-4 py-3  rounded-lg  border-gray-300 border transition-all ${
-                errors.staffName ? 'border-red-300' : 'border-gray-300'
-              }`}
+              className={cn(
+                'w-full px-4 py-3 rounded-lg border transition-all',
+                errors.staffName ? 'border-red-300' : 'border-gray-300',
+                user?.role === 'staff' && 'cursor-not-allowed hover:cursor-not-allowed'
+              )}
             >
               <option value="">Select a staff member</option>
               {loading && <option disabled>Loading staff...</option>}

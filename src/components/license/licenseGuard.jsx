@@ -4,6 +4,34 @@ import { checkLicense } from '@/utils/chekcLicence'
 import { useNavigate, Outlet } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useLicense } from '@/zustand/license'
+import { X } from 'lucide-react'
+
+// Reusable UI to show license inactive/expired notice
+export const LicenseNotice = ({ reason = 'Your license is not active', onClose }) => {
+  const navigate = useNavigate()
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <X
+        className="absolute top-10 right-10 cursor-pointer"
+        onClick={onClose ? onClose : () => navigate('/auth')}
+      />
+      <div className="mx-auto max-w-md rounded-lg bg-white p-6 text-center shadow-lg">
+        <div className="mb-4 text-6xl text-red-500">🚫</div>
+        <h2 className="mb-2 text-2xl font-bold text-gray-800">License Required</h2>
+        <p className="mb-4 text-gray-600">{reason}</p>
+        <div className="relative space-y-3">
+          <a
+            href="mailto:team1.interns@botivate.in?subject=License Renewal&body=Please help me renew my license."
+            className="inline-block w-full rounded-lg bg-red-600 px-6 py-2 text-white transition-colors hover:cursor-pointer hover:bg-red-700"
+          >
+            Renew License
+          </a>
+          <p className="text-sm text-gray-500">Please contact support to renew your license</p>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const LicenseGuard = ({ children }) => {
   const { user, logout } = useAuth()
@@ -48,30 +76,7 @@ const LicenseGuard = ({ children }) => {
 
   // Block access if license is not active
   if (licenseData && !licenseData.active) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="mx-auto max-w-md rounded-lg bg-white p-6 text-center shadow-lg">
-          <div className="mb-4 text-6xl text-red-500">🚫</div>
-          <h2 className="mb-2 text-2xl font-bold text-gray-800">
-            License Required
-          </h2>
-          <p className="mb-4 text-gray-600">
-            {licenseData.reason || 'Your license is not active'}
-          </p>
-          <div className="relative space-y-3">
-            <a
-              href="mailto:team1.interns@botivate.in?subject=License Renewal&body=Please help me renew my license."
-              className="inline-block w-full rounded-lg bg-red-600 px-6 py-2 text-white transition-colors hover:cursor-pointer hover:bg-red-700"
-            >
-              Renew License
-            </a>
-            <p className="text-sm text-gray-500">
-              Please contact support to renew your license
-            </p>
-          </div>
-        </div>
-      </div>
-    )
+    return <LicenseNotice reason={licenseData.reason || 'Your license is not active'} />
   }
 
   // Render children if license is active

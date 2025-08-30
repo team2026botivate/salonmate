@@ -1,21 +1,20 @@
 import { useAuth } from '@/Context/AuthContext'
 import supabase from '@/dataBase/connectdb'
 // eslint-disable-next-line no-unused-vars
+import { checkLicense, createTrialLicense } from '@/utils/chekcLicence'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Chrome,
-  CircleGauge,
   Eye,
   EyeOff,
   Lock,
   Mail,
   Shield,
-  User,
+  User
 } from 'lucide-react'
-import React, { use, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState } from 'react'
 import toast, { Toaster } from 'react-hot-toast'
-import { checkLicense, createTrialLicense } from '@/utils/chekcLicence'
+import { useNavigate } from 'react-router-dom'
 
 const AuthPage = () => {
   const { login, user, loading: authLoading } = useAuth()
@@ -38,9 +37,21 @@ const AuthPage = () => {
 
   // Redirect if already authenticated
   React.useEffect(() => {
-    if (user && !authLoading) {
-      navigate('/admin-dashboard')
+    const maybeRedirect = async () => {
+      if (user && !authLoading) {
+        try {
+          const licenseStatus = await checkLicense(user.id)
+          if (licenseStatus?.active) {
+            navigate('/admin-dashboard')
+          }
+          // If not active, stay on /auth
+        } catch (e) {
+          // On error, stay on /auth
+          console.error('License check failed on auth redirect:', e)
+        }
+      }
     }
+    maybeRedirect()
   }, [user, navigate, authLoading])
 
   const handleInputChange = (e) => {
@@ -152,12 +163,9 @@ const AuthPage = () => {
           // Check license status
           const licenseStatus = await checkLicense(data.user.id)
 
-          // If license is expired or inactive, show warning but allow login
+          // If license is expired or inactive, inform user and keep on /auth
           if (!licenseStatus.active) {
-            toast.error(
-              'Your license has expired. You will be redirected to renew.'
-            )
-            // Allow login but LicenseGuard will handle the redirect
+            toast.error('Your license has expired. Please renew to continue.')
           }
 
           // Create user data for context
@@ -170,9 +178,12 @@ const AuthPage = () => {
           // Use context login to store user data
           login(userData)
 
-          // Clear errors and navigate to dashboard
+          // Clear errors
           setErrors({})
-          navigate('/admin-dashboard')
+          // Navigate only if license active; otherwise remain on /auth
+          if (licenseStatus.active) {
+            navigate('/admin-dashboard')
+          }
         }
       } else {
         // Signup flow

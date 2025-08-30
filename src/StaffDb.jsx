@@ -294,7 +294,7 @@ const StaffDatabase = () => {
   const toArray = (val) => (Array.isArray(val) ? val : val ? [val] : [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 md:p-6 ">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">

@@ -62,7 +62,7 @@ const StaffHistory = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 md:p-6 p-2">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <motion.div

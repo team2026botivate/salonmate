@@ -16,6 +16,7 @@ import {
   useDoStaffStatusActive,
 } from '../../hook/dbOperation'
 import { generateBookingId } from '../../utils/generateBookingId'
+import { useAuth } from '../../Context/AuthContext'
 
 
 const AddNewAppointment = ({
@@ -28,6 +29,8 @@ const AddNewAppointment = ({
   isEdit = false,
   renderFormField,
 }) => {
+
+  const { user } = useAuth()
   const { doStaffStatusActive } = useDoStaffStatusActive()
   const [errors, setErrors] = useState({})
   const [formData, setFormData] = useState({
@@ -193,7 +196,7 @@ const AddNewAppointment = ({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8 ">
       
       {/* Customer Information */}
       <div>
@@ -312,6 +315,7 @@ const AddNewAppointment = ({
               // disabled={loading || updatingStaff}
               type="text"
               value={formData.staffName}
+            
               onChange={handleChange}
               className={`w-full rounded-lg border border-gray-300 px-4 py-3 transition-all ${
                 errors.staffName ? 'border-red-300' : 'border-gray-300'

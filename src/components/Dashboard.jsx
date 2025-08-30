@@ -77,6 +77,8 @@ export default function Dashboard() {
 
   // State management
   const [activeTab, setActiveTab] = useState('')
+
+  console.log(activeTab,"active tab")
   const [activeStaffTab, setActiveStaffTab] = useState('staffAttendance')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -86,7 +88,7 @@ export default function Dashboard() {
       if (!user?.permissions) return false
 
       // Special case: if user has 'all' permission, allow everything
-      if (user.permissions.includes('all')) {
+      if (user?.permissions.includes('all')) {
         return true
       }
 
@@ -94,7 +96,7 @@ export default function Dashboard() {
       const permissionName = COMPONENT_PERMISSION_MAP[componentId]
 
       // Check if user has this specific permission
-      return permissionName && user.permissions.includes(permissionName)
+      return permissionName && user?.permissions.includes(permissionName)
     },
     [user?.permissions]
   )
@@ -157,9 +159,9 @@ export default function Dashboard() {
       const permissionName = COMPONENT_PERMISSION_MAP[subTabName]
       return (
         permissionName &&
-        (user.permissions.includes(permissionName) ||
-          user.permissions.includes('all') ||
-          user.permissions.includes('staff'))
+        (user?.permissions.includes(permissionName) ||
+          user?.permissions.includes('all') ||
+          user?.permissions.includes('staff'))
       )
     },
     [user?.permissions]
