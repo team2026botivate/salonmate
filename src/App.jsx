@@ -34,10 +34,8 @@ function App() {
 
             {/* Protected routes */}
             <Route element={<ProtectedRoute />}>
-              <Route element={<LicenseGuard />}>
-                <Route path="/admin-dashboard/*" element={<Dashboard />} />
+              <Route path="/admin-dashboard/*" element={<Dashboard />} />
                 <Route path="/profile/:id" element={<ProfilePage />} />
-              </Route>
             </Route>
 
             {/* Redirects */}
