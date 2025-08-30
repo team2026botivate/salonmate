@@ -1,10 +1,7 @@
 import { create } from 'zustand'
 
 export const useLicense = create((set) => ({
-  licenseKey: '',
-  expirationDate: '',
-  isActive: false,
-  setLicenseKey: (licenseKey) => set({ licenseKey }),
-  setExpirationDate: (expirationDate) => set({ expirationDate }),
-  setIsActive: (isActive) => set({ isActive }),
+  licenseData: null, // Default value
+  setLicenseData: (data) => set({ licenseData: data }), // Update function
+  clearLicenseData: () => set({ licenseData: null }), // Clear data if needed
 }))

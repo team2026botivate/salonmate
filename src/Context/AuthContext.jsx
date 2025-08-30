@@ -1,3 +1,4 @@
+import { checkLicense } from '@/utils/chekcLicence'
 import { CircleParkingOff, CloudLightning } from 'lucide-react'
 import { createContext, useContext, useEffect, useState } from 'react'
 
@@ -15,8 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-
-  console.log(user,"form context")
+  // console.log(user, 'form context')
 
   // Check for stored user data on initial load
   useEffect(() => {
@@ -35,6 +35,8 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
+   
+    
     checkStoredUser()
   }, [])
 
@@ -43,9 +45,9 @@ export const AuthProvider = ({ children }) => {
     const enhancedUser = {
       ...userData,
       role: userData.role || 'staff',
-      permissions: ['all'] // Default permissions
+      permissions: ['all'], // Default permissions
     }
-    
+
     setUser(enhancedUser)
     localStorage.setItem('salon_user', JSON.stringify(enhancedUser))
   }
@@ -62,12 +64,8 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     logout,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

@@ -1,17 +1,14 @@
 import LicenseManagement from './components/license/licenseManagement'
+import { useLicense } from './zustand/license'
 
 function App() {
-  const mockLicenseData = {
-    licenseKey: 'SALON-MATE-2024-PREMIUM-ABCD-EFGH-1234',
-    expirationDate: '2024-02-15T23:59:59.000Z', // This will show "Expiring Soon"
-    isActive: true,
-  } 
+  const licenseData = useLicense((state) => state?.licenseData)
+
   return (
     <div className="App">
       <LicenseManagement
-        licenseKey={mockLicenseData.licenseKey}
-        expirationDate={mockLicenseData.expirationDate}
-        isActive={mockLicenseData.isActive}
+        expirationDate={licenseData?.expiryDate}
+        isActive={licenseData.active}
       />
     </div>
   )

@@ -79,7 +79,6 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
   // Fetch profile data to get profile image
 
-  console.log(user, 'from navbar')
   // Function to fetch just the profile image from the spreadsheet
   const fetchUserProfileImage = async (userEmail) => {
     try {

@@ -20,6 +20,7 @@ import PromoCard from '../promo-card.jsx'
 import License from '../license.jsx'
 import AppointmentHistory from '../AppointmentHistory.jsx'
 import WhatsappTemplate from '../WhattsappTemplate.jsx'
+import { useNavigate } from 'react-router-dom'
 
 // Map component names to identifiers used in permissions
 const COMPONENT_PERMISSION_MAP = {
@@ -71,30 +72,32 @@ const AccessDenied = ({ message }) => (
 )
 
 export default function Dashboard() {
+  const { navigate } = useNavigate()
   const { user, isAuthenticated, hasPermission } = useAuth()
 
-  console.log(user,"permissions")
-  
   // State management
   const [activeTab, setActiveTab] = useState('')
   const [activeStaffTab, setActiveStaffTab] = useState('staffAttendance')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   // Memoize permission checking function for better performance
-  const isComponentAllowed = useCallback((componentId) => {
-    if (!user?.permissions) return false
-    
-    // Special case: if user has 'all' permission, allow everything
-    if (user.permissions.includes('all')) {
-      return true
-    }
+  const isComponentAllowed = useCallback(
+    (componentId) => {
+      if (!user?.permissions) return false
 
-    // Map component ID to permission name
-    const permissionName = COMPONENT_PERMISSION_MAP[componentId]
-    
-    // Check if user has this specific permission
-    return permissionName && user.permissions.includes(permissionName)
-  }, [user?.permissions])
+      // Special case: if user has 'all' permission, allow everything
+      if (user.permissions.includes('all')) {
+        return true
+      }
+
+      // Map component ID to permission name
+      const permissionName = COMPONENT_PERMISSION_MAP[componentId]
+
+      // Check if user has this specific permission
+      return permissionName && user.permissions.includes(permissionName)
+    },
+    [user?.permissions]
+  )
 
   // Memoize allowed tabs calculation
   const allowedTabs = useMemo(() => {
@@ -115,7 +118,7 @@ export default function Dashboard() {
       'whatsappTemplate',
     ]
 
-    return allPossibleTabs.filter(tab => isComponentAllowed(tab))
+    return allPossibleTabs.filter((tab) => isComponentAllowed(tab))
   }, [isComponentAllowed])
 
   // Set initial active tab based on user role and permissions
@@ -137,24 +140,30 @@ export default function Dashboard() {
   }, [allowedTabs, user?.role])
 
   // Handle tab change - only allow changing to permitted tabs
-  const handleTabChange = useCallback((tabName) => {
-    if (allowedTabs.includes(tabName)) {
-      setActiveTab(tabName)
-    }
-  }, [allowedTabs])
+  const handleTabChange = useCallback(
+    (tabName) => {
+      if (allowedTabs.includes(tabName)) {
+        setActiveTab(tabName)
+      }
+    },
+    [allowedTabs]
+  )
 
   // Check if staff submenu items are allowed based on permissions
-  const isStaffSubmenuAllowed = useCallback((subTabName) => {
-    if (!user?.permissions) return false
-    
-    const permissionName = COMPONENT_PERMISSION_MAP[subTabName]
-    return (
-      permissionName &&
-      (user.permissions.includes(permissionName) ||
-        user.permissions.includes('all') ||
-        user.permissions.includes('staff'))
-    )
-  }, [user?.permissions])
+  const isStaffSubmenuAllowed = useCallback(
+    (subTabName) => {
+      if (!user?.permissions) return false
+
+      const permissionName = COMPONENT_PERMISSION_MAP[subTabName]
+      return (
+        permissionName &&
+        (user.permissions.includes(permissionName) ||
+          user.permissions.includes('all') ||
+          user.permissions.includes('staff'))
+      )
+    },
+    [user?.permissions]
+  )
 
   // Main content rendering function
   const renderContent = useCallback(() => {
@@ -196,9 +205,7 @@ export default function Dashboard() {
           setActiveTab={setActiveTab}
         />
       ),
-      booking: () => (
-        <Booking hideHistoryButton={user?.role === 'staff'} />
-      ),
+      booking: () => <Booking hideHistoryButton={user?.role === 'staff'} />,
       dailyEntry: () => (
         <DailyEntry
           hideHistoryButton={user?.role === 'staff'}
@@ -206,9 +213,7 @@ export default function Dashboard() {
         />
       ),
       appointmentHistory: () => <AppointmentHistory />,
-      inventory: () => (
-        <Inventory hideHistoryButton={user?.role === 'staff'} />
-      ),
+      inventory: () => <Inventory hideHistoryButton={user?.role === 'staff'} />,
       services: () => <Services isAdmin={user?.role === 'admin'} />,
       paymentCommission: () => (
         <PaymentCommission isAdmin={user?.role === 'admin'} />
@@ -220,7 +225,7 @@ export default function Dashboard() {
     }
 
     const ComponentRenderer = componentMap[activeTab]
-    
+
     if (ComponentRenderer && allowedTabs.includes(activeTab)) {
       return <ComponentRenderer />
     }
@@ -235,7 +240,7 @@ export default function Dashboard() {
     activeStaffTab,
     user?.role,
     allowedTabs,
-    isStaffSubmenuAllowed
+    isStaffSubmenuAllowed,
   ])
 
   // Show loading or authentication check
@@ -244,50 +249,56 @@ export default function Dashboard() {
       <div className="flex h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="mb-4 text-lg">Please log in to continue</div>
+          <button
+            className="rounded bg-blue-500 px-4 py-2 text-white"
+            onClick={() => navigate('/auth')}
+          >
+            redirect to login
+          </button>
         </div>
       </div>
     )
   }
 
   return (
-      <div className="flex h-screen flex-col bg-gradient-to-br from-blue-50 to-indigo-100 md:flex-row ">
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={handleTabChange}
-          activeStaffTab={activeStaffTab}
-          setActiveStaffTab={setActiveStaffTab}
+    <div className="flex h-screen flex-col bg-gradient-to-br from-blue-50 to-indigo-100 md:flex-row">
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={handleTabChange}
+        activeStaffTab={activeStaffTab}
+        setActiveStaffTab={setActiveStaffTab}
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+        allowedTabs={allowedTabs}
+        userRole={user?.role}
+      />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Navbar
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
-          allowedTabs={allowedTabs}
           userRole={user?.role}
         />
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <Navbar
-            isMobileMenuOpen={isMobileMenuOpen}
-            setIsMobileMenuOpen={setIsMobileMenuOpen}
-            userRole={user?.role}
-          />
-          <motion.main
-            key={activeTab === 'staff' ? activeStaffTab : activeTab}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.3 }}
-            className="flex-1 overflow-y-auto p-4 md:p-6"
+        <motion.main
+          key={activeTab === 'staff' ? activeStaffTab : activeTab}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 20 }}
+          transition={{ duration: 0.3 }}
+          className="flex-1 overflow-y-auto p-4 md:p-6"
+        >
+          {renderContent()}
+        </motion.main>
+        <footer className="w-full border-t border-gray-200 bg-blue-300 px-3 py-1 text-center text-xs text-black shadow-sm">
+          <a
+            href="https://botivate.in/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors duration-200 hover:text-blue-600"
           >
-            {renderContent()}
-          </motion.main>
-          <footer className="w-full border-t border-gray-200 bg-blue-300 px-3 py-1 text-center text-xs text-black shadow-sm">
-            <a
-              href="https://botivate.in/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors duration-200 hover:text-blue-600"
-            >
-              Powered By-Botivate
-            </a>
-          </footer>
-        </div>
+            Powered By-Botivate
+          </a>
+        </footer>
       </div>
+    </div>
   )
 }

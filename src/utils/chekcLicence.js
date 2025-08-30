@@ -87,8 +87,6 @@ export const createTrialLicense = async (userId) => {
       .select()
       .single()
 
-    console.log(data, 'createTrialLicense')
-
     if (error) {
       console.error('Create trial license error:', error)
       return null
