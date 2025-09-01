@@ -24,8 +24,9 @@ const PromoCard = () => {
     updatePromoCard,
     deletePromoCard,
     checkPromoCodeExists,
-    getActivePromoCards
+    getActivePromoCards,
   } = usePromoCardOperations()
+
 
   // UI state
   const [searchTerm, setSearchTerm] = useState('')
@@ -56,9 +57,12 @@ const PromoCard = () => {
   // Show notification helper
   const showNotification = (message, type = 'success') => {
     setNotification({ show: true, message, type })
-    setTimeout(() => {
-      setNotification({ show: false, message: '', type: '' })
-    }, type === 'error' ? 5000 : 3000)
+    setTimeout(
+      () => {
+        setNotification({ show: false, message: '', type: '' })
+      },
+      type === 'error' ? 5000 : 3000
+    )
   }
 
   // Filter promos by search term
@@ -67,6 +71,7 @@ const PromoCard = () => {
     return searchString.includes(searchTerm.toLowerCase())
   })
 
+  console.log(filteredPromos, 'promo changes')
   // Handle input change for forms
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -85,7 +90,10 @@ const PromoCard = () => {
       // Check if promo code already exists
       const codeExists = await checkPromoCodeExists(newPromo.code)
       if (codeExists) {
-        showNotification('Promo code already exists. Please use a different code.', 'error')
+        showNotification(
+          'Promo code already exists. Please use a different code.',
+          'error'
+        )
         return
       }
 
@@ -98,7 +106,7 @@ const PromoCard = () => {
       }
 
       const result = await addPromoCard(newPromo)
-      
+
       if (result.success) {
         setShowAddForm(false)
         // Reset form
@@ -158,9 +166,15 @@ const PromoCard = () => {
 
     try {
       // Check if promo code already exists (excluding current promo)
-      const codeExists = await checkPromoCodeExists(newPromo.code, editingPromoId)
+      const codeExists = await checkPromoCodeExists(
+        newPromo.code,
+        editingPromoId
+      )
       if (codeExists) {
-        showNotification('Promo code already exists. Please use a different code.', 'error')
+        showNotification(
+          'Promo code already exists. Please use a different code.',
+          'error'
+        )
         return
       }
 
@@ -173,13 +187,16 @@ const PromoCard = () => {
       }
 
       const result = await updatePromoCard(editingPromoId, newPromo)
-      
+
       if (result.success) {
         setEditingPromoId(null)
         setShowEditForm(false)
         showNotification('Promo card updated successfully!')
       } else {
-        showNotification(`Failed to update promo card: ${result.error}`, 'error')
+        showNotification(
+          `Failed to update promo card: ${result.error}`,
+          'error'
+        )
       }
     } catch (error) {
       console.error('Error updating promo:', error)
@@ -201,11 +218,14 @@ const PromoCard = () => {
       setSubmitting(true)
 
       const result = await deletePromoCard(promoToDelete.id)
-      
+
       if (result.success) {
         showNotification('Promo card removed successfully!')
       } else {
-        showNotification(`Failed to remove promo card: ${result.error}`, 'error')
+        showNotification(
+          `Failed to remove promo card: ${result.error}`,
+          'error'
+        )
       }
     } catch (error) {
       console.error('Error deleting promo:', error)
@@ -225,7 +245,7 @@ const PromoCard = () => {
 
   // Check if promo is currently active
   const isPromoActive = (promo) => {
-    if (!promo.start_date || !promo.end_date) return true
+    if (!promo.start_date || new Date(promo.start_date) > new Date()) return true
 
     const today = new Date()
     const startDate = new Date(promo.start_date)
@@ -277,14 +297,17 @@ const PromoCard = () => {
         ) : error ? (
           <div className="rounded-md bg-red-50 p-4 text-center text-red-800">
             {error}{' '}
-            <button className="ml-2 underline" onClick={() => window.location.reload()}>
+            <button
+              className="ml-2 underline"
+              onClick={() => window.location.reload()}
+            >
               Try again
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredPromos.filter(isPromoActive).length > 0 ? (
-              filteredPromos.filter(isPromoActive).map((promo) => (
+              filteredPromos.map((promo) => (
                 <div
                   key={promo.id}
                   className="overflow-hidden rounded-lg border border-orange-200 bg-white shadow-md transition-shadow hover:shadow-lg"

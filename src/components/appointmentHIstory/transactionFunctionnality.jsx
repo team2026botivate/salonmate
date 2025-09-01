@@ -350,10 +350,10 @@ const TransactionFunctionality = ({
                       )}
                     </select>
                     {discountError && (
-                      <p className="text-xs text-red-500">{discountError}</p>
+                      <p className="text-xs text-green-500">{discountError}</p>
                     )}
                     {discountAmount > 0 && (
-                      <div className="flex items-center justify-between text-orange-600">
+                      <div className="flex items-center justify-between text-green-600">
                         <span>Discount Amount</span>
                         <span>-{formatCurrency(discountAmount)}</span>
                       </div>
@@ -387,15 +387,14 @@ const TransactionFunctionality = ({
                         <label
                           key={method.id}
                           className={cn(
-                            "relative flex cursor-pointer items-center rounded-lg border-2 p-3 transition-all",
+                            'relative flex cursor-pointer items-center rounded-lg border-2 p-3 transition-all',
                             isSelected
-                              ? "border-blue-500 bg-blue-50"
-                              : "border-gray-200 hover:border-gray-300",
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200 hover:border-gray-300',
                             method?.isAvtive
-                              ? ""
-                              : "bg-gray-300  hover:cursor-not-allowed"
+                              ? ''
+                              : 'bg-gray-300 hover:cursor-not-allowed'
                           )}
-                          
                         >
                           <input
                             type="radio"
@@ -412,11 +411,10 @@ const TransactionFunctionality = ({
                           />
                           <span
                             className={cn(
-                              "text-sm font-medium",
-                              isSelected ? "text-blue-900" : "text-gray-700",
-                              !method?.isAvtive && "text-gray-400"
+                              'text-sm font-medium',
+                              isSelected ? 'text-blue-900' : 'text-gray-700',
+                              !method?.isAvtive && 'text-gray-400'
                             )}
-                            
                           >
                             {method.name}
                           </span>
