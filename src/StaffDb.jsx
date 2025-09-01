@@ -294,12 +294,12 @@ const StaffDatabase = () => {
   const toArray = (val) => (Array.isArray(val) ? val : val ? [val] : [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 md:p-6 ">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 md:p-6">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <Users className="h-8 w-8 text-blue-600 mr-3" />
+        <div className="mb-8 text-center">
+          <div className="mb-4 flex items-center justify-center">
+            <Users className="mr-3 h-8 w-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900">
               Staff Database Management
             </h1>
@@ -310,18 +310,18 @@ const StaffDatabase = () => {
         </div>
 
         {/* Controls */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-4 flex-1">
+        <div className="mb-8 rounded-2xl bg-white p-6 shadow-lg">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-1 flex-col gap-4 sm:flex-row">
               {/* Search */}
-              <div className="relative flex-1 max-w-md">
-                <Search className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <div className="relative max-w-md flex-1">
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search staff..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -329,7 +329,7 @@ const StaffDatabase = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -339,14 +339,14 @@ const StaffDatabase = () => {
               </select>
 
               {/* Show Deleted Toggle */}
-              <label className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
                 <input
                   type="checkbox"
                   checked={showDeleted}
                   onChange={(e) => setShowDeleted(e.target.checked)}
                   className="rounded"
                 />
-                <span className="text-sm text-gray-700 flex items-center gap-1">
+                <span className="flex items-center gap-1 text-sm text-gray-700">
                   {showDeleted ? (
                     <Eye className="h-4 w-4" />
                   ) : (
@@ -360,7 +360,7 @@ const StaffDatabase = () => {
             {/* Add New Button */}
             <button
               onClick={() => setShowForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
+              className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2 text-white transition-colors hover:bg-blue-700"
             >
               <Plus className="h-4 w-4" />
               Add New Staff
@@ -370,26 +370,26 @@ const StaffDatabase = () => {
 
         {/* Form Modal */}
         {showForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
               <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
+                <div className="mb-6 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-gray-900">
                     {editingId ? 'Edit Staff Member' : 'Add New Staff Member'}
                   </h2>
                   <button
                     onClick={resetForm}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="rounded-lg p-2 transition-colors hover:bg-gray-100"
                   >
                     <X className="h-5 w-5 text-gray-500" />
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {/* Staff Name */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <User className="h-4 w-4 inline mr-1" />
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <User className="mr-1 inline h-4 w-4" />
                       Staff Name *
                     </label>
                     <input
@@ -398,13 +398,13 @@ const StaffDatabase = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, staffName: e.target.value })
                       }
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
                         errors.staffName ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="Enter staff name"
                     />
                     {errors.staffName && (
-                      <p className="text-red-500 text-xs mt-1">
+                      <p className="mt-1 text-xs text-red-500">
                         {errors.staffName}
                       </p>
                     )}
@@ -412,8 +412,8 @@ const StaffDatabase = () => {
 
                   {/* Mobile Number */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <Phone className="h-4 w-4 inline mr-1" />
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <Phone className="mr-1 inline h-4 w-4" />
                       Mobile Number *
                     </label>
                     <input
@@ -427,7 +427,7 @@ const StaffDatabase = () => {
                             .slice(0, 10),
                         })
                       }
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
                         errors.mobileNumber
                           ? 'border-red-500'
                           : 'border-gray-300'
@@ -435,7 +435,7 @@ const StaffDatabase = () => {
                       placeholder="Enter 10-digit mobile number"
                     />
                     {errors.mobileNumber && (
-                      <p className="text-red-500 text-xs mt-1">
+                      <p className="mt-1 text-xs text-red-500">
                         {errors.mobileNumber}
                       </p>
                     )}
@@ -443,8 +443,8 @@ const StaffDatabase = () => {
 
                   {/* Email ID */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <Mail className="h-4 w-4 inline mr-1" />
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <Mail className="mr-1 inline h-4 w-4" />
                       Email ID *
                     </label>
                     <input
@@ -453,13 +453,13 @@ const StaffDatabase = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, emailId: e.target.value })
                       }
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
                         errors.emailId ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="Enter email address"
                     />
                     {errors.emailId && (
-                      <p className="text-red-500 text-xs mt-1">
+                      <p className="mt-1 text-xs text-red-500">
                         {errors.emailId}
                       </p>
                     )}
@@ -467,8 +467,8 @@ const StaffDatabase = () => {
 
                   {/* Position */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <Building className="h-4 w-4 inline mr-1" />
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <Building className="mr-1 inline h-4 w-4" />
                       Position *
                     </label>
                     <select
@@ -476,7 +476,7 @@ const StaffDatabase = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, position: e.target.value })
                       }
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
                         errors.position ? 'border-red-500' : 'border-gray-300'
                       }`}
                     >
@@ -488,7 +488,7 @@ const StaffDatabase = () => {
                       ))}
                     </select>
                     {errors.position && (
-                      <p className="text-red-500 text-xs mt-1">
+                      <p className="mt-1 text-xs text-red-500">
                         {errors.position}
                       </p>
                     )}
@@ -496,8 +496,8 @@ const StaffDatabase = () => {
 
                   {/* Joining Date */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <Calendar className="h-4 w-4 inline mr-1" />
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <Calendar className="mr-1 inline h-4 w-4" />
                       Joining Date *
                     </label>
                     <input
@@ -509,14 +509,14 @@ const StaffDatabase = () => {
                           joiningDate: e.target.value,
                         })
                       }
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
                         errors.joiningDate
                           ? 'border-red-500'
                           : 'border-gray-300'
                       }`}
                     />
                     {errors.joiningDate && (
-                      <p className="text-red-500 text-xs mt-1">
+                      <p className="mt-1 text-xs text-red-500">
                         {errors.joiningDate}
                       </p>
                     )}
@@ -524,7 +524,7 @@ const StaffDatabase = () => {
 
                   {/* Status */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2  ">
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
                       Status
                     </label>
                     <select
@@ -532,7 +532,7 @@ const StaffDatabase = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, status: e.target.value })
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="Active">Active</option>
                       <option value="busy">busy</option>
@@ -543,15 +543,15 @@ const StaffDatabase = () => {
 
                 {/* ID Proof */}
                 <div className="mt-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Shield className="h-4 w-4 inline mr-1" />
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    <Shield className="mr-1 inline h-4 w-4" />
                     ID Proof * (Select multiple)
                   </label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
                     {idProofOptions.map((proof) => (
                       <label
                         key={proof}
-                        className="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                        className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 p-3 hover:bg-gray-50"
                       >
                         <input
                           type="checkbox"
@@ -564,7 +564,7 @@ const StaffDatabase = () => {
                     ))}
                   </div>
                   {errors.idProof && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="mt-1 text-xs text-red-500">
                       {errors.idProof}
                     </p>
                   )}
@@ -591,17 +591,17 @@ const StaffDatabase = () => {
                 </div>
 
                 {/* Form Actions */}
-                <div className="flex gap-4 mt-8">
+                <div className="mt-8 flex gap-4">
                   <button
                     onClick={handleSubmit}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700"
                   >
                     <Save className="h-4 w-4" />
                     {editingId ? 'Update Staff' : 'Add Staff'}
                   </button>
                   <button
                     onClick={resetForm}
-                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="rounded-lg border border-gray-300 px-6 py-3 text-gray-700 transition-colors hover:bg-gray-50"
                   >
                     Cancel
                   </button>
@@ -613,10 +613,10 @@ const StaffDatabase = () => {
 
         {/* Table */}
         {loading ? (
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden animate-pulse">
+          <div className="animate-pulse overflow-hidden rounded-2xl bg-white shadow-lg">
             {/* Header */}
-            <div className="p-6 border-b border-gray-200">
-              <div className="h-6 w-48 bg-gray-200 rounded"></div>
+            <div className="border-b border-gray-200 p-6">
+              <div className="h-6 w-48 rounded bg-gray-200"></div>
             </div>
 
             {/* Table */}
@@ -630,79 +630,79 @@ const StaffDatabase = () => {
                       .map((_, idx) => (
                         <th
                           key={idx}
-                          className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                          className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase"
                         >
-                          <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                          <div className="h-4 w-24 rounded bg-gray-200"></div>
                         </th>
                       ))}
                   </tr>
                 </thead>
 
                 {/* Table Body */}
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 bg-white">
                   {Array(5)
                     .fill(0)
                     .map((_, rowIdx) => (
                       <tr
                         key={rowIdx}
-                        className="hover:bg-gray-50 transition-colors"
+                        className="transition-colors hover:bg-gray-50"
                       >
                         {/* Created At */}
                         <td className="px-6 py-4">
-                          <div className="h-4 w-28 bg-gray-200 rounded"></div>
+                          <div className="h-4 w-28 rounded bg-gray-200"></div>
                         </td>
 
                         {/* Staff Name with Avatar */}
                         <td className="px-6 py-4">
                           <div className="flex items-center">
-                            <div className="h-8 w-8 rounded-full bg-gray-200 mr-3"></div>
-                            <div className="h-4 w-32 bg-gray-200 rounded"></div>
+                            <div className="mr-3 h-8 w-8 rounded-full bg-gray-200"></div>
+                            <div className="h-4 w-32 rounded bg-gray-200"></div>
                           </div>
                         </td>
 
                         {/* Mobile */}
                         <td className="px-6 py-4">
-                          <div className="h-4 w-28 bg-gray-200 rounded"></div>
+                          <div className="h-4 w-28 rounded bg-gray-200"></div>
                         </td>
 
                         {/* Email */}
                         <td className="px-6 py-4">
-                          <div className="h-4 w-36 bg-gray-200 rounded"></div>
+                          <div className="h-4 w-36 rounded bg-gray-200"></div>
                         </td>
 
                         {/* Position */}
                         <td className="px-6 py-4">
-                          <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                          <div className="h-4 w-24 rounded bg-gray-200"></div>
                         </td>
 
                         {/* ID Proof */}
                         <td className="px-6 py-4">
                           <div className="flex gap-1">
-                            <div className="h-5 w-12 bg-gray-200 rounded"></div>
-                            <div className="h-5 w-10 bg-gray-200 rounded"></div>
+                            <div className="h-5 w-12 rounded bg-gray-200"></div>
+                            <div className="h-5 w-10 rounded bg-gray-200"></div>
                           </div>
                         </td>
 
                         {/* Joining Date */}
                         <td className="px-6 py-4">
-                          <div className="h-4 w-28 bg-gray-200 rounded"></div>
+                          <div className="h-4 w-28 rounded bg-gray-200"></div>
                         </td>
 
                         {/* Status */}
                         <td className="px-6 py-4">
-                          <div className="h-5 w-20 bg-gray-200 rounded-full"></div>
+                          <div className="h-5 w-20 rounded-full bg-gray-200"></div>
                         </td>
 
                         {/* Deleted */}
                         <td className="px-6 py-4">
-                          <div className="h-4 w-10 bg-gray-200 rounded"></div>
+                          <div className="h-4 w-10 rounded bg-gray-200"></div>
                         </td>
 
                         {/* Actions */}
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
-                            <div className="h-6 w-6 bg-gray-200 rounded"></div>
-                            <div className="h-6 w-6 bg-gray-200 rounded"></div>
+                            <div className="h-6 w-6 rounded bg-gray-200"></div>
+                            <div className="h-6 w-6 rounded bg-gray-200"></div>
                           </div>
                         </td>
                       </tr>
@@ -712,8 +712,8 @@ const StaffDatabase = () => {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
+          <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
+            <div className="border-b border-gray-200 p-6">
               <h2 className="text-xl font-semibold text-gray-800">
                 Staff Records ({filteredRecords.length})
               </h2>
@@ -736,7 +736,7 @@ const StaffDatabase = () => {
                     ].map(({ key, label }) => (
                       <th
                         key={key}
-                        className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        className="cursor-pointer px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase hover:bg-gray-100"
                         onClick={() => handleSort(key)}
                       >
                         <div className="flex items-center gap-1">
@@ -750,27 +750,27 @@ const StaffDatabase = () => {
                         </div>
                       </th>
                     ))}
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 bg-white">
                   {filteredRecords.map((record) => (
                     <tr
                       key={record.id}
-                      className={`hover:bg-gray-50 transition-colors ${
+                      className={`transition-colors hover:bg-gray-50 ${
                         record.delete_flag ? 'opacity-60' : ''
                       }`}
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-600">
                         {record.created_at
                           ? new Date(record.created_at).toLocaleString()
                           : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-semibold mr-3">
+                          <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-xs font-semibold text-white">
                             {(record.staff_name || '')
                               .split(' ')
                               .map((n) => n[0])
@@ -781,28 +781,28 @@ const StaffDatabase = () => {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-600">
                         {record.mobile_number}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-600">
                         {record.email_id}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-600">
                         {record.position}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-600">
                         <div className="flex flex-wrap gap-1">
                           {toArray(record.id_proof).map((proof) => (
                             <span
                               key={proof}
-                              className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded"
+                              className="inline-block rounded bg-blue-100 px-2 py-1 text-xs text-blue-800"
                             >
                               {proof}
                             </span>
                           ))}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-600">
                         {record.joining_date
                           ? new Date(record.joining_date).toLocaleDateString()
                           : '-'}
@@ -820,36 +820,36 @@ const StaffDatabase = () => {
                             : record.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-600">
                         {record.delete_flag ? (
-                          <span className="text-red-600 font-semibold">
+                          <span className="font-semibold text-red-600">
                             Yes
                           </span>
                         ) : (
-                          <span className="text-green-600 font-semibold">
+                          <span className="font-semibold text-green-600">
                             No
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-600">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleEdit(record)}
-                            className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+                            className="rounded p-1 text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800"
                           >
                             <Edit className="h-4 w-4" />
                           </button>
                           {record.delete_flag ? (
                             <button
                               onClick={() => handlePermanentDelete(record.id)}
-                              className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                              className="rounded p-1 text-red-600 transition-colors hover:bg-red-50 hover:text-red-800"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
                           ) : (
                             <button
                               onClick={() => handleDelete(record.id)}
-                              className="p-1 text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded transition-colors"
+                              className="rounded p-1 text-orange-600 transition-colors hover:bg-orange-50 hover:text-orange-800"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -863,9 +863,9 @@ const StaffDatabase = () => {
             </div>
 
             {filteredRecords.length === 0 && (
-              <div className="text-center py-12">
-                <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">
+              <div className="py-12 text-center">
+                <Users className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+                <h3 className="mb-2 text-lg font-semibold text-gray-600">
                   No staff records found
                 </h3>
                 <p className="text-gray-500">

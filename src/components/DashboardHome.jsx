@@ -117,7 +117,7 @@ const HeroBanner = ({ isLoading }) => {
             <Building2 size={32} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Salon Mate</h1>
+            <h1 className="text-2xl font-bold">Saloon Mate</h1>
             <p className="text-purple-100">Welcome back! Here's your salon overview</p>
           </div>
         </div>

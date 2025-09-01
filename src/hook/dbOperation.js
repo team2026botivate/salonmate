@@ -304,7 +304,7 @@ export const useDoStaffStatusActive = () => {
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
-      activeTimeouts.forEach(timeoutId => clearTimeout(timeoutId))
+      activeTimeouts.forEach((timeoutId) => clearTimeout(timeoutId))
     }
   }, [activeTimeouts])
 
@@ -312,15 +312,15 @@ export const useDoStaffStatusActive = () => {
     try {
       setLoading(true)
       setError(null)
-      
+
       const { data, error } = await supabase
         .from('staff_info')
         .update({ status: newStatus })
         .eq('id', staff_id)
         .select()
-      
+
       if (error) throw error
-      
+
       console.log(`Staff ${staff_id} status updated to: ${newStatus}`)
       return data
     } catch (err) {
@@ -332,13 +332,17 @@ export const useDoStaffStatusActive = () => {
     }
   }
 
-  const doStaffStatusActive = async (staff_id, serviceTimeMinutes, currentStatus) => {
+  const doStaffStatusActive = async (
+    staff_id,
+    serviceTimeMinutes,
+    currentStatus
+  ) => {
     try {
       // Input validation
       if (!staff_id) {
         throw new Error('Staff ID is required')
       }
-      
+
       const minutes = parseInt(serviceTimeMinutes) || 0
       if (minutes <= 0) {
         throw new Error('Service time must be greater than 0')
@@ -347,7 +351,7 @@ export const useDoStaffStatusActive = () => {
       // Clear any existing timeout for this staff member
       if (activeTimeouts.has(staff_id)) {
         clearTimeout(activeTimeouts.get(staff_id))
-        setActiveTimeouts(prev => {
+        setActiveTimeouts((prev) => {
           const newMap = new Map(prev)
           newMap.delete(staff_id)
           return newMap
@@ -357,31 +361,35 @@ export const useDoStaffStatusActive = () => {
       // Only proceed if staff is currently busy/active with a service
       if (currentStatus && currentStatus.toLowerCase() === 'active') {
         const timeInMilliseconds = minutes * 60 * 1000
-        
+
         console.log(`Setting timer for staff ${staff_id}: ${minutes} minutes`)
-        
+
         // Set timeout to change status back to available
         const timeoutId = setTimeout(async () => {
           try {
             await updateStaffStatus(staff_id, 'available')
             // Remove timeout from active list
-            setActiveTimeouts(prev => {
+            setActiveTimeouts((prev) => {
               const newMap = new Map(prev)
               newMap.delete(staff_id)
               return newMap
             })
           } catch (err) {
             console.error('Error in timeout callback:', err)
-            setError(`Failed to update staff status after service completion: ${err.message}`)
+            setError(
+              `Failed to update staff status after service completion: ${err.message}`
+            )
           }
         }, timeInMilliseconds)
 
         // Store timeout ID for cleanup
-        setActiveTimeouts(prev => new Map(prev).set(staff_id, timeoutId))
-        
+        setActiveTimeouts((prev) => new Map(prev).set(staff_id, timeoutId))
+
         return { success: true, timeoutId, minutes }
       } else {
-        throw new Error(`Staff status must be 'active' to set timer. Current status: ${currentStatus}`)
+        throw new Error(
+          `Staff status must be 'active' to set timer. Current status: ${currentStatus}`
+        )
       }
     } catch (err) {
       console.error('doStaffStatusActive error:', err)
@@ -393,7 +401,7 @@ export const useDoStaffStatusActive = () => {
   const cancelStaffTimer = (staff_id) => {
     if (activeTimeouts.has(staff_id)) {
       clearTimeout(activeTimeouts.get(staff_id))
-      setActiveTimeouts(prev => {
+      setActiveTimeouts((prev) => {
         const newMap = new Map(prev)
         newMap.delete(staff_id)
         return newMap
@@ -408,13 +416,13 @@ export const useDoStaffStatusActive = () => {
     return Array.from(activeTimeouts.keys())
   }
 
-  return { 
-    doStaffStatusActive, 
-    cancelStaffTimer, 
+  return {
+    doStaffStatusActive,
+    cancelStaffTimer,
     getActiveTimers,
     updateStaffStatus,
-    loading, 
-    error 
+    loading,
+    error,
   }
 }
 
@@ -701,6 +709,42 @@ export const useGetSelectedExtraServiceDataForTransactionHistory = () => {
   return { loading, error, data }
 }
 
+// getting the promoCard section
+
+export const useGetPromoCardData = () => {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const getPromoCardData = async () => {
+    try {
+      setLoading(true)
+      const { data: promoCardData, error } = await supabase
+        .from('promo_card')
+        .select('*')
+      if (error) throw error
+
+      const filteredPromoCardData = promoCardData.filter(
+        (promoCard) =>
+          promoCard.deleted === false &&
+          new Date(promoCard.end_date) >= new Date()
+      )
+
+      setData(filteredPromoCardData)
+    } catch (err) {
+      console.error('Error fetching promo card data:', err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    getPromoCardData()
+  }, [])
+
+  return { loading, error, data }
+}
 //managing thie staff attendance
 
 export const useStaffAttendance = (selectedDate) => {
@@ -1033,15 +1077,15 @@ export const usePromoCardOperations = () => {
           start_date: promoData.startDate,
           end_date: promoData.endDate,
           created_at: new Date().toISOString(),
-          deleted: false
+          deleted: false,
         })
         .select()
         .single()
 
       if (error) throw error
-      
+
       // Update local state
-      setPromoCards(prev => [data, ...prev])
+      setPromoCards((prev) => [data, ...prev])
       return { success: true, data }
     } catch (err) {
       console.error('Error adding promo card:', err)
@@ -1065,17 +1109,17 @@ export const usePromoCardOperations = () => {
           description: promoData.description,
           start_date: promoData.startDate,
           end_date: promoData.endDate,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', id)
         .select()
         .single()
 
       if (error) throw error
-      
+
       // Update local state
-      setPromoCards(prev => 
-        prev.map(promo => promo.id === id ? data : promo)
+      setPromoCards((prev) =>
+        prev.map((promo) => (promo.id === id ? data : promo))
       )
       return { success: true, data }
     } catch (err) {
@@ -1094,16 +1138,16 @@ export const usePromoCardOperations = () => {
       setError(null)
       const { error } = await supabase
         .from('promo_card')
-        .update({ 
+        .update({
           deleted: true,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', id)
 
       if (error) throw error
-      
+
       // Remove from local state
-      setPromoCards(prev => prev.filter(promo => promo.id !== id))
+      setPromoCards((prev) => prev.filter((promo) => promo.id !== id))
       return { success: true }
     } catch (err) {
       console.error('Error deleting promo card:', err)
@@ -1122,14 +1166,14 @@ export const usePromoCardOperations = () => {
         .select('id')
         .eq('code', code)
         .eq('deleted', false)
-      
+
       if (excludeId) {
         query = query.neq('id', excludeId)
       }
-      
+
       const { data, error } = await query
       if (error) throw error
-      
+
       return data && data.length > 0
     } catch (err) {
       console.error('Error checking promo code:', err)
@@ -1140,7 +1184,7 @@ export const usePromoCardOperations = () => {
   // Get active promo cards
   const getActivePromoCards = useCallback(() => {
     const today = new Date()
-    return promoCards.filter(promo => {
+    return promoCards.filter((promo) => {
       if (!promo.start_date || !promo.end_date) return true
       const startDate = new Date(promo.start_date)
       const endDate = new Date(promo.end_date)
@@ -1162,7 +1206,7 @@ export const usePromoCardOperations = () => {
     updatePromoCard,
     deletePromoCard,
     checkPromoCodeExists,
-    getActivePromoCards
+    getActivePromoCards,
   }
 }
 
@@ -1341,7 +1385,7 @@ export const useDashboardSummary = () => {
     activeServices: 0,
     inactiveServices: 0,
     totalStaff: 0,
-    absentStaff: 0
+    absentStaff: 0,
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -1377,7 +1421,11 @@ export const useDashboardSummary = () => {
       const prevWeekEnd = new Date(weekEnd)
       prevWeekEnd.setDate(weekEnd.getDate() - 7)
 
-      const prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+      const prevMonthStart = new Date(
+        today.getFullYear(),
+        today.getMonth() - 1,
+        1
+      )
       const prevMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0)
       prevMonthEnd.setHours(23, 59, 59, 999)
 
@@ -1465,20 +1513,47 @@ export const useDashboardSummary = () => {
       if (attendanceError) throw attendanceError
 
       // Calculate metrics
-      const weekRevenueTotal = (weekRevenue || []).reduce((sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0), 0)
-      const monthRevenueTotal = (monthRevenue || []).reduce((sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0), 0)
-      const prevWeekRevenueTotal = (prevWeekRevenue || []).reduce((sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0), 0)
-      const prevMonthRevenueTotal = (prevMonthRevenue || []).reduce((sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0), 0)
+      const weekRevenueTotal = (weekRevenue || []).reduce(
+        (sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0),
+        0
+      )
+      const monthRevenueTotal = (monthRevenue || []).reduce(
+        (sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0),
+        0
+      )
+      const prevWeekRevenueTotal = (prevWeekRevenue || []).reduce(
+        (sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0),
+        0
+      )
+      const prevMonthRevenueTotal = (prevMonthRevenue || []).reduce(
+        (sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0),
+        0
+      )
 
-      const weekGrowth = prevWeekRevenueTotal > 0 ? ((weekRevenueTotal - prevWeekRevenueTotal) / prevWeekRevenueTotal) * 100 : 0
-      const monthGrowth = prevMonthRevenueTotal > 0 ? ((monthRevenueTotal - prevMonthRevenueTotal) / prevMonthRevenueTotal) * 100 : 0
+      const weekGrowth =
+        prevWeekRevenueTotal > 0
+          ? ((weekRevenueTotal - prevWeekRevenueTotal) / prevWeekRevenueTotal) *
+            100
+          : 0
+      const monthGrowth =
+        prevMonthRevenueTotal > 0
+          ? ((monthRevenueTotal - prevMonthRevenueTotal) /
+              prevMonthRevenueTotal) *
+            100
+          : 0
 
-      const activeServices = (services || []).filter(s => !s.delete_flag).length
-      const inactiveServices = (services || []).filter(s => s.delete_flag).length
+      const activeServices = (services || []).filter(
+        (s) => !s.delete_flag
+      ).length
+      const inactiveServices = (services || []).filter(
+        (s) => s.delete_flag
+      ).length
 
       const totalStaff = (staff || []).length
-      const attendanceMap = new Map((attendance || []).map(a => [a.staff_id, a.status]))
-      const absentStaff = (staff || []).filter(s => {
+      const attendanceMap = new Map(
+        (attendance || []).map((a) => [a.staff_id, a.status])
+      )
+      const absentStaff = (staff || []).filter((s) => {
         const attendanceStatus = attendanceMap.get(s.id)
         return !attendanceStatus || attendanceStatus.toLowerCase() === 'absent'
       }).length
@@ -1493,7 +1568,7 @@ export const useDashboardSummary = () => {
         activeServices,
         inactiveServices,
         totalStaff,
-        absentStaff
+        absentStaff,
       })
     } catch (e) {
       console.error('fetchDashboardSummary error:', e)
@@ -1526,20 +1601,22 @@ export const useRecentBookings = () => {
 
       const { data: bookings, error: bookingsError } = await supabase
         .from('appointment')
-        .select('id, "Customer Name", Services, "Slot Time", "Booking Status", "Service Price", "Slot Date"')
+        .select(
+          'id, "Customer Name", Services, "Slot Time", "Booking Status", "Service Price", "Slot Date"'
+        )
         .gte('Slot Date', threeDaysAgo.toISOString())
         .order('Slot Date', { ascending: false })
         .limit(5)
 
       if (bookingsError) throw bookingsError
 
-      const formattedBookings = (bookings || []).map(booking => ({
+      const formattedBookings = (bookings || []).map((booking) => ({
         id: booking.id,
         clientName: booking['Customer Name'] || 'Unknown',
         service: booking.Services || 'No service',
         time: booking['Slot Time'] || 'No time',
         status: booking['Booking Status'] || 'pending',
-        amount: parseFloat(booking['Service Price']) || 0
+        amount: parseFloat(booking['Service Price']) || 0,
       }))
 
       setData(formattedBookings)
@@ -1570,7 +1647,9 @@ export const useRecentTransactions = () => {
 
       const { data: transactions, error: transactionsError } = await supabase
         .from('appointment')
-        .select('transaction_id, "Customer Name", payment_method, transactions_status, transaction_final_amount')
+        .select(
+          'transaction_id, "Customer Name", payment_method, transactions_status, transaction_final_amount'
+        )
         .not('transaction_id', 'is', null)
         .not('transactions_status', 'is', null)
         .order('transactions_date', { ascending: false })
@@ -1578,12 +1657,17 @@ export const useRecentTransactions = () => {
 
       if (transactionsError) throw transactionsError
 
-      const formattedTransactions = (transactions || []).map(transaction => ({
-        id: transaction.transaction_id || `TXN${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      const formattedTransactions = (transactions || []).map((transaction) => ({
+        id:
+          transaction.transaction_id ||
+          `TXN${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
         clientName: transaction['Customer Name'] || 'Unknown',
         paymentMethod: transaction.payment_method || 'cash',
-        status: transaction.transactions_status === 'paid' ? 'completed' : transaction.transactions_status || 'pending',
-        amount: parseFloat(transaction.transaction_final_amount) || 0
+        status:
+          transaction.transactions_status === 'paid'
+            ? 'completed'
+            : transaction.transactions_status || 'pending',
+        amount: parseFloat(transaction.transaction_final_amount) || 0,
       }))
 
       setData(formattedTransactions)
@@ -1623,7 +1707,9 @@ export const useStaffPaymentData = () => {
       // Fetch all active staff
       const { data: staffList, error: staffError } = await supabase
         .from('staff_info')
-        .select('id, staff_name, mobile_number, position, base_salary, commission_rate, commission_type, payment_status')
+        .select(
+          'id, staff_name, mobile_number, position, base_salary, commission_rate, commission_type, payment_status'
+        )
         .neq('delete_flag', true)
         .order('staff_name', { ascending: true })
 
@@ -1635,16 +1721,20 @@ export const useStaffPaymentData = () => {
         (staffList || []).map(async (staff) => {
           try {
             // Get attendance count for current month
-            const { data: attendanceData, error: attendanceError } = await supabase
-              .from('staff_attendance')
-              .select('status')
-              .eq('staff_id', staff.id)
-              .gte('date', monthStart.toISOString().split('T')[0])
-              .lte('date', monthEnd.toISOString().split('T')[0])
-              .in('status', ['present', 'active', 'p'])
+            const { data: attendanceData, error: attendanceError } =
+              await supabase
+                .from('staff_attendance')
+                .select('status')
+                .eq('staff_id', staff.id)
+                .gte('date', monthStart.toISOString().split('T')[0])
+                .lte('date', monthEnd.toISOString().split('T')[0])
+                .in('status', ['present', 'active', 'p'])
 
             if (attendanceError) {
-              console.warn(`Error fetching attendance for ${staff.staff_name}:`, attendanceError)
+              console.warn(
+                `Error fetching attendance for ${staff.staff_name}:`,
+                attendanceError
+              )
             }
 
             const totalPresent = (attendanceData || []).length
@@ -1660,23 +1750,29 @@ export const useStaffPaymentData = () => {
               .not('transaction_final_amount', 'is', null)
 
             if (revenueError) {
-              console.warn(`Error fetching revenue for ${staff.staff_name}:`, revenueError)
+              console.warn(
+                `Error fetching revenue for ${staff.staff_name}:`,
+                revenueError
+              )
             }
 
             const totalRevenue = (revenueData || []).reduce(
-              (sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0), 0
+              (sum, item) =>
+                sum + (parseFloat(item.transaction_final_amount) || 0),
+              0
             )
 
             // Get values from database columns
             const baseSalary = parseFloat(staff.base_salary) || 25000
             const commissionRate = parseFloat(staff.commission_rate) || 10
             const commissionType = staff.commission_type || 'percentage'
-            
+
             // Calculate pro-rated salary based on attendance
             // Formula: (base_salary / total_days_in_month) * days_present
             const totalDaysInMonth = monthEnd.getDate()
-            const proRatedSalary = (baseSalary / totalDaysInMonth) * totalPresent
-            
+            const proRatedSalary =
+              (baseSalary / totalDaysInMonth) * totalPresent
+
             // Calculate commission based on type
             let calculatedCommission = 0
             if (commissionType === 'percentage') {
@@ -1696,14 +1792,14 @@ export const useStaffPaymentData = () => {
               commissionType: commissionType,
               calculatedCommission: calculatedCommission,
               totalRevenue: totalRevenue,
-              paymentStatus: staff.payment_status || 'pending'
+              paymentStatus: staff.payment_status || 'pending',
             }
           } catch (err) {
             console.error(`Error processing staff ${staff.staff_name}:`, err)
             const baseSalary = parseFloat(staff.base_salary) || 25000
             const totalDaysInMonth = monthEnd.getDate()
             const proRatedSalary = (baseSalary / totalDaysInMonth) * 0 // 0 days present in error case
-            
+
             return {
               id: staff.id,
               name: staff.staff_name,
@@ -1715,7 +1811,7 @@ export const useStaffPaymentData = () => {
               commissionType: 'percentage',
               calculatedCommission: 0,
               totalRevenue: 0,
-              paymentStatus: 'pending'
+              paymentStatus: 'pending',
             }
           }
         })
@@ -1748,7 +1844,8 @@ export const useUpdateStaffPaymentStatus = () => {
 
       const now = new Date()
       const currentMonth = now.toISOString().slice(0, 7) // YYYY-MM format
-      const totalSalary = staffData.proRatedSalary + staffData.calculatedCommission
+      const totalSalary =
+        staffData.proRatedSalary + staffData.calculatedCommission
 
       // Insert payment record into staff_payments table
       const { data: paymentData, error: paymentError } = await supabase
@@ -1760,7 +1857,7 @@ export const useUpdateStaffPaymentStatus = () => {
           amount: totalSalary,
           payment_method: 'Bank Transfer',
           status: 'Paid',
-          notes: `Salary: ₹${staffData.proRatedSalary} (${staffData.totalPresent}/${staffData.totalDaysInMonth} days) + Commission: ₹${staffData.calculatedCommission}`
+          notes: `Salary: ₹${staffData.proRatedSalary} (${staffData.totalPresent}/${staffData.totalDaysInMonth} days) + Commission: ₹${staffData.calculatedCommission}`,
         })
         .select()
         .single()
@@ -1867,8 +1964,6 @@ export const useDeleteService = () => {
   const [error, setError] = useState(null)
 
   const deleteService = async (id) => {
-
-    console.log(id,"id")
     try {
       setLoading(true)
       setError(null)
@@ -1878,7 +1973,6 @@ export const useDeleteService = () => {
         .delete()
         .eq('id', id)
 
-        console.log(err,"err")
       if (err) throw err
       return true
     } catch (e) {
@@ -1893,10 +1987,7 @@ export const useDeleteService = () => {
   return { deleteService, loading, error }
 }
 
-
 //* customer db operation starting from here
-
-
 
 export const useGetCustomerDataFetch = () => {
   const [data, setData] = useState([])
@@ -1906,9 +1997,7 @@ export const useGetCustomerDataFetch = () => {
   const getCustomerData = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
-        .from('customer_info')
-        .select('*')
+      const { data, error } = await supabase.from('customer_info').select('*')
       if (error) throw error
       setData(data)
     } catch (err) {

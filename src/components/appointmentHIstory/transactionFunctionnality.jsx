@@ -1,5 +1,6 @@
 import {
   AlertCircle,
+  Ban,
   Banknote,
   Check,
   CreditCard,
@@ -10,6 +11,8 @@ import {
 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { generateTransactionId } from '../../utils/generateTransactionId'
+import { useGetPromoCardData } from '@/hook/dbOperation'
+import { cn } from '@/utils/cn'
 
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('en-IN', {
@@ -37,6 +40,10 @@ const TransactionFunctionality = ({
   const [transactionId, setTransactionId] = useState('')
   const [notes, setNotes] = useState('')
   const [discountError, setDiscountError] = useState('')
+  const { data: promoCardData, loading: promoCardLoading } =
+    useGetPromoCardData()
+
+  // console.log(promoCardData, 'promocard')
 
   // Initialize selectedExtras with extraServices when component mounts or extraServices changes
   useEffect(() => {
@@ -119,41 +126,46 @@ const TransactionFunctionality = ({
   )
 
   const paymentMethods = [
-    { id: 'cash', name: 'Cash', icon: Banknote },
-    { id: 'online', name: 'Online', icon: Smartphone },
-    { id: 'credit_card', name: 'Credit Card', icon: CreditCard },
-    { id: 'debit_card', name: 'Debit Card', icon: CreditCard },
+    { id: 'cash', name: 'Cash', icon: Banknote, isAvtive: true },
+    { id: 'online', name: 'Online', icon: Smartphone, isAvtive: false },
+    {
+      id: 'credit_card',
+      name: 'Credit Card',
+      icon: CreditCard,
+      isAvtive: false,
+    },
+    { id: 'debit_card', name: 'Debit Card', icon: CreditCard, isAvtive: false },
   ]
 
   return (
-    <div className="h-screen   w-full  bg-gradient-to-br from-blue-50 to-indigo-50 p-6  relative">
+    <div className="relative h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
       <X
         onClick={() => setIsEditModalOpen(false)}
-        className="absolute top-8 right-5 hover:text-red-600 md:right-10 cursor-pointer"
+        className="absolute top-8 right-5 cursor-pointer hover:text-red-600 md:right-10"
       />
-      <div className="max-w-7xl mx-auto   h-full overflow-y-auto md:py-10 hideScrollBar">
+      <div className="hideScrollBar mx-auto h-full max-w-7xl overflow-y-auto md:py-10">
         {/* Header */}
-        <div className="text-center mb-5 ">
-          <div className="flex items-center  md:justify-center justify-start mb-4 ">
-            <Receipt className="h-8 w-8 text-blue-600 mr-3" />
+        <div className="mb-5 text-center">
+          <div className="mb-4 flex items-center justify-start md:justify-center">
+            <Receipt className="mr-3 h-8 w-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900">
               Transaction / Billing
             </h1>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-5 md:grid-cols-4 gap-8">
+        <div className="grid gap-8 md:grid-cols-4 lg:grid-cols-5">
           {/* Left Column - Extra Services */}
-          <div className="lg:col-span-2 max-h-[calc(100vh-200px)]  rounded-2xl ">
-            <div className="bg-white  shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">
+          <div className="max-h-[calc(100vh-200px)] rounded-2xl lg:col-span-2">
+            <div className="bg-white p-6 shadow-lg">
+              <h2 className="mb-6 text-xl font-semibold text-gray-800">
                 Extra Services
               </h2>
 
               {/* Loading State */}
               {loading && (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
                   <span className="ml-3 text-gray-600">
                     Loading extra services...
                   </span>
@@ -163,7 +175,7 @@ const TransactionFunctionality = ({
               {/* Error State */}
               {error && (
                 <div className="flex items-center justify-center py-12 text-red-600">
-                  <AlertCircle className="h-6 w-6 mr-2" />
+                  <AlertCircle className="mr-2 h-6 w-6" />
                   <span>{error}</span>
                 </div>
               )}
@@ -172,7 +184,7 @@ const TransactionFunctionality = ({
               {!loading && !error && (
                 <div className="space-y-3">
                   {filteredExtras.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="py-8 text-center text-gray-500">
                       {(extraServices?.length ?? 0) === 0
                         ? 'No extra services available'
                         : 'No services match your search'}
@@ -189,7 +201,7 @@ const TransactionFunctionality = ({
                             extra.service_name ||
                             `${extra.service_name}-${extra.base_price}`
                           }
-                          className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:shadow-md ${
+                          className={`flex cursor-pointer items-center rounded-xl border-2 p-4 transition-all duration-200 hover:shadow-md ${
                             isSelected
                               ? 'border-blue-500 bg-blue-50 shadow-sm'
                               : 'border-gray-200 bg-white hover:border-gray-300'
@@ -203,7 +215,7 @@ const TransactionFunctionality = ({
                               className="sr-only"
                             />
                             <div
-                              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
+                              className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all duration-200 ${
                                 isSelected
                                   ? 'border-blue-500 bg-blue-500'
                                   : 'border-gray-300 bg-white'
@@ -215,7 +227,7 @@ const TransactionFunctionality = ({
                             </div>
                           </div>
 
-                          <div className="ml-4 flex-1 flex items-center justify-between">
+                          <div className="ml-4 flex flex-1 items-center justify-between">
                             <span
                               className={`font-medium ${
                                 isSelected ? 'text-blue-900' : 'text-gray-800'
@@ -241,16 +253,16 @@ const TransactionFunctionality = ({
           </div>
 
           {/* Right Column - Summary */}
-          <div className="lg:col-span-2 h-[calc(100vh-100px)] flex flex-col  ">
-            <div className="rounded-2xl shadow-lg p-6 h-full flex flex-col bg-white   ">
-              <div className="flex-1 overflow-auto hideScrollBar pr-2 -mr-2 thickScrollBar">
-                <h3 className="text-xl font-semibold text-gray-800 mb-6">
+          <div className="flex h-[calc(100vh-100px)] flex-col lg:col-span-2">
+            <div className="flex h-full flex-col rounded-2xl bg-white p-6 shadow-lg">
+              <div className="hideScrollBar thickScrollBar -mr-2 flex-1 overflow-auto pr-2">
+                <h3 className="mb-6 text-xl font-semibold text-gray-800">
                   Billing Summary
                 </h3>
 
                 {/* Base Service */}
-                <div className="mb-6 p-4 bg-gray-50 rounded-xl">
-                  <h4 className="text-sm font-medium text-gray-600 mb-2">
+                <div className="mb-6 rounded-xl bg-gray-50 p-4">
+                  <h4 className="mb-2 text-sm font-medium text-gray-600">
                     Base Service
                   </h4>
                   <div className="flex items-center justify-between">
@@ -266,14 +278,14 @@ const TransactionFunctionality = ({
                 {/* Selected Extras */}
                 {selectedExtras.length > 0 && (
                   <div className="mb-6">
-                    <h4 className="text-sm font-medium text-gray-600 mb-3">
+                    <h4 className="mb-3 text-sm font-medium text-gray-600">
                       Selected Extras
                     </h4>
                     <div className="space-y-2">
                       {selectedExtras.map((extra, index) => (
                         <div
-                          key={index} 
-                          className="flex items-center justify-between p-3 bg-blue-50 rounded-lg"
+                          key={index}
+                          className="flex items-center justify-between rounded-lg bg-blue-50 p-3"
                         >
                           <span className="text-sm text-gray-800">
                             {extra.service_name}
@@ -284,7 +296,7 @@ const TransactionFunctionality = ({
                             </span>
                             <button
                               onClick={() => handleExtraServiceToggle(extra)}
-                              className="p-1 text-red-500 hover:bg-red-100 rounded transition-colors"
+                              className="rounded p-1 text-red-500 transition-colors hover:bg-red-100"
                             >
                               <X className="h-4 w-4" />
                             </button>
@@ -296,8 +308,8 @@ const TransactionFunctionality = ({
                 )}
 
                 {/* Price Breakdown */}
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between items-center">
+                <div className="mb-6 space-y-3">
+                  <div className="flex items-center justify-between">
                     <span className="text-gray-600">Subtotal</span>
                     <span className="font-medium">
                       {formatCurrency(subtotal)}
@@ -309,23 +321,39 @@ const TransactionFunctionality = ({
                     <label className="block text-sm font-medium text-gray-700">
                       Discount (%)
                     </label>
-                    <input
+                    <select
                       type="number"
                       min="0"
                       max="100"
                       step="0.1"
                       value={discountPercent}
                       onChange={(e) => handleDiscountChange(e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
                         discountError ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="0"
-                    />
+                    >
+                      {promoCardLoading ? (
+                        <option value="">Loading...</option>
+                      ) : (
+                        <>
+                          <option value="">Select Discount</option>
+                          {promoCardData.map((promoCard) => (
+                            <option
+                              key={promoCard.id}
+                              value={promoCard.discount}
+                            >
+                              {`${promoCard.code}_${promoCard.discount}%`}
+                            </option>
+                          ))}
+                        </>
+                      )}
+                    </select>
                     {discountError && (
-                      <p className="text-red-500 text-xs">{discountError}</p>
+                      <p className="text-xs text-red-500">{discountError}</p>
                     )}
                     {discountAmount > 0 && (
-                      <div className="flex justify-between items-center text-orange-600">
+                      <div className="flex items-center justify-between text-orange-600">
                         <span>Discount Amount</span>
                         <span>-{formatCurrency(discountAmount)}</span>
                       </div>
@@ -333,7 +361,7 @@ const TransactionFunctionality = ({
                   </div>
 
                   <div className="border-t border-gray-200 pt-3">
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between">
                       <span className="text-lg font-semibold text-gray-800">
                         Total Due
                       </span>
@@ -346,22 +374,28 @@ const TransactionFunctionality = ({
 
                 {/* Payment Method */}
                 <div className="mb-6">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">
+                  <h4 className="mb-3 text-sm font-medium text-gray-700">
                     Payment Method
                   </h4>
                   <div className="grid grid-cols-2 gap-2">
                     {paymentMethods.map((method) => {
                       const IconComponent = method.icon
-                      const isSelected = paymentMethod === method.id
+                      const isSelected =
+                        paymentMethod === method.id && method.isAvtive
 
                       return (
                         <label
                           key={method.id}
-                          className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                          className={cn(
+                            "relative flex cursor-pointer items-center rounded-lg border-2 p-3 transition-all",
                             isSelected
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-gray-200 hover:border-gray-300",
+                            method?.isAvtive
+                              ? ""
+                              : "bg-gray-300  hover:cursor-not-allowed"
+                          )}
+                          
                         >
                           <input
                             type="radio"
@@ -372,17 +406,23 @@ const TransactionFunctionality = ({
                             className="sr-only"
                           />
                           <IconComponent
-                            className={`h-4 w-4 mr-2 ${
+                            className={`mr-2 h-4 w-4 ${
                               isSelected ? 'text-blue-600' : 'text-gray-500'
                             }`}
                           />
                           <span
-                            className={`text-sm font-medium ${
-                              isSelected ? 'text-blue-900' : 'text-gray-700'
-                            }`}
+                            className={cn(
+                              "text-sm font-medium",
+                              isSelected ? "text-blue-900" : "text-gray-700",
+                              !method?.isAvtive && "text-gray-400"
+                            )}
+                            
                           >
                             {method.name}
                           </span>
+                          {!method?.isAvtive ? (
+                            <Ban className="absolute top-1/2 right-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-red-500" />
+                          ) : null}
                         </label>
                       )
                     })}
@@ -391,7 +431,7 @@ const TransactionFunctionality = ({
                   {/* Transaction ID for non-cash payments */}
                   {paymentMethod && paymentMethod !== 'cash' && (
                     <div className="mt-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="mb-1 block text-sm font-medium text-gray-700">
                         Transaction ID *
                       </label>
                       <input
@@ -399,7 +439,7 @@ const TransactionFunctionality = ({
                         value={transactionId}
                         onChange={(e) => setTransactionId(e.target.value)}
                         placeholder="Enter transaction ID"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                         required
                       />
                     </div>
@@ -408,7 +448,7 @@ const TransactionFunctionality = ({
 
                 {/* Notes */}
                 <div className="">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
                     Notes (Optional)
                   </label>
                   <textarea
@@ -416,20 +456,20 @@ const TransactionFunctionality = ({
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Add any additional notes..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
 
               {/* Submit Button - Sticky at bottom */}
-              <div className=" border-t border-gray-200">
+              <div className="border-t border-gray-200">
                 <button
                   onClick={handleSubmit}
                   disabled={!isFormValid()}
-                  className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
+                  className={`w-full rounded-xl px-6 py-3 font-semibold transition-all duration-200 ${
                     isFormValid()
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      ? 'transform bg-blue-600 text-white shadow-lg hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-xl'
+                      : 'cursor-not-allowed bg-gray-300 text-gray-500'
                   }`}
                 >
                   {loadingForSubmit ? 'Submitting...' : 'Submit Payment'}
