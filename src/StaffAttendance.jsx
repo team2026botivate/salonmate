@@ -216,8 +216,8 @@ const StaffAttendance = () => {
         <div className="mb-8 rounded-2xl bg-white p-6  shadow-lg md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-col items-center  md:flex-row gap-4">
-              <div className=' w-full flex items-center justify-between'>
-                <div className="flex items-center gap-2">
+              <div className=' w-full flex items-center justify-between flex-col gap-3 sm:flex-row'>
+                <div className="flex items-center gap-2 ">
                   <Calendar className="h-5 w-5 text-gray-500" />
                   <label className="text-sm font-medium text-gray-700">
                     Date:
