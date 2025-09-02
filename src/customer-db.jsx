@@ -12,13 +12,13 @@ import {
   Phone,
   Search,
   Send,
-  Smartphone,
   Users,
   X,
+  Mail,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useGetCustomerDataFetch } from './hook/dbOperation'
-import { sendSms } from './utils/sendSms'
+import { useSendEmail } from './hook/sendEmail'
 
 // Toast Notification Component
 const Toast = ({ message, type, isVisible, onClose }) => {
@@ -66,17 +66,17 @@ const MessageModal = ({
   isOpen,
   onClose,
   customer,
-  onSendSMS,
+  onSendEmail,
   onSendWhatsApp,
 }) => {
-  const [activeTab, setActiveTab] = useState('sms')
+  const [activeTab, setActiveTab] = useState('email')
   const [message, setMessage] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const maxLength = 300
 
-  // SMS Templates
-  const smsTemplates = [
+  // Email Templates
+  const emailTemplates = [
     {
       id: 'appointment',
       name: 'Appointment Reminder',
@@ -132,7 +132,7 @@ const MessageModal = ({
   ]
 
   const getCurrentTemplates = () => {
-    return activeTab === 'sms' ? smsTemplates : whatsappTemplates
+    return activeTab === 'email' ? emailTemplates : whatsappTemplates
   }
 
   const handleTemplateSelect = (templateContent) => {
@@ -142,7 +142,7 @@ const MessageModal = ({
     if (customer) {
       processedMessage = processedMessage
         .replace(/{name}/g, customer.name)
-        .replace(/{phone}/g, customer.phone)
+        .replace(/{email}/g, customer.email)
         .replace(/{time}/g, '2:00 PM')
         .replace(/{date}/g, new Date().toLocaleDateString())
         .replace(/{amount}/g, '100')
@@ -151,32 +151,28 @@ const MessageModal = ({
     }
     setMessage(processedMessage)
   }
-
   const handleSend = async () => {
     if (!message.trim()) return
-
-    setIsLoading(true)
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
     // Call appropriate handler based on active tab
-    if (activeTab === 'sms') {
-      onSendSMS?.(message, customer.phone)
-      console.log(message)
+    if (activeTab === 'email') {
+      try {
+        setIsLoading(true)
+        const res = await onSendEmail?.(message, customer?.email)
+        if (res?.success) {
+          handleClose()
+        }
+      } finally {
+        setIsLoading(false)
+      }
     } else {
-      onSendWhatsApp?.(message, customer.phone)
+      onSendWhatsApp?.(message, customer?.phone)
     }
-
-    setMessage('')
-    setSelectedTemplate('')
-    setIsLoading(false)
-    onClose()
   }
 
   const handleClose = () => {
     setMessage('')
     setSelectedTemplate('')
-    setActiveTab('sms')
+    setActiveTab('email')
     onClose()
   }
 
@@ -227,7 +223,7 @@ const MessageModal = ({
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">{customer.name}</p>
-                    <p className="text-sm text-gray-500">{customer.phone}</p>
+                    <p className="text-sm text-gray-500">{customer.email}</p>
                   </div>
                 </div>
               </div>
@@ -237,15 +233,15 @@ const MessageModal = ({
             <div className="mb-4">
               <div className="flex rounded-lg bg-gray-100 p-1">
                 <button
-                  onClick={() => handleTabChange('sms')}
+                  onClick={() => handleTabChange('email')}
                   className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all ${
-                    activeTab === 'sms'
+                    activeTab === 'email'
                       ? 'bg-white text-purple-600 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  <Smartphone size={16} />
-                  SMS
+                  <Mail size={16} />
+                  Email
                 </button>
                 <button
                   onClick={() => handleTabChange('whatsapp')}
@@ -292,7 +288,7 @@ const MessageModal = ({
                 transition={{ duration: 0.2 }}
                 value={message}
                 onChange={(e) => setMessage(e.target.value.slice(0, maxLength))}
-                placeholder={`Type your ${activeTab === 'sms' ? 'SMS' : 'WhatsApp'} message here...`}
+                placeholder={`Type your ${activeTab === 'email' ? 'Email' : 'WhatsApp'} message here...`}
                 className="h-32 w-full resize-none rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-purple-500"
               />
               <div className="mt-2 flex items-center justify-between">
@@ -324,7 +320,7 @@ const MessageModal = ({
                 </label>
                 <div
                   className={`rounded-lg border-2 border-dashed p-3 ${
-                    activeTab === 'sms'
+                    activeTab === 'email'
                       ? 'border-purple-200 bg-purple-50'
                       : 'border-green-200 bg-green-50'
                   }`}
@@ -332,13 +328,13 @@ const MessageModal = ({
                   <div className="flex items-start gap-2">
                     <div
                       className={`flex h-6 w-6 items-center justify-center rounded-full ${
-                        activeTab === 'sms'
+                        activeTab === 'email'
                           ? 'bg-purple-100 text-purple-600'
                           : 'bg-green-100 text-green-600'
                       }`}
                     >
-                      {activeTab === 'sms' ? (
-                        <Smartphone size={12} />
+                      {activeTab === 'email' ? (
+                        <Mail size={12} />
                       ) : (
                         <MessageSquare size={12} />
                       )}
@@ -365,7 +361,7 @@ const MessageModal = ({
                 onClick={handleSend}
                 disabled={!message.trim() || isLoading}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 font-medium text-white transition-colors disabled:bg-gray-300 ${
-                  activeTab === 'sms'
+                  activeTab === 'email'
                     ? 'bg-purple-600 hover:bg-purple-700'
                     : 'bg-green-600 hover:bg-green-700'
                 }`}
@@ -375,7 +371,7 @@ const MessageModal = ({
                 ) : (
                   <Send size={16} />
                 )}
-                Send {activeTab === 'sms' ? 'SMS' : 'WhatsApp'}
+                Send {activeTab === 'email' ? 'Email' : 'WhatsApp'}
               </button>
             </div>
           </motion.div>
@@ -430,6 +426,8 @@ const CustomerManagement = () => {
 
   const { loading, error, data } = useGetCustomerDataFetch()
 
+  const sendEmail = useSendEmail()
+
   const itemsPerPage = 10
 
   // Map DB rows to UI and handle loading state from hook
@@ -442,12 +440,13 @@ const CustomerManagement = () => {
     const mapped = (data || []).map((row) => ({
       id: row.id,
       name: row.customer_name || 'Unknown',
-      phone: row.mobile_number || '-',
-      email: row.email_id || '-',
+      phone: row.mobile_number || '',
+      email: row.email || '',
       lastVisit: row.timestamp || row.created_at || null,
       totalVisits: row.total_visits ?? null,
       totalSpent: row.total_spent ?? null,
     }))
+
     setCustomers(mapped)
     setFilteredCustomers(mapped)
   }, [data])
@@ -502,11 +501,17 @@ const CustomerManagement = () => {
     }).format(amount)
   }
 
-  const handleSendSMS = async (message, phoneNumber) => {
-    console.log(message)
-    console.log(phoneNumber, 'customer')
-   const sms =  await sendSms(message, phoneNumber)
-   console.log(sms,"sms")
+  const handleSendEmail = async (message, emailAddress) => {
+    const res = await sendEmail(message, emailAddress)
+    // Fallback local toast in case global toasts are not visible
+    // console.log(res, "res")
+    setToast({
+      message:
+        res?.message || (res?.success ? 'Email sent' : 'Failed to send email'),
+      type: res?.success ? 'success' : 'error',
+      isVisible: true,
+    })
+    return res
   }
 
   const handleSendWhatsApp = (message, phoneNumber) => {
@@ -829,7 +834,7 @@ const CustomerManagement = () => {
           customer={selectedCustomer}
           onSendMessage={handleSendMessage}
           onSendWhatsApp={handleSendWhatsApp}
-          onSendSMS={handleSendSMS}
+          onSendEmail={handleSendEmail}
         />
 
         {/* Toast Notification */}
