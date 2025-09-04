@@ -23,7 +23,6 @@ const ProfilePage = () => {
   const [previewImage, setPreviewImage] = useState(null)
 
 
-  console.log(authUser,"authUser")
   
 
   const [profileData, setProfileData] = useState({  

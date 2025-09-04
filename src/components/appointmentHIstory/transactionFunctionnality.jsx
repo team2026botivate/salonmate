@@ -43,7 +43,6 @@ const TransactionFunctionality = ({
   const { data: promoCardData, loading: promoCardLoading } =
     useGetPromoCardData()
 
-  // console.log(promoCardData, 'promocard')
 
   // Initialize selectedExtras with extraServices when component mounts or extraServices changes
   useEffect(() => {

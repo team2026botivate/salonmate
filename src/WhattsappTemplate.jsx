@@ -642,7 +642,6 @@ const handleUpdateTemplate = async (e) => {
         body: formData,
       })
 
-      console.log("Template deleted in Google Sheets")
 
       // Update UI
       const updatedTemplates = templates.filter((template) => template.id !== templateToDelete.id)

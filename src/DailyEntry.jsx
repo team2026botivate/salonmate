@@ -11,21 +11,22 @@ const DailyEntry = () => {
 
   const { loading, error, data } = useGetRunningAppointment() // getting running appointments total data
 
-  console.log(data)
   const [searchTerm, setSearchTerm] = useState('')
   const [dailyFromInputPropsData, setDailyFromInputPropsData] = useState({
     bookingId: '',
     bookingStatus: '',
     service: '',
+    staffId: '',
   })
-
-
 
   const refreshExtraServicesHookRefresh = useAppData(
     (state) => state.refreshExtraServicesHookRefresh
   )
 
-  useEffect(() => {}, [refreshExtraServicesHookRefresh])
+  useEffect(() => {
+    // Force close modal when data refreshes to prevent stuck overlay
+    SetIsEditBoxOpen(false)
+  }, [refreshExtraServicesHookRefresh])
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -41,7 +42,6 @@ const DailyEntry = () => {
         return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
-
 
   const filteredAppointments = data.filter((appointment) => {
     const term = searchTerm.toLowerCase()
@@ -90,21 +90,20 @@ const DailyEntry = () => {
     }
   }, [filteredAppointments])
 
-  
   return (
-    <div className="bg-white rounded-xl  shadow-lg overflow-hidden">
+    <div className="overflow-hidden rounded-xl bg-white shadow-lg">
       <AnimatePresence>
         {!!isEditBoxOpen && (
           <motion.div
-            className="fixed inset-0 z-10 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, pointerEvents: 'none' }}
+            transition={{ duration: 0.1, ease: 'easeOut' }}
             onClick={() => SetIsEditBoxOpen(false)}
           >
             <motion.div
-              className="absolute inset-0 flex items-start justify-center overflow-y-auto p-4 sm:p-6 hideScrollBar "
+              className="hideScrollBar absolute inset-0 flex items-start justify-center overflow-y-auto p-4 sm:p-6"
               initial={{ opacity: 0, y: 24, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -112,7 +111,7 @@ const DailyEntry = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <X
-                className="fixed size-10 hover:text-red-700 z-60 top-10 right-10 cursor-pointer sm:top-15 sm:right-15  text-red-700 lg:text-white "
+                className="fixed top-10 right-10 z-60 size-10 cursor-pointer text-red-700 hover:text-red-700 sm:top-15 sm:right-15 lg:text-white"
                 onClick={() => SetIsEditBoxOpen(false)}
               />
               <motion.div className="w-full lg:max-w-6xl" initial={false}>
@@ -121,6 +120,7 @@ const DailyEntry = () => {
                   appointmentId={dailyFromInputPropsData.bookingId}
                   bookingStatus={dailyFromInputPropsData.bookingStatus}
                   service={dailyFromInputPropsData.service}
+                  staffId={dailyFromInputPropsData.staffId}
                 />
               </motion.div>
             </motion.div>
@@ -129,13 +129,13 @@ const DailyEntry = () => {
       </AnimatePresence>
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 ">
-        <div className="flex items-center justify-between flex-col md:flex-row gap-5">
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
+        <div className="flex flex-col items-center justify-between gap-5 md:flex-row">
           <div>
             <h2 className="text-2xl font-bold text-white">
               Daily Appointments
             </h2>
-            <p className="text-indigo-100 mt-1">
+            <p className="mt-1 text-indigo-100">
               Manage today's bookings and services
             </p>
           </div>
@@ -154,16 +154,16 @@ const DailyEntry = () => {
       </div>
 
       {/* Filters */}
-      <div className="p-6 border-b border-gray-200 bg-gray-50">
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+      <div className="border-b border-gray-200 bg-gray-50 p-6">
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="relative max-w-md flex-1">
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
             <input
               type="text"
               placeholder="Search by customer name, booking ID, or service..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+              className="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 transition-all duration-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
             />
           </div>
           {/* <div className="flex items-center space-x-3">
@@ -188,22 +188,22 @@ const DailyEntry = () => {
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Booking Details
               </th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Service Info
               </th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Staff
               </th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Pricing
               </th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Status
               </th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Actions
               </th>
             </tr>
@@ -212,7 +212,7 @@ const DailyEntry = () => {
             {loading ? (
               <tr>
                 <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-pink-500 mb-2"></div>
+                  <div className="mb-2 inline-block h-6 w-6 animate-spin rounded-full border-t-2 border-b-2 border-pink-500"></div>
                   <p className="text-sm text-gray-500">
                     Loading appointments...
                   </p>
@@ -222,7 +222,7 @@ const DailyEntry = () => {
               filteredAppointments.map((appointment) => (
                 <tr
                   key={appointment['Booking ID']}
-                  className="hover:bg-gray-50 transition-colors duration-150"
+                  className="transition-colors duration-150 hover:bg-gray-50"
                 >
                   <td className="px-6 py-4">
                     <div>
@@ -231,7 +231,7 @@ const DailyEntry = () => {
                           <div className="text-sm font-medium text-gray-900">
                             {appointment['Booking ID']}
                           </div>
-                          <div className="text-sm text-gray-600 font-medium">
+                          <div className="text-sm font-medium text-gray-600">
                             {appointment['Customer Name']}
                           </div>
                           <div className="text-xs text-gray-500">
@@ -251,8 +251,8 @@ const DailyEntry = () => {
                       </div>
                       {Array.isArray(appointment.extra_Services) &&
                         appointment.extra_Services.length > 0 && (
-                          <div className="mt-1 flex items-center gap-2 flex-wrap">
-                            <div className="text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full inline-block text-nowrap">
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
+                            <div className="inline-block rounded-full bg-indigo-50 px-2 py-1 text-xs text-nowrap text-indigo-600">
                               + {appointment.extra_Services[0]?.service_name}
                             </div>
                             {appointment.extra_Services.length > 1 && (
@@ -278,7 +278,7 @@ const DailyEntry = () => {
                         )}
                       </div>
                       {appointment.discount > 0 && (
-                        <div className="text-xs text-green-600 font-medium">
+                        <div className="text-xs font-medium text-green-600">
                           {appointment.discount}% discount
                         </div>
                       )}
@@ -286,7 +286,7 @@ const DailyEntry = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border capitalize ${getStatusColor(
+                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${getStatusColor(
                         appointment['Booking Status']
                       )}`}
                     >
@@ -294,20 +294,21 @@ const DailyEntry = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <butto
+                    <button
                       onClick={() => {
                         setDailyFromInputPropsData((prev) => ({
                           ...prev,
                           bookingId: appointment.id,
                           bookingStatus: appointment['Booking Status'],
                           service: appointment['Services'],
+                          staffId: appointment.staff_id,
                         }))
                         SetIsEditBoxOpen(true)
                       }}
-                      className="p-1 hover:cursor-pointer text-gray-400 hover:text-blue-600 transition-colors"
+                      className="p-1 text-gray-400 transition-colors hover:cursor-pointer hover:text-blue-600"
                     >
                       <Edit className="h-4 w-4" />
-                    </butto>
+                    </button>
                   </td>
                 </tr>
               ))
@@ -317,7 +318,7 @@ const DailyEntry = () => {
       </div>
 
       {/* Footer */}
-      <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+      <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
         <div className="flex items-center justify-between text-sm text-gray-600">
           <div>
             Showing {filteredAppointments.length} of {data.length} appointments

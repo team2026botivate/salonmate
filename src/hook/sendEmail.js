@@ -5,7 +5,6 @@ import toast from 'react-hot-toast'
 
 export const useSendEmail = () => {
   const sendEmail = async (message, emailAddress) => {
-    console.log(emailAddress,"emailAddress")
     const payload = {
       email: emailAddress,
       subject: 'SalonMate Notification',

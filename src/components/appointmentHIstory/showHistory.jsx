@@ -44,7 +44,6 @@ const ShowHistory = ({
 
   const { data, loading } =
     useGetSelectedExtraServiceDataForTransactionHistory()
-  console.log(data)
 
   const [expandedRows, setExpandedRows] = useState(new Set())
 

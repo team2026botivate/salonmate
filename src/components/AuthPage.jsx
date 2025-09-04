@@ -310,12 +310,10 @@ const AuthPage = () => {
 
         // Create trial license for new user (7 days)
 
-        console.log(user, 'user id')
         try {
           // Pass the freshly created shop/store id explicitly to avoid FK violations
           const trialLicense = await createTrialLicense(user.id, shopId?.id)
           if (trialLicense) {
-            console.log('Trial license created:', trialLicense)
           } else {
             console.warn('Failed to create trial license')
           }

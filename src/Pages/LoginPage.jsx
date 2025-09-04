@@ -43,8 +43,6 @@ const LoginPage = () => {
         password,
       })
 
-      console.log(data?.user)
-      console.log(supabaseError)
       if (supabaseError) {
         setError(supabaseError.message)
         setIsLoading(false)

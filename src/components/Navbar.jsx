@@ -142,7 +142,6 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
   // Function to handle logout
   const handleLogout = () => {
-    console.log('Logging out...')
     logout()
     navigate('/login')
   }

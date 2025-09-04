@@ -260,7 +260,6 @@ const DashboardHome = ({ isAdmin, setActiveTab }) => {
   const { data: recentTransactions, loading: transactionsLoading, error: transactionsError } = useRecentTransactions();
 
 
-  console.log(recentTransactions,"recent transation ")
   // Combined loading state
   const isLoading = summaryLoading || bookingsLoading || transactionsLoading;
   

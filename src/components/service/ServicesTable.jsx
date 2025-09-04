@@ -32,7 +32,6 @@ export const ServicesTable = ({
   const itemsPerPage = 10;
 
 
-  console.log(services,"servicesjkkkk")
   // Filter and search services
   const filteredServices = services.filter(service => {
     const matchesSearch = service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -73,7 +72,6 @@ export const ServicesTable = ({
     currentPage * itemsPerPage
   );
 
-  console.log(paginatedServices,"service")
 
   const handleSort = (field) => {
     if (sortField === field) {

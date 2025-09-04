@@ -10,8 +10,6 @@ const TrialPage = () => {
         role: 'admin',
       },
     })
-    console.log(user)
-    console.log(error)
   }
 
   useEffect(() => {

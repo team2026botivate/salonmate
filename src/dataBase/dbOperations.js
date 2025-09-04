@@ -7,8 +7,7 @@ import supabase from './connectdb'
  * @returns {Promise<{success: boolean, url?: string, error?: string}>}
  */
 export const uploadProfileImage = async (file, userId) => {
-  console.log(file)
-  console.log(userId)
+  
   try {
     // Ensure user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -29,7 +28,6 @@ export const uploadProfileImage = async (file, userId) => {
         upsert: true,
       })
 
-      console.log(uploadData, uploadError)
 
     if (uploadError) {
       console.error('Upload error:', uploadError)

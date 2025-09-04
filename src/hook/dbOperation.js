@@ -357,7 +357,6 @@ export const useDoStaffStatusActive = () => {
 
       if (error) throw error
 
-      console.log(`Staff ${staff_id} status updated to: ${newStatus}`)
       return data
     } catch (err) {
       console.error('Error updating staff status:', err)
@@ -398,7 +397,6 @@ export const useDoStaffStatusActive = () => {
       if (currentStatus && currentStatus.toLowerCase() === 'active') {
         const timeInMilliseconds = minutes * 60 * 1000
 
-        console.log(`Setting timer for staff ${staff_id}: ${minutes} minutes`)
 
         // Set timeout to change status back to available
         const timeoutId = setTimeout(async () => {
@@ -442,7 +440,6 @@ export const useDoStaffStatusActive = () => {
         newMap.delete(staff_id)
         return newMap
       })
-      console.log(`Timer cancelled for staff ${staff_id}`)
       return true
     }
     return false
@@ -575,6 +572,7 @@ export const useCreateExtraService = () => {
         })
         .eq('id', appointmentId)
       if (error) throw error
+
       setRefreshExtraServicesHookRefresh()
       return data
     } catch (err) {
@@ -1866,7 +1864,6 @@ export const useStaffPaymentData = () => {
         .order('staff_name', { ascending: true })
         .eq('store_id', store_id)
 
-      console.log(staffList)
       if (staffError) throw staffError
 
       // Fetch attendance data for current month for each staff member
@@ -2028,7 +2025,6 @@ export const useUpdateStaffPaymentStatus = () => {
 
       if (statusError) throw statusError
 
-      console.log(`Payment processed successfully for ${staffData.name}`)
       return paymentData
     } catch (e) {
       console.error('updatePaymentStatus error:', e)
@@ -2198,7 +2194,6 @@ export const useCreateShopId = () => {
         .select()
         .single()
 
-      console.log(data, 'fomr data')
 
       if (error) throw error
       return data
