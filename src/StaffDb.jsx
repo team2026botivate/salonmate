@@ -58,7 +58,7 @@ const StaffDatabase = () => {
     position: '',
     idProof: [],
     joiningDate: '',
-    status: 'Active',
+    status: 'active',
     deleteFlag: false,
     // New fields for staff_info schema
     baseSalary: '',
@@ -66,6 +66,9 @@ const StaffDatabase = () => {
     commissionType: 'percentage',
     staffCustomId: '',
   })
+
+  // Optional login creation toggle (default: off)
+  const [createLoginAccount, setCreateLoginAccount] = useState(false)
 
   const [errors, setErrors] = useState({})
 
@@ -105,8 +108,11 @@ const StaffDatabase = () => {
     if (!formData.staffName.trim()) {
       newErrors.staffName = 'Staff name is required'
     }
-    if (!formData.password || formData.password.length < 6) {
-      newErrors.password = 'Password is required (min 6 characters)'
+    // Password is only required when opting to create a login for a new staff (not during edit)
+    if (!editingId && createLoginAccount) {
+      if (!formData.password || formData.password.length < 6) {
+        newErrors.password = 'Password is required (min 6 characters)'
+      }
     }
 
     if (!formData.mobileNumber.trim()) {
@@ -174,10 +180,10 @@ const StaffDatabase = () => {
           setCurrentStep(2)
           return
         }
-        // Create Supabase Auth user if not already created
+        // Create Supabase Auth user only if requested and not already created
         try {
           setAuthError(null)
-          if (!accountCreated) {
+          if (createLoginAccount && !accountCreated) {
             const result = await createStaff({
               email: formData.emailId,
               password: formData.password,
@@ -267,7 +273,7 @@ const StaffDatabase = () => {
       position: '',
       idProof: [],
       joiningDate: '',
-      status: 'Active',
+      status: 'active',
       baseSalary: '',
       commissionRate: 10,
       commissionType: 'percentage',
@@ -276,10 +282,11 @@ const StaffDatabase = () => {
     setErrors({})
     setShowForm(false)
     setEditingId(null)
-    setCurrentStep(2) // Reset to first step
+    setCurrentStep(1) // Reset to first step
     setAccountCreated(false)
     setAuthUserId(null)
     setAuthError(null)
+    setCreateLoginAccount(false)
   }
 
   // Handle edit
@@ -291,7 +298,7 @@ const StaffDatabase = () => {
       position: record.position,
       idProof: record.id_proof || [],
       joiningDate: record.joining_date || '',
-      status: record.status,
+      status: (record.status || 'active').toLowerCase(),
       deleteFlag: record.delete_flag,
     })
     setEditingId(record.id)
@@ -558,28 +565,83 @@ const StaffDatabase = () => {
                       )}
                     </div>
 
-                    {/* Password */}
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
-                        <Lock className="mr-1 inline h-4 w-4" />
-                        Password *
-                      </label>
-                      <input
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) =>
-                          setFormData({ ...formData, password: e.target.value })
-                        }
-                        className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
-                          errors.password ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        placeholder="Enter a password (min 6 characters)"
-                        autoComplete="new-password"
-                      />
-                      {errors.password && (
-                        <p className="mt-1 text-xs text-red-500">{errors.password}</p>
-                      )}
-                    </div>
+                    {/* Status (edit mode only) */}
+                    {editingId && (
+                      <div className="md:col-span-2">
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                          Status
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData({ ...formData, status: 'active' })
+                            }
+                            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors border ${
+                              formData.status === 'active'
+                                ? 'bg-green-600 text-white border-green-600'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            Active
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData({ ...formData, status: 'busy' })
+                            }
+                            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors border ${
+                              formData.status === 'busy'
+                                ? 'bg-red-600 text-white border-red-600'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            Busy
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Create Login Account (optional) */}
+                    {!editingId && (
+                      <div className="md:col-span-2 flex items-center gap-2 rounded-lg border border-gray-200 p-3">
+                        <input
+                          id="create-login-account"
+                          type="checkbox"
+                          checked={createLoginAccount}
+                          onChange={(e) => setCreateLoginAccount(e.target.checked)}
+                          className="rounded"
+                        />
+                        <label htmlFor="create-login-account" className="text-sm text-gray-700">
+                          Create login account for this staff (optional)
+                        </label>
+                      </div>
+                    )}
+
+                    {/* Password (only shown when creating a new staff AND when opted-in) */}
+                    {!editingId && createLoginAccount && (
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                          <Lock className="mr-1 inline h-4 w-4" />
+                          Password *
+                        </label>
+                        <input
+                          type="password"
+                          value={formData.password}
+                          onChange={(e) =>
+                            setFormData({ ...formData, password: e.target.value })
+                          }
+                          className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
+                            errors.password ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="Enter a password (min 6 characters)"
+                          autoComplete="new-password"
+                        />
+                        {errors.password && (
+                          <p className="mt-1 text-xs text-red-500">{errors.password}</p>
+                        )}
+                      </div>
+                    )}
 
                     {/* Mobile Number */}
                     <div>
@@ -664,17 +726,19 @@ const StaffDatabase = () => {
                         </p>
                       )}
                     </div>
-                    {/* Auth creation feedback */}
-                    <div className="md:col-span-2">
-                      {authError && (
-                        <p className="mt-2 text-sm text-red-600">{authError}</p>
-                      )}
-                      {accountCreated && (
-                        <div className="mt-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-                          Staff account created successfully for <span className="font-semibold">{formData.emailId}</span>.
-                        </div>
-                      )}
-                    </div>
+                    {/* Auth creation feedback (only when opted-in and creating new) */}
+                    {!editingId && createLoginAccount && (
+                      <div className="md:col-span-2">
+                        {authError && (
+                          <p className="mt-2 text-sm text-red-600">{authError}</p>
+                        )}
+                        {accountCreated && (
+                          <div className="mt-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+                            Staff account created successfully for <span className="font-semibold">{formData.emailId}</span>.
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 

@@ -76,6 +76,8 @@ const MultiServiceSelector = ({
     } catch (error) {
       console.error('Error submitting extra services:', error)
     } finally {
+      // Always close the edit box so the overlay never traps clicks
+      closeEditBox(false)
       setIsSubmitting(false)
     }
   }
@@ -92,16 +94,6 @@ const MultiServiceSelector = ({
       setfilterdService(filteredService)
     }
   }, [service, data])
-
-  // Close dialog when submission completes successfully
-  useEffect(() => {
-    if (!loadingCreate && isSubmitting && !errorCreate) {
-      setTimeout(() => {
-        closeEditBox(false)
-        setIsSubmitting(false)
-      }, 100) // Small delay to ensure state updates
-    }
-  }, [loadingCreate, isSubmitting, errorCreate, closeEditBox])
 
   if (loading) {
     return (
@@ -315,6 +307,7 @@ const MultiServiceSelector = ({
               )}
               <div className="mt-4">
                 <button
+                  type="button"
                   onClick={handleSubmit}
                   disabled={loadingCreate || isSubmitting}
                   className={`w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg flex items-center gap-2 justify-center ${
