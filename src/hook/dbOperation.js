@@ -785,6 +785,43 @@ export const useGetSelectedExtraServiceDataForTransactionHistory = () => {
   return { loading, error, data }
 }
 
+// Hook to get ALL appointments history for the store
+export const useGetAllAppointmentsHistory = () => {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const { store_id } = useAppData()
+
+  const getAllAppointmentsHistory = async () => {
+    if (!store_id) {
+      console.warn('No store_id available, skipping all appointments history fetch')
+      setLoading(false)
+      return
+    }
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('appointment')
+        .select('*')
+        .eq('store_id', store_id)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      setData(data)
+    } catch (err) {
+      console.error('Error fetching all appointments history:', err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    getAllAppointmentsHistory()
+  }, [store_id])
+
+  return { loading, error, data, refetch: getAllAppointmentsHistory }
+}
+
 // getting the promoCard section
 
 export const useGetPromoCardData = () => {

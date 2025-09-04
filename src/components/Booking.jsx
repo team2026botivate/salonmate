@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   useGetallAppointmentData,
   useUpdateAppointmentById,
+  useGetAllAppointmentsHistory,
 } from '../hook/dbOperation.js'
 import BookingForm from './Booking/BookingForm'
 import BookingHistoryModal from './Booking/BookingHistoryModal'
@@ -178,36 +179,13 @@ const Booking = ({ hideHistoryButton = false }) => {
     )
   }, [appointments, uiState.searchTerm])
 
+  const { data: allHistoryAppointments, loading: historyLoading, error: historyError } = useGetAllAppointmentsHistory()
+
   const filteredHistoryAppointments = useMemo(() => {
-    let baseAppointments = dataState.allAppointments
+    let baseAppointments = allHistoryAppointments || []
 
-    // Filter by staff if staff user
-    if (isStaff) {
-      const staffHeader = dataState.tableHeaders.find(
-        (h) =>
-          h.label.toLowerCase().includes('staff') &&
-          h.label.toLowerCase().includes('name')
-      )
-      if (staffHeader) {
-        baseAppointments = baseAppointments.filter((appointment) => {
-          const staffName = (appointment[staffHeader.id] || '')
-            .toString()
-            .trim()
-            .toLowerCase()
-          const userStaffName = (user.staffName || '')
-            .toString()
-            .trim()
-            .toLowerCase()
-          return (
-            staffName === userStaffName ||
-            staffName.includes(userStaffName) ||
-            userStaffName.includes(staffName)
-          )
-        })
-      }
-    }
-
-    // Filter by search term
+    // Show ALL appointments for history modal (no staff filtering for history)
+    // Filter by search term only
     if (!uiState.historySearchTerm) return baseAppointments
 
     return baseAppointments.filter((appointment) =>
@@ -218,13 +196,20 @@ const Booking = ({ hideHistoryButton = false }) => {
           .includes(uiState.historySearchTerm.toLowerCase())
       )
     )
-  }, [
-    dataState.allAppointments,
-    dataState.tableHeaders,
-    uiState.historySearchTerm,
-    isStaff,
-    user,
-  ])
+  }, [allHistoryAppointments, uiState.historySearchTerm])
+
+  // Create table headers from appointment data for history modal
+  const historyTableHeaders = useMemo(() => {
+    if (!allHistoryAppointments || allHistoryAppointments.length === 0) return []
+    
+    const sampleAppointment = allHistoryAppointments[0]
+    return Object.keys(sampleAppointment)
+      .filter(key => !key.startsWith('_') && key !== 'id' && key !== 'store_id')
+      .map(key => ({
+        id: key,
+        label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+      }))
+  }, [allHistoryAppointments])
 
   // Utility functions
   const getStaffNumberByName = useCallback(
@@ -428,12 +413,8 @@ const Booking = ({ hideHistoryButton = false }) => {
         const formData = new FormData()
         formData.append('rowData', JSON.stringify(rowData))
 
-        const response = await fetch(sheetConfig.scriptUrl, {
-          method: 'POST',
-          body: formData,
-        })
+        
 
-        if (!response.ok) throw new Error('Failed to submit appointment')
 
         const newAppointmentWithId = {
           ...formattedAppointment,
@@ -776,12 +757,14 @@ const Booking = ({ hideHistoryButton = false }) => {
         <BookingHistoryModal
           show={uiState.showHistoryModal}
           onClose={() => updateUiState({ showHistoryModal: false })}
-          tableHeaders={dataState.tableHeaders}
+          tableHeaders={historyTableHeaders}
           filteredHistoryAppointments={filteredHistoryAppointments}
           historySearchTerm={uiState.historySearchTerm}
           setHistorySearchTerm={(term) =>
             updateUiState({ historySearchTerm: term })
           }
+          loading={historyLoading}
+          error={historyError}
         />
 
         <AnimatePresence>
