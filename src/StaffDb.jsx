@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useStaffInfo } from './hook/dbOperation'
+import { useCreateStaff, useStaffInfo } from './hook/dbOperation'
 import {
   Users,
   Plus,
@@ -19,6 +19,7 @@ import {
   SortDesc,
   Eye,
   EyeOff,
+  Lock,
 } from 'lucide-react'
 
 const StaffDatabase = () => {
@@ -35,14 +36,23 @@ const StaffDatabase = () => {
 
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const [currentStep, setCurrentStep] = useState(1) // Multi-step state
   const [searchTerm, setSearchTerm] = useState('')
   const [sortField, setSortField] = useState('created_at')
   const [sortDirection, setSortDirection] = useState('desc')
   const [statusFilter, setStatusFilter] = useState('all')
   const [showDeleted, setShowDeleted] = useState(false)
 
+  const { createStaff, loading: staffCreationLoading } = useCreateStaff()
+
+  // Auth creation state (Step 1 -> Supabase Auth)
+  const [accountCreated, setAccountCreated] = useState(false)
+  const [authUserId, setAuthUserId] = useState(null)
+  const [authError, setAuthError] = useState(null)
+
   const [formData, setFormData] = useState({
     staffName: '',
+    password: '',
     mobileNumber: '',
     emailId: '',
     position: '',
@@ -50,10 +60,16 @@ const StaffDatabase = () => {
     joiningDate: '',
     status: 'Active',
     deleteFlag: false,
+    // New fields for staff_info schema
+    baseSalary: '',
+    commissionRate: 10,
+    commissionType: 'percentage',
+    staffCustomId: '',
   })
 
   const [errors, setErrors] = useState({})
 
+  //todo ye data staff se ayega
   const positions = [
     'Hair Stylist',
     'Nail Technician',
@@ -75,17 +91,22 @@ const StaffDatabase = () => {
     'Bank Passbook',
   ]
 
+  const totalSteps = 2
+
   // Load from DB on mount
   useEffect(() => {
     fetchStaff()
   }, [fetchStaff])
 
-  // Validation
-  const validateForm = () => {
+  // Validation for Step 1 (Basic Info)
+  const validateStep1 = () => {
     const newErrors = {}
 
     if (!formData.staffName.trim()) {
       newErrors.staffName = 'Staff name is required'
+    }
+    if (!formData.password || formData.password.length < 6) {
+      newErrors.password = 'Password is required (min 6 characters)'
     }
 
     if (!formData.mobileNumber.trim()) {
@@ -104,6 +125,14 @@ const StaffDatabase = () => {
       newErrors.position = 'Position is required'
     }
 
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  // Validation for Step 2 (Additional Info)
+  const validateStep2 = () => {
+    const newErrors = {}
+
     if (formData.idProof.length === 0) {
       newErrors.idProof = 'At least one ID proof is required'
     }
@@ -116,19 +145,104 @@ const StaffDatabase = () => {
     return Object.keys(newErrors).length === 0
   }
 
+  // Check if current step is valid
+  const isCurrentStepValid = () => {
+    if (currentStep === 1) {
+      return (
+        formData.staffName.trim() &&
+        formData.mobileNumber.trim() &&
+        /^\d{10}$/.test(formData.mobileNumber) &&
+        formData.emailId.trim() &&
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailId) &&
+        formData.position.trim()
+      )
+    } else if (currentStep === 2) {
+      return formData.idProof.length > 0 && formData.joiningDate
+    }
+    return false
+  }
+
+  // Handle next step
+  const handleNext = async () => {
+    let isValid = false
+
+    if (currentStep === 1) {
+      isValid = validateStep1()
+      if (isValid) {
+        // If editing existing staff, skip auth creation and go to step 2
+        if (editingId) {
+          setCurrentStep(2)
+          return
+        }
+        // Create Supabase Auth user if not already created
+        try {
+          setAuthError(null)
+          if (!accountCreated) {
+            const result = await createStaff({
+              email: formData.emailId,
+              password: formData.password,
+            })
+            // If sign up succeeds, proceed to step 2
+            if (result && result.user) {
+              setAuthUserId(result.user.id)
+              setAccountCreated(true)
+              setCurrentStep(2)
+              return
+            } else {
+              // If API didn't return user but no thrown error, show a generic error
+              setAuthError('Unable to create staff user. Please try again or use a different email.')
+              return
+            }
+          } else {
+            // Already created, just move forward
+            setCurrentStep(2)
+            return
+          }
+        } catch (e) {
+          setAuthError(e?.message || 'Failed to create staff user. The email may already be registered.')
+          return
+        }
+      }
+      return
+    } else if (currentStep === 2) {
+      isValid = validateStep2()
+    }
+
+    if (isValid) {
+      if (currentStep < totalSteps) {
+        setCurrentStep(currentStep + 1)
+      } else {
+        handleSubmit()
+      }
+    }
+  }
+
+  // Handle back step
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1)
+    }
+  }
+
   // Handle form submission
   const handleSubmit = async () => {
-    if (!validateForm()) return
+    if (!validateStep2()) return
 
     const payload = {
       staff_name: formData.staffName,
       mobile_number: formData.mobileNumber,
       email_id: formData.emailId,
       position: formData.position,
-      id_proof: formData.idProof, // expects text[] in DB
-      joining_date: formData.joiningDate, // expects date in DB
+      id_proof: formData.idProof,
+      joining_date: formData.joiningDate,
       status: formData.status,
-      delete_flag: formData.deleteFlag,
+      // Map new fields to DB columns
+      base_salary: formData.baseSalary ? Number(formData.baseSalary) : null,
+      commission_rate:
+        formData.commissionRate !== '' ? Number(formData.commissionRate) : 10,
+      commission_type: formData.commissionType || 'percentage',
+      // Link to created auth user (store in staff_id text column)
+      staff_id: authUserId || formData.staffCustomId || null,
     }
 
     try {
@@ -147,17 +261,25 @@ const StaffDatabase = () => {
   const resetForm = () => {
     setFormData({
       staffName: '',
+      password: '',
       mobileNumber: '',
       emailId: '',
       position: '',
       idProof: [],
       joiningDate: '',
       status: 'Active',
-      deleteFlag: false,
+      baseSalary: '',
+      commissionRate: 10,
+      commissionType: 'percentage',
+      staffCustomId: '',
     })
     setErrors({})
     setShowForm(false)
     setEditingId(null)
+    setCurrentStep(2) // Reset to first step
+    setAccountCreated(false)
+    setAuthUserId(null)
+    setAuthError(null)
   }
 
   // Handle edit
@@ -173,6 +295,7 @@ const StaffDatabase = () => {
       deleteFlag: record.delete_flag,
     })
     setEditingId(record.id)
+    setCurrentStep(1) // Start from first step when editing
     setShowForm(true)
   }
 
@@ -308,7 +431,6 @@ const StaffDatabase = () => {
             Manage your salon staff records efficiently
           </p>
         </div>
-
         {/* Controls */}
         <div className="mb-8 rounded-2xl bg-white p-6 shadow-lg">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -367,8 +489,7 @@ const StaffDatabase = () => {
             </button>
           </div>
         </div>
-
-        {/* Form Modal */}
+        {/* Multi-Step Form Modal create new staff */}
         {showForm && (
           <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
             <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
@@ -385,233 +506,333 @@ const StaffDatabase = () => {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  {/* Staff Name */}
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                      <User className="mr-1 inline h-4 w-4" />
-                      Staff Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.staffName}
-                      onChange={(e) =>
-                        setFormData({ ...formData, staffName: e.target.value })
-                      }
-                      className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
-                        errors.staffName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Enter staff name"
-                    />
-                    {errors.staffName && (
-                      <p className="mt-1 text-xs text-red-500">
-                        {errors.staffName}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Mobile Number */}
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                      <Phone className="mr-1 inline h-4 w-4" />
-                      Mobile Number *
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.mobileNumber}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          mobileNumber: e.target.value
-                            .replace(/\D/g, '')
-                            .slice(0, 10),
-                        })
-                      }
-                      className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
-                        errors.mobileNumber
-                          ? 'border-red-500'
-                          : 'border-gray-300'
-                      }`}
-                      placeholder="Enter 10-digit mobile number"
-                    />
-                    {errors.mobileNumber && (
-                      <p className="mt-1 text-xs text-red-500">
-                        {errors.mobileNumber}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Email ID */}
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                      <Mail className="mr-1 inline h-4 w-4" />
-                      Email ID *
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.emailId}
-                      onChange={(e) =>
-                        setFormData({ ...formData, emailId: e.target.value })
-                      }
-                      className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
-                        errors.emailId ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Enter email address"
-                    />
-                    {errors.emailId && (
-                      <p className="mt-1 text-xs text-red-500">
-                        {errors.emailId}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Position */}
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                      <Building className="mr-1 inline h-4 w-4" />
-                      Position *
-                    </label>
-                    <select
-                      value={formData.position}
-                      onChange={(e) =>
-                        setFormData({ ...formData, position: e.target.value })
-                      }
-                      className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
-                        errors.position ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Select Position</option>
-                      {positions.map((position) => (
-                        <option key={position} value={position}>
-                          {position}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.position && (
-                      <p className="mt-1 text-xs text-red-500">
-                        {errors.position}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Joining Date */}
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                      <Calendar className="mr-1 inline h-4 w-4" />
-                      Joining Date *
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.joiningDate}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          joiningDate: e.target.value,
-                        })
-                      }
-                      className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
-                        errors.joiningDate
-                          ? 'border-red-500'
-                          : 'border-gray-300'
-                      }`}
-                    />
-                    {errors.joiningDate && (
-                      <p className="mt-1 text-xs text-red-500">
-                        {errors.joiningDate}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Status */}
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                      Status
-                    </label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) =>
-                        setFormData({ ...formData, status: e.target.value })
-                      }
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="Active">Active</option>
-                      <option value="busy">busy</option>
-                      <option value="Half Day">Half Day</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* ID Proof */}
-                <div className="mt-6">
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    <Shield className="mr-1 inline h-4 w-4" />
-                    ID Proof * (Select multiple)
-                  </label>
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                    {idProofOptions.map((proof) => (
-                      <label
-                        key={proof}
-                        className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 p-3 hover:bg-gray-50"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.idProof.includes(proof)}
-                          onChange={() => handleIdProofChange(proof)}
-                          className="rounded"
-                        />
-                        <span className="text-sm text-gray-700">{proof}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {errors.idProof && (
-                    <p className="mt-1 text-xs text-red-500">
-                      {errors.idProof}
-                    </p>
-                  )}
-                </div>
-
-                {/* Delete Flag */}
-                <div className="mt-6">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.deleteFlag}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          deleteFlag: e.target.checked,
-                        })
-                      }
-                      className="rounded"
-                    />
-                    <span className="text-sm text-gray-700">
-                      Mark as deleted
+                {/* Progress Indicator */}
+                <div className="mb-6">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs font-medium text-blue-600">
+                      Step {currentStep} of {totalSteps}
                     </span>
-                  </label>
+                    <span className="text-xs text-gray-500">
+                      {currentStep === 1
+                        ? 'Basic Information'
+                        : 'Additional Details'}
+                    </span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-gray-200">
+                    <div
+                      className="h-2 rounded-full bg-blue-600 transition-all duration-300 ease-out"
+                      style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+                    ></div>
+                  </div>
                 </div>
+
+                {/* Step 1: Basic Information */}
+                {currentStep === 1 && (
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    {/* Staff Name */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        <User className="mr-1 inline h-4 w-4" />
+                        Staff Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.staffName}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            staffName: e.target.value,
+                          })
+                        }
+                        className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
+                          errors.staffName
+                            ? 'border-red-500'
+                            : 'border-gray-300'
+                        }`}
+                        placeholder="Enter staff name"
+                      />
+                      {errors.staffName && (
+                        <p className="mt-1 text-xs text-red-500">
+                          {errors.staffName}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Password */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        <Lock className="mr-1 inline h-4 w-4" />
+                        Password *
+                      </label>
+                      <input
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
+                        className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
+                          errors.password ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter a password (min 6 characters)"
+                        autoComplete="new-password"
+                      />
+                      {errors.password && (
+                        <p className="mt-1 text-xs text-red-500">{errors.password}</p>
+                      )}
+                    </div>
+
+                    {/* Mobile Number */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        <Phone className="mr-1 inline h-4 w-4" />
+                        Mobile Number *
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.mobileNumber}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            mobileNumber: e.target.value
+                              .replace(/\D/g, '')
+                              .slice(0, 10),
+                          })
+                        }
+                        className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
+                          errors.mobileNumber
+                            ? 'border-red-500'
+                            : 'border-gray-300'
+                        }`}
+                        placeholder="Enter 10-digit mobile number"
+                      />
+                      {errors.mobileNumber && (
+                        <p className="mt-1 text-xs text-red-500">
+                          {errors.mobileNumber}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Email ID */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        <Mail className="mr-1 inline h-4 w-4" />
+                        Email ID *
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.emailId}
+                        onChange={(e) =>
+                          setFormData({ ...formData, emailId: e.target.value })
+                        }
+                        className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
+                          errors.emailId ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter email address"
+                      />
+                      {errors.emailId && (
+                        <p className="mt-1 text-xs text-red-500">
+                          {errors.emailId}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Position */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        <Building className="mr-1 inline h-4 w-4" />
+                        Position *
+                      </label>
+                      <select
+                        value={formData.position}
+                        onChange={(e) =>
+                          setFormData({ ...formData, position: e.target.value })
+                        }
+                        className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
+                          errors.position ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">Select Position</option>
+                        {positions.map((position) => (
+                          <option key={position} value={position}>
+                            {position}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.position && (
+                        <p className="mt-1 text-xs text-red-500">
+                          {errors.position}
+                        </p>
+                      )}
+                    </div>
+                    {/* Auth creation feedback */}
+                    <div className="md:col-span-2">
+                      {authError && (
+                        <p className="mt-2 text-sm text-red-600">{authError}</p>
+                      )}
+                      {accountCreated && (
+                        <div className="mt-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+                          Staff account created successfully for <span className="font-semibold">{formData.emailId}</span>.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 2: Additional Details */}
+                {currentStep === 2 && (
+                  <div>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                      {/* Joining Date */}
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                          <Calendar className="mr-1 inline h-4 w-4" />
+                          Joining Date *
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.joiningDate}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              joiningDate: e.target.value,
+                            })
+                          }
+                          className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
+                            errors.joiningDate
+                              ? 'border-red-500'
+                              : 'border-gray-300'
+                          }`}
+                        />
+                        {errors.joiningDate && (
+                          <p className="mt-1 text-xs text-red-500">
+                            {errors.joiningDate}
+                          </p>
+                        )}
+                      </div>
+                      {/* Base Salary */}
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                          Base Salary
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={formData.baseSalary}
+                          onChange={(e) =>
+                            setFormData({ ...formData, baseSalary: e.target.value })
+                          }
+                          className="w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g. 20000"
+                        />
+                      </div>
+                      {/* Commission Rate */}
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                          Commission Rate
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.commissionRate}
+                          onChange={(e) =>
+                            setFormData({ ...formData, commissionRate: e.target.value })
+                          }
+                          className="w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g. 10"
+                        />
+                      </div>
+                      {/* Commission Type */}
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                          Commission Type
+                        </label>
+                        <select
+                          value={formData.commissionType}
+                          onChange={(e) =>
+                            setFormData({ ...formData, commissionType: e.target.value })
+                          }
+                          className="w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="percentage">Percentage</option>
+                          <option value="fixed">Fixed</option>
+                        </select>
+                      </div>
+                      
+                    </div>
+
+                    {/* ID Proof */}
+                    <div className="mt-6">
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        <Shield className="mr-1 inline h-4 w-4" />
+                        ID Proof * (Select multiple)
+                      </label>
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                        {idProofOptions.map((proof) => (
+                          <label
+                            key={proof}
+                            className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 p-3 hover:bg-gray-50"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formData.idProof.includes(proof)}
+                              onChange={() => handleIdProofChange(proof)}
+                              className="rounded"
+                            />
+                            <span className="text-sm text-gray-700">
+                              {proof}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                      {errors.idProof && (
+                        <p className="mt-1 text-xs text-red-500">
+                          {errors.idProof}
+                        </p>
+                      )}
+                    </div>
+
+                   
+                  
+                  </div>
+                )}
 
                 {/* Form Actions */}
-                <div className="mt-8 flex gap-4">
+                <div className="mt-8 flex justify-between border-t border-gray-200 pt-6">
                   <button
-                    onClick={handleSubmit}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700"
-                  >
-                    <Save className="h-4 w-4" />
-                    {editingId ? 'Update Staff' : 'Add Staff'}
-                  </button>
-                  <button
-                    onClick={resetForm}
+                    type="button"
+                    onClick={currentStep === 1 ? resetForm : handleBack}
                     className="rounded-lg border border-gray-300 px-6 py-3 text-gray-700 transition-colors hover:bg-gray-50"
                   >
-                    Cancel
+                    {currentStep === 1 ? 'Cancel' : 'Back'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={staffCreationLoading}
+                    className={`rounded-lg px-8 py-3 font-medium transition-colors ${
+                      staffCreationLoading
+                        ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                        : isCurrentStepValid()
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-blue-400 text-white hover:bg-blue-500'
+                    }`}
+                  >
+                    {staffCreationLoading
+                      ? 'Creating account...'
+                      : currentStep === totalSteps
+                      ? editingId
+                        ? 'Update Staff'
+                        : 'Add Staff'
+                      : 'Next Step'}
                   </button>
                 </div>
               </div>
             </div>
           </div>
         )}
-
-        {/* Table */}
+        {/* Table - Rest of your existing table code remains exactly the same */}
         {loading ? (
           <div className="animate-pulse overflow-hidden rounded-2xl bg-white shadow-lg">
             {/* Header */}

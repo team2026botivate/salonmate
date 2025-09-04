@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/Context/AuthContext'
-import { checkLicense } from '@/utils/chekcLicence'
+import { checkLicenseByStoreId } from '@/utils/chekcLicence'
 import { useNavigate, Outlet } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useLicense } from '@/zustand/license'
 import { X } from 'lucide-react'
+import { useAppData } from '@/zustand/appData'
 
 // Reusable UI to show license inactive/expired notice
 export const LicenseNotice = ({ reason = 'Your license is not active', onClose }) => {
@@ -38,12 +39,16 @@ const LicenseGuard = ({ children }) => {
   const { licenseData, setLicenseData } = useLicense((state) => state)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+  const storeIdFromState = useAppData((state) => state.store_id)
 
   useEffect(() => {
     const checkUserLicense = async () => {
-      if (user?.id) {
+      // Prefer store_id from Zustand, fallback to user.profile.store_id
+      const effectiveStoreId = storeIdFromState || user?.profile?.store_id
+
+      if (effectiveStoreId) {
         try {
-          const data = await checkLicense(user.id)
+          const data = await checkLicenseByStoreId(effectiveStoreId)
           setLicenseData(data)
 
           if (!data.active) {
@@ -58,12 +63,13 @@ const LicenseGuard = ({ children }) => {
           setLoading(false)
         }
       } else {
+        // If we don't have a store id yet, don't block; allow app to proceed
         setLoading(false)
       }
     }
 
     checkUserLicense()
-  }, [user])
+  }, [user, storeIdFromState])
 
   // Show loading while checking license
   if (loading) {

@@ -30,6 +30,7 @@ const StaffPaymentSection = () => {
   const { updatePaymentStatus, loading: updateLoading } =
     useUpdateStaffPaymentStatus()
 
+    console.log(staffData,"staffData")
   // State management
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')

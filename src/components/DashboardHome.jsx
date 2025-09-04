@@ -129,7 +129,7 @@ const HeroBanner = ({ isLoading }) => {
 };
 
 // Data Table Component
-const DataTable = ({ title, data, columns, isLoading, delay }) => {
+const DataTable = ({ title, data, columns, isLoading, delay, onViewAll }) => {
   if (isLoading) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
@@ -160,6 +160,7 @@ const DataTable = ({ title, data, columns, isLoading, delay }) => {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
         <motion.button
+          onClick={onViewAll}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1 text-sm"
@@ -258,6 +259,8 @@ const DashboardHome = ({ isAdmin, setActiveTab }) => {
   const { data: recentBookings, loading: bookingsLoading, error: bookingsError } = useRecentBookings();
   const { data: recentTransactions, loading: transactionsLoading, error: transactionsError } = useRecentTransactions();
 
+
+  console.log(recentTransactions,"recent transation ")
   // Combined loading state
   const isLoading = summaryLoading || bookingsLoading || transactionsLoading;
   
@@ -414,6 +417,7 @@ const DashboardHome = ({ isAdmin, setActiveTab }) => {
             columns={bookingColumns}
             isLoading={isLoading}
             delay={0.5}
+            onViewAll={() => setActiveTab && setActiveTab('booking')}
           />
           
           <DataTable
@@ -422,6 +426,7 @@ const DashboardHome = ({ isAdmin, setActiveTab }) => {
             columns={transactionColumns}
             isLoading={isLoading}
             delay={0.6}
+            onViewAll={() => setActiveTab && setActiveTab('appointmentHistory')}
           />
         </div>
       </div>

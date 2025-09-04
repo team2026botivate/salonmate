@@ -459,7 +459,7 @@ Add audit logs & soft-delete.
 
 16) Quick examples — protect endpoints (Node/Express pseudo)
 // middleware
-function authMiddleware(req, res, next) {
+function authMiddleware(req, res, next) 
   const token = req.headers.authorization?.split(' ')[1];
   const payload = verifyJwt(token); // contains user_id, shop_id, role, staff_id
   req.user = payload;
@@ -497,3 +497,36 @@ ek migration SQL bana ke de sakta hoon jo shop_id add kare aur constraints lagay
 ya ek sample Express/Next.js middleware + Prisma model file bana ke de doon.
 
 Kaunsa chahiye? (main seedha bana ke dedunga — batao migration chahiye ya backend middleware + prisma models? )
+
+
+
+
+
+
+
+
+
+
+
+
+date --> 3/9/2025
+
+
+
+add appointment is not working ✅
+
+transatoin page me desktop me scroll nhi dikhna chaiye 
+but mobile me nhi hai 
+
+
+running appointment me stuck ho jaa rha hai page 
+
+
+todo likho staffDb.jsx me waha position data db se ayega
+
+
+check the staff payment page waha jo mobile me jaisa card dikh rha hai 
+waise same krna hai 
+pure website me jaha jaha table hai 
+
+

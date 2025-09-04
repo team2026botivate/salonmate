@@ -16,6 +16,8 @@ import { exportToCSV, formatCurrency, formatDate } from '../../utils/formatter';
 
 
 export const ServicesTable = ({
+  
+
   services,
   onToggleDelete,
   onDeletePermanently
@@ -29,6 +31,8 @@ export const ServicesTable = ({
   
   const itemsPerPage = 10;
 
+
+  console.log(services,"servicesjkkkk")
   // Filter and search services
   const filteredServices = services.filter(service => {
     const matchesSearch = service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -69,6 +73,8 @@ export const ServicesTable = ({
     currentPage * itemsPerPage
   );
 
+  console.log(paginatedServices,"service")
+
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -81,7 +87,7 @@ export const ServicesTable = ({
   const handleExport = () => {
     const exportData = filteredServices.map(service => ({
       ...service,
-      price: formatCurrency(service.price).replace('$', '')
+      price: formatCurrency(service.price).replace('₹', '')
     }));
     exportToCSV(exportData, `services-${new Date().toISOString().split('T')[0]}.csv`);
   };

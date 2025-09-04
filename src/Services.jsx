@@ -19,13 +19,16 @@ import {
   const { toggleDelete, loading: toggleLoading } = useToggleServiceDelete();
   const { deleteService, loading: deleteLoading } = useDeleteService();
 
+  
+
+  console.log(rawServices,"rawServices")
   // Transform Supabase data to match UI format
   const services = rawServices.map(service => ({
     id: service.id,
     name: service.service_name,
     duration: service.time_duration,
     price: service.base_price,
-    description: service.service_description,
+    description: service.description,
     isDeleted: service.delete_flag,
     createdAt: new Date(service.created_at)
   }));

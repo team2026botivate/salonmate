@@ -18,8 +18,8 @@ const ProfileHeader = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Left side - Logo and Navigation */}
-          <div className="flex items-center space-x-8">
-            <div className="flex items-center">
+          <div className="flex items-center space-x-8 flex-row-reverse gap-5">
+            <div className="sm:flex items-centern hidden">
               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
                 <User size={18} className="text-white" />
               </div>
@@ -28,9 +28,9 @@ const ProfileHeader = ({
             
             <button
               onClick={onGoBack}
-              className="flex items-center text-gray-500 hover:text-gray-700 transition-colors text-sm font-medium"
+              className="flex  items-center group hover:cursor-pointer  text-gray-800 hover:text-black transition-colors text-sm font-medium"
             >
-              <ArrowLeft size={16} className="mr-2" />
+              <ArrowLeft size={16} className="mr-2 group-hover:text-black group-hover:-translate-x-1 group-hover:scale-125  transition-transform duration-150" />
               Dashboard
             </button>
           </div>

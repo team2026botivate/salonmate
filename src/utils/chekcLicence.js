@@ -1,13 +1,15 @@
 import supabase from '@/dataBase/connectdb'
+import { useAppData } from '@/zustand/appData'
 
 // Check license status for a user
 export const checkLicense = async (userId) => {
+  
   try {
     const { data, error } = await supabase
       .from('licenses')
       .select('*')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
 
     if (error) {
       console.error('License check error:', error)
@@ -15,6 +17,21 @@ export const checkLicense = async (userId) => {
         active: false,
         reason: 'License not found',
         error: error.message,
+      }
+    }
+
+    // No row found -> inactive license without throwing
+    if (!data) {
+      return {
+        active: false,
+        expired: true,
+        licenseType: null,
+        status: 'inactive',
+        license: null,
+        daysRemaining: 0,
+        expiryDate: null,
+        startDate: null,
+        reason: 'License not found',
       }
     }
 
@@ -47,6 +64,62 @@ export const checkLicense = async (userId) => {
   }
 }
 
+// Check license status for a shop/store by store_id
+export const checkLicenseByStoreId = async (storeId) => {
+  try {
+    const { data, error } = await supabase
+      .from('licenses')
+      .select('*')
+      .eq('store_id', storeId)
+      .maybeSingle()
+
+    if (error) {
+      console.error('License check by store_id error:', error)
+      return {
+        active: false,
+        reason: 'License not found',
+        error: error.message,
+      }
+    }
+
+    if (!data) {
+      return {
+        active: false,
+        expired: true,
+        licenseType: null,
+        status: 'inactive',
+        license: null,
+        daysRemaining: 0,
+        expiryDate: null,
+        startDate: null,
+        reason: 'License not found',
+      }
+    }
+
+    const now = new Date()
+    const expiryDate = new Date(data.trial_end)
+    const isExpired = now > expiryDate
+    const daysRemaining = Math.ceil(
+      (expiryDate.getTime() - now.getTime()) / (1000 * 3600 * 24)
+    )
+
+    return {
+      active: data.is_active && !isExpired,
+      expired: isExpired,
+      licenseType: data.plan,
+      status: data.is_active ? 'active' : 'inactive',
+      license: data,
+      daysRemaining,
+      expiryDate: expiryDate.toISOString(),
+      startDate: data.trial_start,
+      reason: isExpired ? `${data.plan} license expired` : null,
+    }
+  } catch (err) {
+    console.error('License check by store_id failed:', err)
+    return { active: false, reason: 'License check failed', error: err.message }
+  }
+}
+
 // Get license data for a user
 export const getLicenseData = async (userId) => {
   try {
@@ -54,7 +127,7 @@ export const getLicenseData = async (userId) => {
       .from('licenses')
       .select('*')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
 
     if (error) {
       console.error('Get license data error:', error)
@@ -69,7 +142,16 @@ export const getLicenseData = async (userId) => {
 }
 
 // Create trial license for new user
-export const createTrialLicense = async (userId) => {
+export const createTrialLicense = async (userId, storeId) => {
+  // Access Zustand store outside React components via getState() if storeId not provided
+  const { store_id: stateStoreId } = useAppData.getState()
+
+  const finalStoreId = storeId || stateStoreId
+  if (!finalStoreId) {
+    console.error('Create trial license error: Missing store_id (no param and no Zustand value)')
+    return null
+  }
+
   try {
     const startDate = new Date()
     const endDate = new Date()
@@ -83,6 +165,7 @@ export const createTrialLicense = async (userId) => {
         trial_start: startDate.toISOString(),
         trial_end: endDate.toISOString(),
         is_active: true,
+        store_id: finalStoreId,
       })
       .select()
       .single()
@@ -177,3 +260,8 @@ export const updateExpiredLicenses = async () => {
 
 // Legacy export for backward compatibility
 export const checkLicence = checkLicense
+
+
+
+
+

@@ -365,6 +365,7 @@ const AddNewAppointment = ({
               }`}
               disabled={servicesLoading}
             >
+              <option value="">Select Service</option>
               {serviceslist?.map((service) => (
                 <option
                   className="rounded-md bg-white"
