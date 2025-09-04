@@ -164,12 +164,55 @@ const AddNewAppointment = ({
   //   return Object.keys(newErrors).length === 0;
   // };
 
+  // Check if selected date allows staff selection (today or tomorrow only)
+  const isStaffSelectionAllowed = () => {
+    if (!formData.slotDate) return false
+    
+    const selectedDate = new Date(formData.slotDate)
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(today.getDate() + 1)
+    
+    // Reset time to compare only dates
+    selectedDate.setHours(0, 0, 0, 0)
+    today.setHours(0, 0, 0, 0)
+    tomorrow.setHours(0, 0, 0, 0)
+    
+    return selectedDate.getTime() === today.getTime() || selectedDate.getTime() === tomorrow.getTime()
+  }
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }))
+    
+    // Clear staff selection if date is changed to future date
+    if (name === 'slotDate') {
+      const selectedDate = new Date(value)
+      const today = new Date()
+      const tomorrow = new Date(today)
+      tomorrow.setDate(today.getDate() + 1)
+      
+      selectedDate.setHours(0, 0, 0, 0)
+      today.setHours(0, 0, 0, 0)
+      tomorrow.setHours(0, 0, 0, 0)
+      
+      const isAllowed = selectedDate.getTime() === today.getTime() || selectedDate.getTime() === tomorrow.getTime()
+      
+      if (!isAllowed) {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: value,
+          staffName: '',
+          staffNumber: '',
+          id: '',
+          staffStatus: '',
+        }))
+        return
+      }
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -312,20 +355,29 @@ const AddNewAppointment = ({
             </label>
             <select
               name="staffName"
-              // disabled={loading || updatingStaff}
+              disabled={!isStaffSelectionAllowed() || loading}
               type="text"
               value={formData.staffName}
-            
               onChange={handleChange}
-              className={`w-full rounded-lg border border-gray-300 px-4 py-3 transition-all ${
-                errors.staffName ? 'border-red-300' : 'border-gray-300'
+              className={`w-full rounded-lg border px-4 py-3 transition-all ${
+                !isStaffSelectionAllowed() 
+                  ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  : errors.staffName 
+                    ? 'border-red-300' 
+                    : 'border-gray-300'
               }`}
             >
-              {loading && <option disabled>Loading staff...</option>}
-              {!loading && data.length === 0 && (
+              <option value="">
+                {!isStaffSelectionAllowed() 
+                  ? "Staff selection only available for today and tomorrow" 
+                  : "Select Staff (Optional)"
+                }
+              </option>
+              {isStaffSelectionAllowed() && loading && <option disabled>Loading staff...</option>}
+              {isStaffSelectionAllowed() && !loading && data.length === 0 && (
                 <option disabled>No staff found</option>
               )}
-              {!loading &&
+              {isStaffSelectionAllowed() && !loading &&
                 data.map((staff) => (
                   <option
                     className="flex items-center justify-between rounded-md bg-white"

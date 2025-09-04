@@ -230,26 +230,16 @@ const StaffAttendance = () => {
                   />
                 </div>
 
-                <button
-                  onClick={fetchAttendance}
-                  disabled={loading}
-                  className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4" />
-                  )}
-                  Refresh
-                </button>
+              
               </div>
 
               <button
                 onClick={markAllPresent}
                 className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white transition-colors hover:bg-green-700"
               >
-                <CheckCircle className="h-4 w-4" />
-                Mark All Present
+                <CheckCircle className="h-4 w-4  " />
+
+                <span className='text-nowrap'>Mark All Present</span>
               </button>
             </div>
           </div>
