@@ -3,7 +3,11 @@ import supabase from '@/dataBase/connectdb'
 import { useCreateShopId } from '@/hook/dbOperation'
 import { useAppData } from '@/zustand/appData'
 // eslint-disable-next-line no-unused-vars
-import { checkLicense, checkLicenseByStoreId, createTrialLicense } from '@/utils/chekcLicence'
+import {
+  checkLicense,
+  checkLicenseByStoreId,
+  createTrialLicense,
+} from '@/utils/chekcLicence'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Chrome,
@@ -60,7 +64,6 @@ const AuthPage = () => {
   const [shopCreationLoading, setShopCreationLoading] = useState(false)
   const [shopId, setShopId] = useState(null)
   const [isRegistrationComplete, setIsRegistrationComplete] = useState(false)
-
 
   const signupSteps = ['Shop Details', 'Admin Setup']
   const totalSignupSteps = signupSteps.length
@@ -498,16 +501,16 @@ const AuthPage = () => {
   if (isRegistrationComplete) {
     return (
       <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="flex flex-1 items-center justify-center p-8 lg:p-12">
+        <div className="flex items-center justify-center flex-1 p-8 lg:p-12">
           <motion.div
             className="w-full max-w-md"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="rounded-2xl bg-white p-8 text-center shadow-xl">
-              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+            <div className="p-8 text-center bg-white shadow-xl rounded-2xl">
+              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-green-100 rounded-full">
+                <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
               <h2 className="mb-4 text-2xl font-bold text-gray-900">
                 Registration Complete!
@@ -522,13 +525,13 @@ const AuthPage = () => {
                     setIsSignIn(true)
                     resetRegistration()
                   }}
-                  className="w-full rounded-lg bg-indigo-600 px-6 py-3 font-medium text-white transition-colors duration-200 hover:bg-indigo-700"
+                  className="w-full px-6 py-3 font-medium text-white transition-colors duration-200 bg-indigo-600 rounded-lg hover:bg-indigo-700"
                 >
                   Go to Sign In
                 </button>
                 <button
                   onClick={resetRegistration}
-                  className="w-full rounded-lg bg-gray-200 px-6 py-3 font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-300"
+                  className="w-full px-6 py-3 font-medium text-gray-700 transition-colors duration-200 bg-gray-200 rounded-lg hover:bg-gray-300"
                 >
                   Register Another Shop
                 </button>
@@ -539,13 +542,13 @@ const AuthPage = () => {
 
         {/* Right Panel - Image Section */}
         <motion.div
-          className="relative hidden flex-1 bg-gradient-to-br from-indigo-900 to-purple-900 lg:flex"
+          className="relative flex-1 hidden bg-gradient-to-br from-indigo-900 to-purple-900 lg:flex"
           initial={{ opacity: 0, scale: 1.05 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8 }}
         >
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            className="absolute inset-0 bg-center bg-no-repeat bg-cover"
             style={{
               backgroundImage: `url('https://images.pexels.com/photos/3993449/pexels-photo-3993449.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')`,
             }}
@@ -573,7 +576,7 @@ const AuthPage = () => {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Left Panel - Form Section */}
-      <div className="flex flex-1 items-center justify-center p-8 lg:p-12">
+      <div className="flex items-center justify-center flex-1 p-8 lg:p-12">
         <motion.div
           className="w-full max-w-md"
           initial={{ opacity: 0, x: -20 }}
@@ -583,18 +586,18 @@ const AuthPage = () => {
           {/* Logo/Brand */}
           <div className="mb-8 text-center">
             <motion.h1
-              className="mb-2 flex items-center justify-center gap-3 text-3xl font-extrabold"
+              className="flex items-center justify-center gap-3 mb-2 text-3xl font-extrabold"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              <span className="bg-gradient-to-r from-slate-800 to-indigo-700 bg-clip-text text-transparent">
+              <span className="text-transparent bg-gradient-to-r from-slate-800 to-indigo-700 bg-clip-text">
                 SaloonMate
               </span>
               <img
                 src="/3.png"
                 alt="SaloonMate logo"
-                className="size-12 rounded-md shadow-sm ring-1 ring-slate-200/60 dark:ring-white/10"
+                className="rounded-md shadow-sm size-12 ring-1 ring-slate-200/60 dark:ring-white/10"
               />
             </motion.h1>
             <motion.p
@@ -610,7 +613,7 @@ const AuthPage = () => {
           {/* Step Indicator for Signup */}
           {!isSignIn && (
             <div className="mb-8">
-              <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 {signupSteps.map((step, index) => (
                   <div key={index} className="flex items-center">
                     <div
@@ -623,7 +626,7 @@ const AuthPage = () => {
                       } `}
                     >
                       {index + 1 < currentSignupStep ? (
-                        <CheckCircle className="h-5 w-5" />
+                        <CheckCircle className="w-5 h-5" />
                       ) : (
                         index + 1
                       )}
@@ -683,7 +686,7 @@ const AuthPage = () => {
               <div>
                 <label
                   htmlFor="email"
-                  className="mb-2 block text-sm font-medium text-slate-700"
+                  className="block mb-2 text-sm font-medium text-slate-700"
                 >
                   Email Address
                 </label>
@@ -693,7 +696,7 @@ const AuthPage = () => {
                   whileFocus="focus"
                   whileTap="tap"
                 >
-                  <Mail className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-slate-400" />
+                  <Mail className="absolute w-5 h-5 transform -translate-y-1/2 top-1/2 left-3 text-slate-400" />
                   <input
                     type="email"
                     id="email"
@@ -715,7 +718,7 @@ const AuthPage = () => {
               <div>
                 <label
                   htmlFor="password"
-                  className="mb-2 block text-sm font-medium text-slate-700"
+                  className="block mb-2 text-sm font-medium text-slate-700"
                 >
                   Password
                 </label>
@@ -725,7 +728,7 @@ const AuthPage = () => {
                   whileFocus="focus"
                   whileTap="tap"
                 >
-                  <Lock className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-slate-400" />
+                  <Lock className="absolute w-5 h-5 transform -translate-y-1/2 top-1/2 left-3 text-slate-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     id="password"
@@ -740,12 +743,12 @@ const AuthPage = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute top-1/2 right-3 -translate-y-1/2 transform text-slate-400 transition-colors hover:text-slate-600"
+                    className="absolute transition-colors transform -translate-y-1/2 top-1/2 right-3 text-slate-400 hover:text-slate-600"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
+                      <EyeOff className="w-5 h-5" />
                     ) : (
-                      <Eye className="h-5 w-5" />
+                      <Eye className="w-5 h-5" />
                     )}
                   </button>
                 </motion.div>
@@ -755,14 +758,15 @@ const AuthPage = () => {
               </div>
 
               {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between">
+              {/*todo: after some time i have to fix it */}
+              {/* <div className="flex items-center justify-between">
                 <label className="flex items-center">
                   <input
                     type="checkbox"
                     name="rememberMe"
                     checked={formData.rememberMe || false}
                     onChange={handleInputChange}
-                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
                   />
                   <span className="ml-2 text-sm text-slate-700">
                     Remember me
@@ -774,7 +778,7 @@ const AuthPage = () => {
                 >
                   Forgot password?
                 </button>
-              </div>
+              </div> */}
 
               {/* Submit Error */}
               {errors.submit && (
@@ -790,10 +794,10 @@ const AuthPage = () => {
                 whileHover="hover"
                 whileTap="tap"
                 disabled={loading}
-                className={`flex w-full items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-3 font-medium text-white transition-colors hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none ${loading ? 'cursor-not-allowed opacity-70' : ''}`}
+                className={`flex w-full items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-3 font-medium text-white transition-colors hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none ${loading ? 'cursor-not-allowed opacity-70' : ''} [background-color:#000000]`}
               >
                 {loading && (
-                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span className="w-5 h-5 border-2 border-white rounded-full animate-spin border-t-transparent" />
                 )}
                 <span>{loading ? 'Signing in...' : 'Sign In'}</span>
               </motion.button>
@@ -804,9 +808,9 @@ const AuthPage = () => {
                 variants={buttonVariants}
                 whileHover="hover"
                 whileTap="tap"
-                className="flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-3 font-medium text-slate-700 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none"
+                className="flex items-center justify-center w-full px-4 py-3 font-medium transition-colors bg-white border rounded-lg border-slate-300 text-slate-700 hover:bg-gray-50 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none"
               >
-                <Chrome className="mr-2 h-5 w-5" />
+                <Chrome className="w-5 h-5 mr-2" />
                 Sign in with Google
               </motion.button> */}
             </form>
@@ -830,7 +834,7 @@ const AuthPage = () => {
                     <div>
                       <label
                         htmlFor="shopName"
-                        className="mb-2 block text-sm font-medium text-slate-700"
+                        className="block mb-2 text-sm font-medium text-slate-700"
                       >
                         Shop Name <span className="text-red-500">*</span>
                       </label>
@@ -840,7 +844,7 @@ const AuthPage = () => {
                         whileFocus="focus"
                         whileTap="tap"
                       >
-                        <Building className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-slate-400" />
+                        <Building className="absolute w-5 h-5 transform -translate-y-1/2 top-1/2 left-3 text-slate-400" />
                         <input
                           type="text"
                           id="shopName"
@@ -856,7 +860,7 @@ const AuthPage = () => {
                         />
                       </motion.div>
                       {errors.shopEmail && (
-                        <p className="mt-1 animate-pulse text-sm text-red-600">
+                        <p className="mt-1 text-sm text-red-600 animate-pulse">
                           {errors.shopEmail}
                         </p>
                       )}
@@ -866,7 +870,7 @@ const AuthPage = () => {
                     <div>
                       <label
                         htmlFor="mobileNumber"
-                        className="mb-2 block text-sm font-medium text-slate-700"
+                        className="block mb-2 text-sm font-medium text-slate-700"
                       >
                         Mobile Number <span className="text-red-500">*</span>
                       </label>
@@ -876,7 +880,7 @@ const AuthPage = () => {
                         whileFocus="focus"
                         whileTap="tap"
                       >
-                        <Phone className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-slate-400" />
+                        <Phone className="absolute w-5 h-5 transform -translate-y-1/2 top-1/2 left-3 text-slate-400" />
                         <input
                           type="tel"
                           id="mobileNumber"
@@ -901,7 +905,7 @@ const AuthPage = () => {
                         />
                       </motion.div>
                       {errors.mobileNumber && (
-                        <p className="mt-1 animate-pulse text-sm text-red-600">
+                        <p className="mt-1 text-sm text-red-600 animate-pulse">
                           {errors.mobileNumber}
                         </p>
                       )}
@@ -911,7 +915,7 @@ const AuthPage = () => {
                     <div>
                       <label
                         htmlFor="address"
-                        className="mb-2 block text-sm font-medium text-slate-700"
+                        className="block mb-2 text-sm font-medium text-slate-700"
                       >
                         Address <span className="text-red-500">*</span>
                       </label>
@@ -921,7 +925,7 @@ const AuthPage = () => {
                         whileFocus="focus"
                         whileTap="tap"
                       >
-                        <MapPin className="absolute top-3 left-3 h-5 w-5 text-slate-400" />
+                        <MapPin className="absolute w-5 h-5 top-3 left-3 text-slate-400" />
                         <textarea
                           id="address"
                           name="address"
@@ -937,7 +941,7 @@ const AuthPage = () => {
                         />
                       </motion.div>
                       {errors.address && (
-                        <p className="mt-1 animate-pulse text-sm text-red-600">
+                        <p className="mt-1 text-sm text-red-600 animate-pulse">
                           {errors.address}
                         </p>
                       )}
@@ -959,7 +963,7 @@ const AuthPage = () => {
                     <div>
                       <label
                         htmlFor="name"
-                        className="mb-2 block text-sm font-medium text-slate-700"
+                        className="block mb-2 text-sm font-medium text-slate-700"
                       >
                         Full Name <span className="text-red-500">*</span>
                       </label>
@@ -969,7 +973,7 @@ const AuthPage = () => {
                         whileFocus="focus"
                         whileTap="tap"
                       >
-                        <User className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-slate-400" />
+                        <User className="absolute w-5 h-5 transform -translate-y-1/2 top-1/2 left-3 text-slate-400" />
                         <input
                           type="text"
                           id="name"
@@ -983,7 +987,7 @@ const AuthPage = () => {
                         />
                       </motion.div>
                       {errors.name && (
-                        <p className="mt-1 animate-pulse text-sm text-red-600">
+                        <p className="mt-1 text-sm text-red-600 animate-pulse">
                           {errors.name}
                         </p>
                       )}
@@ -993,7 +997,7 @@ const AuthPage = () => {
                     <div>
                       <label
                         htmlFor="adminEmail"
-                        className="mb-2 block text-sm font-medium text-slate-700"
+                        className="block mb-2 text-sm font-medium text-slate-700"
                       >
                         Email ID <span className="text-red-500">*</span>
                       </label>
@@ -1003,7 +1007,7 @@ const AuthPage = () => {
                         whileFocus="focus"
                         whileTap="tap"
                       >
-                        <Mail className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-slate-400" />
+                        <Mail className="absolute w-5 h-5 transform -translate-y-1/2 top-1/2 left-3 text-slate-400" />
                         <input
                           type="email"
                           id="adminEmail"
@@ -1019,7 +1023,7 @@ const AuthPage = () => {
                         />
                       </motion.div>
                       {errors.adminEmail && (
-                        <p className="mt-1 animate-pulse text-sm text-red-600">
+                        <p className="mt-1 text-sm text-red-600 animate-pulse">
                           {errors.adminEmail}
                         </p>
                       )}
@@ -1029,7 +1033,7 @@ const AuthPage = () => {
                     <div>
                       <label
                         htmlFor="adminPassword"
-                        className="mb-2 block text-sm font-medium text-slate-700"
+                        className="block mb-2 text-sm font-medium text-slate-700"
                       >
                         Password <span className="text-red-500">*</span>
                       </label>
@@ -1039,7 +1043,7 @@ const AuthPage = () => {
                         whileFocus="focus"
                         whileTap="tap"
                       >
-                        <Lock className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-slate-400" />
+                        <Lock className="absolute w-5 h-5 transform -translate-y-1/2 top-1/2 left-3 text-slate-400" />
                         <input
                           type={showPassword ? 'text' : 'password'}
                           id="adminPassword"
@@ -1056,17 +1060,17 @@ const AuthPage = () => {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute top-1/2 right-3 -translate-y-1/2 transform text-slate-400 transition-colors hover:text-slate-600"
+                          className="absolute transition-colors transform -translate-y-1/2 top-1/2 right-3 text-slate-400 hover:text-slate-600"
                         >
                           {showPassword ? (
-                            <EyeOff className="h-5 w-5" />
+                            <EyeOff className="w-5 h-5" />
                           ) : (
-                            <Eye className="h-5 w-5" />
+                            <Eye className="w-5 h-5" />
                           )}
                         </button>
                       </motion.div>
                       {errors.adminPassword && (
-                        <p className="mt-1 animate-pulse text-sm text-red-600">
+                        <p className="mt-1 text-sm text-red-600 animate-pulse">
                           {errors.adminPassword}
                         </p>
                       )}
@@ -1076,7 +1080,7 @@ const AuthPage = () => {
                     <div>
                       <label
                         htmlFor="confirmPassword"
-                        className="mb-2 block text-sm font-medium text-slate-700"
+                        className="block mb-2 text-sm font-medium text-slate-700"
                       >
                         Confirm Password <span className="text-red-500">*</span>
                       </label>
@@ -1086,7 +1090,7 @@ const AuthPage = () => {
                         whileFocus="focus"
                         whileTap="tap"
                       >
-                        <Lock className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-slate-400" />
+                        <Lock className="absolute w-5 h-5 transform -translate-y-1/2 top-1/2 left-3 text-slate-400" />
                         <input
                           type={showConfirmPassword ? 'text' : 'password'}
                           id="confirmPassword"
@@ -1105,17 +1109,17 @@ const AuthPage = () => {
                           onClick={() =>
                             setShowConfirmPassword(!showConfirmPassword)
                           }
-                          className="absolute top-1/2 right-3 -translate-y-1/2 transform text-slate-400 transition-colors hover:text-slate-600"
+                          className="absolute transition-colors transform -translate-y-1/2 top-1/2 right-3 text-slate-400 hover:text-slate-600"
                         >
                           {showConfirmPassword ? (
-                            <EyeOff className="h-5 w-5" />
+                            <EyeOff className="w-5 h-5" />
                           ) : (
-                            <Eye className="h-5 w-5" />
+                            <Eye className="w-5 h-5" />
                           )}
                         </button>
                       </motion.div>
                       {errors.confirmPassword && (
-                        <p className="mt-1 animate-pulse text-sm text-red-600">
+                        <p className="mt-1 text-sm text-red-600 animate-pulse">
                           {errors.confirmPassword}
                         </p>
                       )}
@@ -1132,7 +1136,7 @@ const AuthPage = () => {
               )}
 
               {/* Navigation Buttons */}
-              <div className="flex justify-between border-t border-gray-200 pt-6">
+              <div className="flex justify-between pt-6 border-t border-gray-200">
                 <motion.button
                   type="button"
                   onClick={handleSignupBack}
@@ -1146,7 +1150,7 @@ const AuthPage = () => {
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-md'
                   }`}
                 >
-                  <ChevronLeft className="mr-2 h-5 w-5" />
+                  <ChevronLeft className="w-5 h-5 mr-2" />
                   Back
                 </motion.button>
 
@@ -1166,7 +1170,7 @@ const AuthPage = () => {
                   }`}
                 >
                   {(loading || shopCreationLoading) && (
-                    <span className="mr-2 h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span className="w-5 h-5 mr-2 border-2 border-white rounded-full animate-spin border-t-transparent" />
                   )}
                   <span>
                     {shopCreationLoading
@@ -1178,7 +1182,7 @@ const AuthPage = () => {
                           : 'Next'}
                   </span>
                   {!loading && !shopCreationLoading && (
-                    <ChevronRight className="ml-2 h-5 w-5" />
+                    <ChevronRight className="w-5 h-5 ml-2" />
                   )}
                 </motion.button>
               </div>
@@ -1205,14 +1209,14 @@ const AuthPage = () => {
 
       {/* Right Panel - Image Section */}
       <motion.div
-        className="relative hidden flex-1 bg-gradient-to-br from-indigo-900 to-purple-900 lg:flex"
+        className="relative flex-1 hidden bg-gradient-to-br from-indigo-900 to-purple-900 lg:flex"
         initial={{ opacity: 0, scale: 1.05 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8 }}
       >
         {/* Background Image */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-center bg-no-repeat bg-cover"
           style={{
             backgroundImage: `url('https://images.pexels.com/photos/3993449/pexels-photo-3993449.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')`,
           }}
@@ -1242,12 +1246,12 @@ const AuthPage = () => {
 
           {/* Decorative Elements */}
           <motion.div
-            className="absolute top-8 right-8 h-20 w-20 rounded-full border border-white/20"
+            className="absolute w-20 h-20 border rounded-full top-8 right-8 border-white/20"
             animate={{ rotate: 360 }}
             transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
           />
           <motion.div
-            className="absolute bottom-8 left-8 h-12 w-12 rounded-full border border-white/20"
+            className="absolute w-12 h-12 border rounded-full bottom-8 left-8 border-white/20"
             animate={{ rotate: -360 }}
             transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
           />
