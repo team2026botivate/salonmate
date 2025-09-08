@@ -591,7 +591,7 @@ const AuthPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              <span className="text-transparent bg-gradient-to-r from-slate-800 to-indigo-700 bg-clip-text">
+              <span className="font-color">
                 SaloonMate
               </span>
               <img
@@ -794,7 +794,10 @@ const AuthPage = () => {
                 whileHover="hover"
                 whileTap="tap"
                 disabled={loading}
-                className={`flex w-full items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-3 font-medium text-white transition-colors hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none ${loading ? 'cursor-not-allowed opacity-70' : ''} [background-color:#000000]`}
+                // fallback inline
+                // style={{ backgroundColor: '#000000', color: '#ffffff' }}
+                // Tailwind utilities (modern browsers)
+                className={`btn-bg-modern flex w-full items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-3 font-medium text-white transition-colors hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none ${loading ? 'cursor-not-allowed opacity-70' : ''}`}
               >
                 {loading && (
                   <span className="w-5 h-5 border-2 border-white rounded-full animate-spin border-t-transparent" />

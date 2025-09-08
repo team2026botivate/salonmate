@@ -1,4 +1,5 @@
-@import "tailwindcss";
+/* Tailwind import pehle karo */
+@import 'tailwindcss';
 
 @layer utilities {
   .hideScrollBar::-webkit-scrollbar {
@@ -7,13 +8,34 @@
   .thickScrollBar::-webkit-scrollbar {
     width: 12px;
     height: 12px;
-
   }
-
   .thickScrollBar::-webkit-scrollbar-thumb {
     background-color: #888;
     border-radius: 6px;
   }
 
+  .btn-bg-modern {
+    background-color: #000000; /* fallback for legacy */
+  }
+  .font-color {
+    color: #000000;
+  }
 }
 
+/* Only modern browsers that support complex selectors will apply this override */
+@supports selector(:focus-visible) {
+  @layer utilities {
+    .btn-bg-modern {
+      background-color: #1f2937 !important; /* slate-800 */
+    }
+    .btn-bg-modern:hover {
+      background-color: #334155 !important; /* slate-700 on hover */
+    }
+    .font-color {
+      background: linear-gradient(to right, #1e293b, #4338ca);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  }
+}
