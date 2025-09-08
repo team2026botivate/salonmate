@@ -636,17 +636,13 @@ export const useCreateTransaction = () => {
   const createTransaction = async (payload) => {
     try {
       setLoading(true)
-      // Use totalDue directly if it's a finite number; otherwise, coerce and round
-      let finalAmountInt
-      if (
-        typeof payload?.totalDue === 'number' &&
-        Number.isFinite(payload.totalDue)
-      ) {
-        finalAmountInt = payload.totalDue
-      } else {
-        const coerced = Number(payload?.totalDue)
-        finalAmountInt = Number.isFinite(coerced) ? Math.round(coerced) : 0
-      }
+      // Coerce and round to satisfy integer column type in DB
+      const finalAmountInt = (() => {
+        const n = Number(payload?.totalDue)
+        if (!Number.isFinite(n)) return 0
+        // Ensure integer as a true number, not a string
+        return parseInt(n.toFixed(0), 10)
+      })()
 
       const updateData = {
         transactions_status: payload?.transactionStatus || 'paid',
@@ -662,7 +658,12 @@ export const useCreateTransaction = () => {
         .from('appointment')
         .update(updateData)
         .eq('id', payload.appointmentId)
-      if (error) throw error
+
+      if (error) {
+        console.error('Error updating running appointment:', error)
+        setError(error.message)
+        throw new Error('Error while payment ')
+      }
       setRefreshTransactionHookRefresh()
       return data
     } catch (err) {
