@@ -22,6 +22,34 @@
   }
 }
 
+/* Legacy fallback styles: apply ONLY when a parent has `.legacy-only` */
+@layer base {
+  .legacy-only button,
+  .legacy-only [role='button'],
+  .legacy-only .btn {
+    background-color: #000000;
+    color: #ffffff;
+  }
+
+  .legacy-only .bg-white,
+  .legacy-only .btn-white {
+    background-color: #ffffff;
+    color: #111827;
+  }
+
+  .legacy-only button.bg-transparent,
+  .legacy-only [role='button'].bg-transparent,
+  .legacy-only .btn-transparent {
+    background-color: transparent;
+    color: inherit;
+  }
+
+  .legacy-only .btn-fallback-light {
+    background-color: #ffffff;
+    color: #111827;
+  }
+}
+
 /* Only modern browsers that support complex selectors will apply this override */
 @supports selector(:focus-visible) {
   @layer utilities {
@@ -38,33 +66,7 @@
       color: transparent;
     }
   }
+
+  /* No neutralizer needed now; modern browsers unaffected unless `.legacy-only` is present */
 }
 
-@supports not selector(:focus-visible) {
-  @layer base {
-    button,
-    [role='button'],
-    .btn {
-      background-color: #000000;
-      color: #ffffff;
-    }
-
-    .bg-white,
-    .btn-white {
-      background-color: #ffffff;
-      color: #111827;
-    }
-
-    button.bg-transparent,
-    [role='button'].bg-transparent,
-    .btn-transparent {
-      background-color: transparent;
-      color: inherit;
-    }
-
-    .btn-fallback-light {
-      background-color: #ffffff;
-      color: #111827;
-    }
-  }
-}

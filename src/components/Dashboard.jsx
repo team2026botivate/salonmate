@@ -289,15 +289,25 @@ export default function Dashboard() {
         >
           {renderContent()}
         </motion.main>
-        <footer className="w-full px-3 py-1 text-xs text-center text-black bg-blue-300 border-t border-gray-200 shadow-sm">
-          <a
-            href="https://botivate.in/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition-colors duration-200 hover:text-blue-600"
-          >
-            Powered By-Botivate
-          </a>
+        <footer className="w-full border-t border-slate-600 bg-slate-800">
+          <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div className="flex items-center justify-center gap-2 py-2">
+              <div className="text-sm font-medium tracking-wide text-white">
+                Powered by
+              </div>
+              <a
+                href="https://botivate.in/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative inline-flex items-center text-lg font-semibold tracking-wide text-white transition-all duration-300 group hover:scale-105"
+              >
+                <span className="text-transparent transition-all duration-300 bg-gradient-to-r from-blue-400 via-purple-500 to-blue-600 bg-clip-text group-hover:from-blue-300 group-hover:via-purple-400 group-hover:to-blue-500">
+                  Botivate
+                </span>
+                <div className="absolute -bottom-1 left-0 h-0.5 w-0 bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-300 ease-out group-hover:w-full"></div>
+              </a>
+            </div>
+          </div>
         </footer>
       </div>
     </div>
