@@ -19,7 +19,6 @@ const TestStaffStatus = () => {
   const handleTest = async () => {
     const result = await doStaffStatusActive(testStaffId, serviceTime, currentStatus)
     setResult(result)
-    console.log('Test result:', result)
   }
 
   const handleCancel = () => {
@@ -33,12 +32,12 @@ const TestStaffStatus = () => {
   }
 
   return (
-    <div className="p-6 max-w-md mx-auto bg-white rounded-lg shadow-md">
-      <h2 className="text-xl font-bold mb-4">Test Staff Status Hook</h2>
+    <div className="max-w-md p-6 mx-auto bg-white rounded-lg shadow-md">
+      <h2 className="mb-4 text-xl font-bold">Test Staff Status Hook</h2>
       
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Staff ID:</label>
+          <label className="block mb-1 text-sm font-medium">Staff ID:</label>
           <input
             type="text"
             value={testStaffId}
@@ -49,7 +48,7 @@ const TestStaffStatus = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Service Time (minutes):</label>
+          <label className="block mb-1 text-sm font-medium">Service Time (minutes):</label>
           <input
             type="number"
             value={serviceTime}
@@ -59,7 +58,7 @@ const TestStaffStatus = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Current Status:</label>
+          <label className="block mb-1 text-sm font-medium">Current Status:</label>
           <select
             value={currentStatus}
             onChange={(e) => setCurrentStatus(e.target.value)}
@@ -75,7 +74,7 @@ const TestStaffStatus = () => {
           <button
             onClick={handleTest}
             disabled={loading || !testStaffId}
-            className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
+            className="px-4 py-2 text-white bg-blue-500 rounded disabled:opacity-50"
           >
             {loading ? 'Loading...' : 'Start Timer'}
           </button>
@@ -83,7 +82,7 @@ const TestStaffStatus = () => {
           <button
             onClick={handleCancel}
             disabled={!testStaffId}
-            className="px-4 py-2 bg-red-500 text-white rounded disabled:opacity-50"
+            className="px-4 py-2 text-white bg-red-500 rounded disabled:opacity-50"
           >
             Cancel Timer
           </button>
@@ -91,27 +90,27 @@ const TestStaffStatus = () => {
           <button
             onClick={handleStatusUpdate}
             disabled={loading || !testStaffId}
-            className="px-4 py-2 bg-green-500 text-white rounded disabled:opacity-50"
+            className="px-4 py-2 text-white bg-green-500 rounded disabled:opacity-50"
           >
             Set Available
           </button>
         </div>
 
         {error && (
-          <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          <div className="p-3 text-red-700 bg-red-100 border border-red-400 rounded">
             Error: {error}
           </div>
         )}
 
         {result && (
           <div className="p-3 bg-gray-100 border rounded">
-            <h3 className="font-medium mb-2">Result:</h3>
+            <h3 className="mb-2 font-medium">Result:</h3>
             <pre className="text-sm">{JSON.stringify(result, null, 2)}</pre>
           </div>
         )}
 
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-          <h3 className="font-medium mb-2">Active Timers:</h3>
+        <div className="p-3 border border-blue-200 rounded bg-blue-50">
+          <h3 className="mb-2 font-medium">Active Timers:</h3>
           <p className="text-sm">{getActiveTimers().join(', ') || 'None'}</p>
         </div>
       </div>

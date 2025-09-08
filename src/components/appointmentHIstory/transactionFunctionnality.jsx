@@ -43,7 +43,6 @@ const TransactionFunctionality = ({
   const { data: promoCardData, loading: promoCardLoading } =
     useGetPromoCardData()
 
-
   // Initialize selectedExtras with extraServices when component mounts or extraServices changes
   useEffect(() => {
     if (extraServices && extraServices.length > 0) {
@@ -56,7 +55,11 @@ const TransactionFunctionality = ({
     baseService?.price +
     selectedExtras.reduce((sum, extra) => sum + extra?.base_price, 0)
   const discountAmount = Math.min((subtotal * discountPercent) / 100, subtotal)
-  const totalDue = Math.max(0, subtotal - discountAmount)
+  // GST calculations (18% on taxable amount = subtotal - discount)
+  const taxableAmount = Math.max(0, subtotal - discountAmount)
+  const GST_PERCENT = 18
+  const gstAmount = +(taxableAmount * (GST_PERCENT / 100)).toFixed(2)
+  const totalDue = Math.max(0, taxableAmount + gstAmount)
 
   // Validation
   const isFormValid = () => {
@@ -106,6 +109,7 @@ const TransactionFunctionality = ({
       transactionId: generateTransactionId(),
       transactionStatus: 'paid',
       totalDue,
+      gst_amount: gstAmount,
       payment: {
         method: paymentMethod,
         ...(paymentMethod !== 'cash' && {
@@ -137,16 +141,16 @@ const TransactionFunctionality = ({
   ]
 
   return (
-    <div className="relative h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
+    <div className="relative w-full h-screen p-6 bg-gradient-to-br from-blue-50 to-indigo-50">
       <X
         onClick={() => setIsEditModalOpen(false)}
-        className="absolute top-8 right-5 cursor-pointer hover:text-red-600 md:right-10"
+        className="absolute cursor-pointer top-8 right-5 hover:text-red-600 md:right-10"
       />
-      <div className="hideScrollBar mx-auto h-full max-w-7xl overflow-y-auto md:py-10">
+      <div className="h-full mx-auto overflow-y-auto hideScrollBar max-w-7xl md:py-10">
         {/* Header */}
         <div className="mb-5 text-center">
-          <div className="mb-4 flex items-center justify-start md:justify-center">
-            <Receipt className="mr-3 h-8 w-8 text-blue-600" />
+          <div className="flex items-center justify-start mb-4 md:justify-center">
+            <Receipt className="w-8 h-8 mr-3 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900">
               Transaction / Billing
             </h1>
@@ -155,8 +159,8 @@ const TransactionFunctionality = ({
 
         <div className="grid gap-8 md:grid-cols-4 lg:grid-cols-5">
           {/* Left Column - Extra Services */}
-          <div className="max-h-[calc(100vh-200px)] rounded-2xl lg:col-span-2">
-            <div className="bg-white p-6 shadow-lg">
+          <div className="col-span-4 max-h-[calc(100vh-200px)] overflow-auto rounded-2xl md:col-span-2 lg:col-span-2">
+            <div className="p-6 bg-white shadow-lg">
               <h2 className="mb-6 text-xl font-semibold text-gray-800">
                 Extra Services
               </h2>
@@ -164,7 +168,7 @@ const TransactionFunctionality = ({
               {/* Loading State */}
               {loading && (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
                   <span className="ml-3 text-gray-600">
                     Loading extra services...
                   </span>
@@ -174,7 +178,7 @@ const TransactionFunctionality = ({
               {/* Error State */}
               {error && (
                 <div className="flex items-center justify-center py-12 text-red-600">
-                  <AlertCircle className="mr-2 h-6 w-6" />
+                  <AlertCircle className="w-6 h-6 mr-2" />
                   <span>{error}</span>
                 </div>
               )}
@@ -221,12 +225,12 @@ const TransactionFunctionality = ({
                               }`}
                             >
                               {isSelected && (
-                                <Check className="h-3 w-3 text-white" />
+                                <Check className="w-3 h-3 text-white" />
                               )}
                             </div>
                           </div>
 
-                          <div className="ml-4 flex flex-1 items-center justify-between">
+                          <div className="flex items-center justify-between flex-1 ml-4">
                             <span
                               className={`font-medium ${
                                 isSelected ? 'text-blue-900' : 'text-gray-800'
@@ -252,15 +256,15 @@ const TransactionFunctionality = ({
           </div>
 
           {/* Right Column - Summary */}
-          <div className="flex h-[calc(100vh-100px)] flex-col lg:col-span-2">
-            <div className="flex h-full flex-col rounded-2xl bg-white p-6 shadow-lg">
-              <div className="hideScrollBar thickScrollBar -mr-2 flex-1 overflow-auto pr-2">
+          <div className="col-span-4 flex h-[calc(100vh-100px)] flex-col md:col-span-2 lg:col-span-2">
+            <div className="flex flex-col h-full p-6 bg-white shadow-lg rounded-2xl">
+              <div className="flex-1 pr-2 -mr-2 overflow-auto hideScrollBar thickScrollBar">
                 <h3 className="mb-6 text-xl font-semibold text-gray-800">
                   Billing Summary
                 </h3>
 
                 {/* Base Service */}
-                <div className="mb-6 rounded-xl bg-gray-50 p-4">
+                <div className="p-4 mb-6 rounded-xl bg-gray-50">
                   <h4 className="mb-2 text-sm font-medium text-gray-600">
                     Base Service
                   </h4>
@@ -284,7 +288,7 @@ const TransactionFunctionality = ({
                       {selectedExtras.map((extra, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between rounded-lg bg-blue-50 p-3"
+                          className="flex items-center justify-between p-3 rounded-lg bg-blue-50"
                         >
                           <span className="text-sm text-gray-800">
                             {extra.service_name}
@@ -295,9 +299,9 @@ const TransactionFunctionality = ({
                             </span>
                             <button
                               onClick={() => handleExtraServiceToggle(extra)}
-                              className="rounded p-1 text-red-500 transition-colors hover:bg-red-100"
+                              className="p-1 text-red-500 transition-colors rounded hover:bg-red-100"
                             >
-                              <X className="h-4 w-4" />
+                              <X className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
@@ -359,7 +363,23 @@ const TransactionFunctionality = ({
                     )}
                   </div>
 
-                  <div className="border-t border-gray-200 pt-3">
+                  {/* Taxable Amount */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Taxable Amount</span>
+                    <span className="font-medium">
+                      {formatCurrency(taxableAmount)}
+                    </span>
+                  </div>
+
+                  {/* GST 18% */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">GST (18%)</span>
+                    <span className="font-medium">
+                      {formatCurrency(gstAmount)}
+                    </span>
+                  </div>
+
+                  <div className="pt-3 border-t border-gray-200">
                     <div className="flex items-center justify-between">
                       <span className="text-lg font-semibold text-gray-800">
                         Total Due
@@ -418,7 +438,7 @@ const TransactionFunctionality = ({
                             {method.name}
                           </span>
                           {!method?.isAvtive ? (
-                            <Ban className="absolute top-1/2 right-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-red-500" />
+                            <Ban className="absolute w-4 h-4 text-red-500 -translate-x-1/2 -translate-y-1/2 top-1/2 right-1/2" />
                           ) : null}
                         </label>
                       )
@@ -428,7 +448,7 @@ const TransactionFunctionality = ({
                   {/* Transaction ID for non-cash payments */}
                   {paymentMethod && paymentMethod !== 'cash' && (
                     <div className="mt-3">
-                      <label className="mb-1 block text-sm font-medium text-gray-700">
+                      <label className="block mb-1 text-sm font-medium text-gray-700">
                         Transaction ID *
                       </label>
                       <input
@@ -436,7 +456,7 @@ const TransactionFunctionality = ({
                         value={transactionId}
                         onChange={(e) => setTransactionId(e.target.value)}
                         placeholder="Enter transaction ID"
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-transparent focus:ring-2 focus:ring-blue-500"
                         required
                       />
                     </div>
@@ -445,7 +465,7 @@ const TransactionFunctionality = ({
 
                 {/* Notes */}
                 <div className="">
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                  <label className="block mb-2 text-sm font-medium text-gray-700">
                     Notes (Optional)
                   </label>
                   <textarea
@@ -453,7 +473,7 @@ const TransactionFunctionality = ({
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Add any additional notes..."
                     rows={3}
-                    className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>

@@ -226,6 +226,7 @@ export const InvoicePDF = ({
   invoiceNumber = `INV-${Date.now()}`,
 }) => {
   // Safe guards and fallbacks to avoid runtime errors
+
   const salon = salonInfo || {}
   const customer = customerInfo || {}
   const svc = Array.isArray(services) ? services : []
@@ -267,9 +268,6 @@ export const InvoicePDF = ({
     })
   }
 
-  const getDate = (date) => {
-    return date.toISOString().split('T')[0]
-  }
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -278,7 +276,7 @@ export const InvoicePDF = ({
           <View style={styles.brandSection}>
             <Image src={logoSrc} style={styles.logoImage} />
             <View style={styles.brandText}>
-              <Text style={styles.logo}>SALON MATE</Text>
+              <Text style={styles.logo}>SALOON MATE</Text>
               <Text style={styles.tagline}>Professional Salon Management</Text>
             </View>
           </View>
@@ -286,6 +284,7 @@ export const InvoicePDF = ({
             <Text style={styles.salonName}>{salon.name || ''}</Text>
             <Text style={styles.salonText}>{salon.address || ''}</Text>
             <Text style={styles.salonText}>Phone: {salon.phone || ''}</Text>
+            <Text style={styles.salonText}>GST No: {salon.gst || ''}</Text>
           </View>
         </View>
 
@@ -303,7 +302,12 @@ export const InvoicePDF = ({
             <Text style={styles.sectionTitle}>Invoice Details</Text>
             <Text style={styles.invoiceNumber}>#{invoiceNumber}</Text>
             <Text style={styles.infoText}>
-              Date & Time: {formatDateTime(customer.date || customer.transactions_date || new Date().toISOString())}
+              Date & Time:{' '}
+              {formatDateTime(
+                customer.date ||
+                  customer.transactions_date ||
+                  new Date().toISOString()
+              )}
             </Text>
           </View>
         </View>
@@ -401,7 +405,7 @@ export const InvoicePDF = ({
           <Text style={styles.thankYou}>
             Thank you for choosing {salon.name || 'our salon'}!
           </Text>
-          <Text style={styles.poweredBy}>Powered by Botivate Pvt Ltd</Text>
+          <Text style={styles.poweredBy}>Powered by Botivate</Text>
         </View>
       </Page>
     </Document>

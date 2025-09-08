@@ -14,6 +14,8 @@ const TransactionsPanel = ({ setIsEditModalOpen, transactionFromData }) => {
 
   // Mock submit handler
   const handleSubmit = async (payload) => {
+
+    
     await createTransaction(payload)
     if (!error) {
       toast.success('Transaction created successfully')

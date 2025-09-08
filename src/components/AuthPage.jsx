@@ -59,7 +59,7 @@ const AuthPage = () => {
     role: 'admin',
   })
 
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState({}) 
   const [loading, setLoading] = useState(false)
   const [shopCreationLoading, setShopCreationLoading] = useState(false)
   const [shopId, setShopId] = useState(null)
@@ -591,9 +591,7 @@ const AuthPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              <span className="font-color">
-                SaloonMate
-              </span>
+              <span className="font-color">SaloonMate</span>
               <img
                 src="/3.png"
                 alt="SaloonMate logo"

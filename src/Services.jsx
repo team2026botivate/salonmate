@@ -21,7 +21,6 @@ import {
 
   
 
-  console.log(rawServices,"rawServices")
   // Transform Supabase data to match UI format
   const services = rawServices.map(service => ({
     id: service.id,

@@ -12,12 +12,8 @@ const StaffManagement = () => {
   const [activeTab, setActiveTab] = useState("staffAttendance")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  console.log("Current active tab:", activeTab) // Add this for debugging
-
   // Function to render the active tab content
   const renderContent = () => {
-    console.log("Rendering content for tab:", activeTab) // Add this for debugging
-    
     switch (activeTab) {
       case "staffAttendance":
         return <StaffAttendance />
@@ -26,7 +22,6 @@ const StaffManagement = () => {
       case "staffHistory":
         return <StaffHistory />
       default:
-        console.log("Default case triggered, showing StaffAttendance") // Add this for debugging
         return <StaffAttendance /> // Default to staff attendance
     }
   }
@@ -41,9 +36,9 @@ const StaffManagement = () => {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden">
         {/* Top mobile header with menu button */}
-        <header className="bg-white shadow-sm h-16 flex items-center md:hidden">
+        <header className="flex items-center h-16 bg-white shadow-sm md:hidden">
           <button
             className="p-4 focus:outline-none"
             onClick={() => setIsMobileMenuOpen(true)}
@@ -54,7 +49,7 @@ const StaffManagement = () => {
         </header>
 
         {/* Main content area */}
-        <main className="flex-1 overflow-auto p-4">
+        <main className="flex-1 p-4 overflow-auto">
           {renderContent()}
         </main>
       </div>

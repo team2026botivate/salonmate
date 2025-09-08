@@ -48,11 +48,11 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'done':
-        return <CheckCircle className="h-4 w-4 text-blue-600" />
+        return <CheckCircle className="w-4 h-4 text-blue-600" />
       case 'pending':
-        return <AlertCircle className="h-4 w-4 text-yellow-600" />
+        return <AlertCircle className="w-4 h-4 text-yellow-600" />
       case 'cancelled':
-        return <XCircle className="h-4 w-4 text-red-600" />
+        return <XCircle className="w-4 h-4 text-red-600" />
       default:
         return null
     }
@@ -89,15 +89,14 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
   })
 
   const handleTransaction = async (transaction) => {
-    
     if (!transaction?.transaction_id || !transaction?.transactions_date) {
-    
-      console.warn('Invoice not available: missing transaction_id or transactions_date')
+      console.warn(
+        'Invoice not available: missing transaction_id or transactions_date'
+      )
       return
     }
-    
 
-    const { data,error } = await supabase
+    const { data, error } = await supabase
       .from('stores')
       .select('*')
       .eq('id', transaction?.store_id)
@@ -109,6 +108,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
         name: data?.name,
         address: data?.shop_address,
         phone: data?.shop_number,
+        gst: data?.gst_number,
       }
 
       const customerInfo = {
@@ -151,8 +151,8 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
       )
       // If final amount equals base service price (and no tax/discount), assume extras weren't charged
       const finalAmount = Number(transaction?.transaction_final_amount)
-      const discount = Number(transaction?.discount ?? 0) || 0
-      const tax = Number(transaction?.tax ?? 0) || 0
+      const discount = Number(transaction?.transaction_discount ?? 0) || 0
+      const tax = Number(transaction?.gst_amount ?? 0) || 0
 
       const includeExtras = !(
         !isNaN(finalAmount) &&
@@ -179,6 +179,8 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
 
       const invoiceNumber =
         String(transaction?.transaction_id || '').trim() || `INV-${Date.now()}`
+
+      
 
       const blob = await pdf(
         <InvoicePDF
@@ -210,7 +212,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
   }
 
   return (
-    <div className="relative rounded-xl bg-gradient-to-b to-blue-50 p-5 shadow-md">
+    <div className="relative p-5 shadow-md rounded-xl bg-gradient-to-b to-blue-50">
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 bg-red-500">
           <TransactionsPanel
@@ -222,10 +224,10 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="flex items-center gap-3 text-3xl font-bold text-gray-900">
-                <Calendar className="h-8 w-8 text-blue-600" />
+                <Calendar className="w-8 h-8 text-blue-600" />
                 Today's Transactions
               </h1>
               <p className="mt-2 text-gray-600">
@@ -238,75 +240,75 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
         </div>
 
         {/* Table */}
-        <div className="overflow-hidden rounded-md bg-white">
+        <div className="overflow-hidden bg-white rounded-md">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
+                      <Clock className="w-4 h-4" />
                       Time
                     </div>
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     Transaction ID
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     Date
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     Booking ID
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
+                      <User className="w-4 h-4" />
                       Customer
                     </div>
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     Service
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     Service Price
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
+                      <CreditCard className="w-4 h-4" />
                       Payment
                     </div>
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     Staff
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     Extra Services
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     Total
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     Status
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     Discount
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     Transaction Status
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     Actions
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
                     Invoice
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
                     <td colSpan="15" className="px-4 py-8 text-center">
-                      <div className="flex w-full items-center justify-center">
+                      <div className="flex items-center justify-center w-full">
                         <LoaderCircle className="size-10 animate-spin" />
                       </div>
                     </td>
@@ -314,8 +316,8 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                 ) : filteredTransactions.length === 0 ? (
                   <tr>
                     <td colSpan="15" className="px-4 py-12 text-center">
-                      <div className="rounded-xl bg-white p-8 text-center">
-                        <Calendar className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+                      <div className="p-8 text-center bg-white rounded-xl">
+                        <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                         <h3 className="mb-2 text-xl font-semibold text-gray-600">
                           No transactions found
                         </h3>
@@ -329,58 +331,58 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                   filteredTransactions.map((transaction) => (
                     <React.Fragment key={transaction.id}>
                       <tr className="transition-colors hover:bg-gray-50">
-                        <td className="px-4 py-4 text-sm font-medium whitespace-nowrap text-gray-900">
+                        <td className="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                           {formatDateTime(transaction.transactions_date) ||
                             'N/A'}
                         </td>
-                        <td className="px-4 py-4 font-mono text-sm whitespace-nowrap text-gray-600">
+                        <td className="px-4 py-4 font-mono text-sm text-gray-600 whitespace-nowrap">
                           {transaction.transaction_id || 'N/A'}
                         </td>
-                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
+                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
                           {new Date(
                             transaction['Slot Date']
                           ).toLocaleDateString()}
                         </td>
-                        <td className="px-4 py-4 font-mono text-sm whitespace-nowrap text-gray-600">
+                        <td className="px-4 py-4 font-mono text-sm text-gray-600 whitespace-nowrap">
                           {transaction['Booking ID']}
                         </td>
-                        <td className="px-4 py-4 text-sm font-medium whitespace-nowrap text-gray-900">
+                        <td className="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                           {transaction['Customer Name']}
                         </td>
-                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
+                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
                           {transaction.Services}
                         </td>
-                        <td className="px-4 py-4 text-sm font-semibold whitespace-nowrap text-green-600">
+                        <td className="px-4 py-4 text-sm font-semibold text-green-600 whitespace-nowrap">
                           {formateCurrency(transaction['Service Price'])}
                         </td>
-                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
-                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-800">
+                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2 py-1 text-xs text-gray-800 bg-gray-100 rounded-full">
                             {transaction.payment_method || 'N/A'}
                           </span>
                         </td>
-                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
+                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
                           {transaction['Staff Name'] || 'N/A'}
                         </td>
-                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
+                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
                           {transaction.extra_Services?.length > 0 ? (
                             <button
                               onClick={() => toggleRowExpansion(transaction.id)}
                               className="flex items-center gap-1 text-blue-600 transition-colors hover:text-blue-800"
                             >
-                              <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
+                              <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">
                                 {transaction.extra_Services.length} services
                               </span>
                               {expandedRows.has(transaction.id) ? (
-                                <ChevronUp className="h-4 w-4" />
+                                <ChevronUp className="w-4 h-4" />
                               ) : (
-                                <ChevronDown className="h-4 w-4" />
+                                <ChevronDown className="w-4 h-4" />
                               )}
                             </button>
                           ) : (
                             <span className="text-xs text-gray-400">None</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 text-sm font-bold whitespace-nowrap text-gray-900">
+                        <td className="px-4 py-4 text-sm font-bold text-gray-900 whitespace-nowrap">
                           {formateCurrency(
                             transaction.transaction_final_amount
                           )}
@@ -392,7 +394,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                               transaction.status.slice(1)}
                           </span>
                         </td>
-                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
+                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
                           {transaction.discount > 0 ? (
                             <span className="font-semibold text-green-600">
                               {formateCurrency(transaction.discount)}
@@ -404,22 +406,22 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
 
                         {/* todo yaha pe agr transaction status dalna hai ho ji
                       backend se ayega */}
-                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-700">
-                          <span className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold">
+                        <td className="px-4 py-4 text-sm text-gray-700 whitespace-nowrap">
+                          <span className="flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full">
                             {transaction?.transactions_status ? (
-                              <div className="flex items-center gap-2 rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
-                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              <div className="flex items-center gap-2 px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
                                 paid
                               </div>
                             ) : (
-                              <div className="flex items-center gap-2 rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">
-                                <XCircle className="h-4 w-4 text-red-600" />
+                              <div className="flex items-center gap-2 px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-full">
+                                <XCircle className="w-4 h-4 text-red-600" />
                                 unpaid
                               </div>
                             )}
                           </span>
                         </td>
-                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
+                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <button
                               disabled={transaction?.transactions_status}
@@ -440,27 +442,32 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                                   : 'text-red-600 hover:text-red-800'
                               )}
                             >
-                              <Edit className="h-4 w-4" />
+                              <Edit className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
                         <td className="flex items-center justify-center px-4 py-4 whitespace-nowrap">
                           <button
-                            disabled={!transaction?.transaction_id || !transaction?.transactions_date}
+                            disabled={
+                              !transaction?.transaction_id ||
+                              !transaction?.transactions_date
+                            }
                             onClick={() => handleTransaction(transaction)}
                             className={cn(
                               'rounded p-2 transition-colors',
-                              !transaction?.transaction_id || !transaction?.transactions_date
+                              !transaction?.transaction_id ||
+                                !transaction?.transactions_date
                                 ? 'cursor-not-allowed text-gray-400'
                                 : 'hover:cursor-pointer hover:bg-green-50 hover:text-green-600'
                             )}
                             title={
-                              !transaction?.transaction_id || !transaction?.transactions_date
+                              !transaction?.transaction_id ||
+                              !transaction?.transactions_date
                                 ? 'Invoice will be available after payment is recorded'
                                 : 'Download invoice'
                             }
                           >
-                            <ArrowDownToLine className="h-4 w-4" />
+                            <ArrowDownToLine className="w-4 h-4" />
                           </button>
                         </td>
                       </tr>
@@ -475,7 +482,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                                     (service, index) => (
                                       <div
                                         key={index}
-                                        className="rounded-lg border border-blue-200 bg-white p-3"
+                                        className="p-3 bg-white border border-blue-200 rounded-lg"
                                       >
                                         <div className="flex items-center justify-between">
                                           <span className="text-sm font-medium text-gray-800">

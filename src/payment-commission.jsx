@@ -30,7 +30,6 @@ const StaffPaymentSection = () => {
   const { updatePaymentStatus, loading: updateLoading } =
     useUpdateStaffPaymentStatus()
 
-    console.log(staffData,"staffData")
   // State management
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -140,8 +139,8 @@ const StaffPaymentSection = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 lg:p-8">
-      <div className="mx-auto max-w-7xl space-y-8">
+    <div className="min-h-screen p-4 bg-gray-50 lg:p-8">
+      <div className="mx-auto space-y-8 max-w-7xl">
         {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -172,7 +171,7 @@ const StaffPaymentSection = () => {
               {/* Total Staff Card */}
               <motion.div
                 variants={itemVariants}
-                className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow duration-300 hover:shadow-md"
+                className="p-6 transition-shadow duration-300 bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -183,8 +182,8 @@ const StaffPaymentSection = () => {
                       {summaryData.totalStaff}
                     </p>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-                    <Users className="h-5 w-5 text-blue-600" />
+                  <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
+                    <Users className="w-5 h-5 text-blue-600" />
                   </div>
                 </div>
               </motion.div>
@@ -192,7 +191,7 @@ const StaffPaymentSection = () => {
               {/* Total Salary Card */}
               <motion.div
                 variants={itemVariants}
-                className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow duration-300 hover:shadow-md"
+                className="p-6 transition-shadow duration-300 bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -203,8 +202,8 @@ const StaffPaymentSection = () => {
                       {formatCurrency(summaryData.totalSalaryToBePaid)}
                     </p>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
-                    <DollarSign className="h-5 w-5 text-purple-600" />
+                  <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-lg">
+                    <DollarSign className="w-5 h-5 text-purple-600" />
                   </div>
                 </div>
               </motion.div>
@@ -212,7 +211,7 @@ const StaffPaymentSection = () => {
               {/* Total Paid Card */}
               <motion.div
                 variants={itemVariants}
-                className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow duration-300 hover:shadow-md"
+                className="p-6 transition-shadow duration-300 bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -223,8 +222,8 @@ const StaffPaymentSection = () => {
                       {formatCurrency(summaryData.totalPaid)}
                     </p>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
                   </div>
                 </div>
               </motion.div>
@@ -232,7 +231,7 @@ const StaffPaymentSection = () => {
               {/* Total Pending Card */}
               <motion.div
                 variants={itemVariants}
-                className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow duration-300 hover:shadow-md"
+                className="p-6 transition-shadow duration-300 bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -243,8 +242,8 @@ const StaffPaymentSection = () => {
                       {formatCurrency(summaryData.totalPending)}
                     </p>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
-                    <AlertCircle className="h-5 w-5 text-orange-600" />
+                  <div className="flex items-center justify-center w-10 h-10 bg-orange-100 rounded-lg">
+                    <AlertCircle className="w-5 h-5 text-orange-600" />
                   </div>
                 </div>
               </motion.div>
@@ -257,28 +256,28 @@ const StaffPaymentSection = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
+          className="p-6 bg-white border border-gray-100 shadow-sm rounded-xl"
         >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             {/* Search Input */}
-            <div className="relative max-w-md flex-1">
-              <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 top-1/2 left-3" />
               <input
                 type="text"
                 placeholder="Search staff by name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 py-2 pr-4 pl-10 transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full py-2 pl-10 pr-4 transition-all duration-200 border border-gray-200 rounded-lg focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
 
             {/* Filter Dropdown */}
             <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-gray-400" />
+              <Filter className="w-5 h-5 text-gray-400" />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="rounded-lg border border-gray-200 px-4 py-2 transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="px-4 py-2 transition-all duration-200 border border-gray-200 rounded-lg focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
               >
                 <option value="all">All Status</option>
                 <option value="paid">Paid</option>
@@ -293,9 +292,9 @@ const StaffPaymentSection = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm"
+          className="overflow-hidden bg-white border border-gray-100 shadow-sm rounded-xl"
         >
-          <div className="border-b border-gray-100 px-6 py-4">
+          <div className="px-6 py-4 border-b border-gray-100">
             <h2 className="text-xl font-semibold text-gray-900">
               Staff Payment Details
             </h2>
@@ -306,30 +305,30 @@ const StaffPaymentSection = () => {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                  <th className="px-6 py-4 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                     Staff Name
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                  <th className="px-6 py-4 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                     Base Salary
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                  <th className="px-6 py-4 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                     Total Present
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                  <th className="px-6 py-4 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                     Commission
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                  <th className="px-6 py-4 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                     Total Salary
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                  <th className="px-6 py-4 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                  <th className="px-6 py-4 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
+              <tbody className="bg-white divide-y divide-gray-100">
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <TableRowSkeleton key={index} />
@@ -348,7 +347,7 @@ const StaffPaymentSection = () => {
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-purple-500 text-sm font-medium text-white">
+                            <div className="flex items-center justify-center w-10 h-10 mr-3 text-sm font-medium text-white rounded-full bg-gradient-to-br from-blue-400 to-purple-500">
                               {staff.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="text-sm font-medium text-gray-900">
@@ -356,7 +355,7 @@ const StaffPaymentSection = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
+                        <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
                           <div>
                             <div className="font-medium">{formatCurrency(staff.proRatedSalary || 0)}</div>
                             <div className="text-xs text-gray-500">
@@ -365,15 +364,15 @@ const StaffPaymentSection = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
+                        <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
                           {staff.totalPresent} days
                         </td>
-                        <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
+                        <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
                           {staff.commissionType === 'percentage'
                             ? `${staff.commission}% (₹${staff.calculatedCommission?.toFixed(2) || 0})`
                             : formatCurrency(staff.calculatedCommission || 0)}
                         </td>
-                        <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900">
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                           {formatCurrency(calculateTotalSalary(staff))}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -386,12 +385,12 @@ const StaffPaymentSection = () => {
                           >
                             {staff.paymentStatus === 'paid' ? (
                               <>
-                                <Check className="mr-1 h-3 w-3" />
+                                <Check className="w-3 h-3 mr-1" />
                                 Paid
                               </>
                             ) : (
                               <>
-                                <Clock className="mr-1 h-3 w-3" />
+                                <Clock className="w-3 h-3 mr-1" />
                                 Pending
                               </>
                             )}
@@ -404,10 +403,10 @@ const StaffPaymentSection = () => {
                               <button
                                 onClick={() => handleMarkAsPaid(staff.id)}
                                 disabled={updateLoading}
-                                className="rounded-lg p-2 text-gray-400 transition-all duration-200 hover:bg-green-50 hover:text-green-600 disabled:opacity-50"
+                                className="p-2 text-gray-400 transition-all duration-200 rounded-lg hover:bg-green-50 hover:text-green-600 disabled:opacity-50"
                                 title="Mark as Paid"
                               >
-                                <CreditCard className="h-4 w-4" />
+                                <CreditCard className="w-4 h-4" />
                               </button>
                             )}
                           </div>
@@ -423,24 +422,24 @@ const StaffPaymentSection = () => {
           {/* Mobile Card View */}
           <div className="lg:hidden">
             {isLoading ? (
-              <div className="space-y-4 p-4">
+              <div className="p-4 space-y-4">
                 {Array.from({ length: 3 }).map((_, index) => (
                   <div
                     key={index}
-                    className="animate-pulse rounded-lg bg-gray-50 p-4"
+                    className="p-4 rounded-lg animate-pulse bg-gray-50"
                   >
-                    <div className="mb-4 flex items-center space-x-4">
-                      <div className="h-12 w-12 rounded-full bg-gray-200"></div>
+                    <div className="flex items-center mb-4 space-x-4">
+                      <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
                       <div className="flex-1">
-                        <div className="mb-2 h-4 w-32 rounded bg-gray-200"></div>
-                        <div className="h-3 w-24 rounded bg-gray-200"></div>
+                        <div className="w-32 h-4 mb-2 bg-gray-200 rounded"></div>
+                        <div className="w-24 h-3 bg-gray-200 rounded"></div>
                       </div>
                     </div>
                     <div className="space-y-2">
                       {Array.from({ length: 4 }).map((_, i) => (
                         <div
                           key={i}
-                          className="h-3 w-full rounded bg-gray-200"
+                          className="w-full h-3 bg-gray-200 rounded"
                         ></div>
                       ))}
                     </div>
@@ -449,7 +448,7 @@ const StaffPaymentSection = () => {
               </div>
             ) : (
               <AnimatePresence>
-                <div className="space-y-4 p-4">
+                <div className="p-4 space-y-4">
                   {filteredStaffData.map((staff, index) => (
                     <motion.div
                       key={staff.id}
@@ -458,11 +457,11 @@ const StaffPaymentSection = () => {
                       animate="visible"
                       exit="exit"
                       transition={{ delay: index * 0.05 }}
-                      className="rounded-lg bg-gray-50 p-4 transition-colors duration-200 hover:bg-gray-100"
+                      className="p-4 transition-colors duration-200 rounded-lg bg-gray-50 hover:bg-gray-100"
                     >
-                      <div className="mb-4 flex items-center justify-between">
+                      <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center">
-                          <div className="mr-3 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-purple-500 font-medium text-white">
+                          <div className="flex items-center justify-center w-12 h-12 mr-3 font-medium text-white rounded-full bg-gradient-to-br from-blue-400 to-purple-500">
                             {staff.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
@@ -478,12 +477,12 @@ const StaffPaymentSection = () => {
                             >
                               {staff.paymentStatus === 'paid' ? (
                                 <>
-                                  <Check className="mr-1 h-3 w-3" />
+                                  <Check className="w-3 h-3 mr-1" />
                                   Paid
                                 </>
                               ) : (
                                 <>
-                                  <Clock className="mr-1 h-3 w-3" />
+                                  <Clock className="w-3 h-3 mr-1" />
                                   Pending
                                 </>
                               )}
@@ -491,16 +490,16 @@ const StaffPaymentSection = () => {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <button className="rounded-lg p-2 text-gray-400 transition-all duration-200 hover:bg-blue-50 hover:text-blue-600">
-                            <Edit3 className="h-4 w-4" />
+                          <button className="p-2 text-gray-400 transition-all duration-200 rounded-lg hover:bg-blue-50 hover:text-blue-600">
+                            <Edit3 className="w-4 h-4" />
                           </button>
                           {staff.paymentStatus === 'pending' && (
                             <button
                               onClick={() => handleMarkAsPaid(staff.id)}
                               disabled={updateLoading}
-                              className="rounded-lg p-2 text-gray-400 transition-all duration-200 hover:bg-green-50 hover:text-green-600 disabled:opacity-50"
+                              className="p-2 text-gray-400 transition-all duration-200 rounded-lg hover:bg-green-50 hover:text-green-600 disabled:opacity-50"
                             >
-                              <CreditCard className="h-4 w-4" />
+                              <CreditCard className="w-4 h-4" />
                             </button>
                           )}
                         </div>
@@ -551,8 +550,8 @@ const StaffPaymentSection = () => {
               animate={{ opacity: 1 }}
               className="py-12 text-center"
             >
-              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
-                <AlertCircle className="h-8 w-8 text-red-400" />
+              <div className="flex items-center justify-center w-20 h-20 mx-auto mb-4 bg-red-100 rounded-full">
+                <AlertCircle className="w-8 h-8 text-red-400" />
               </div>
               <h3 className="mb-2 text-lg font-medium text-gray-900">
                 Error Loading Data
@@ -560,7 +559,7 @@ const StaffPaymentSection = () => {
               <p className="mb-4 text-gray-500">{error}</p>
               <button
                 onClick={refetch}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+                className="px-4 py-2 text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
               >
                 Try Again
               </button>
@@ -574,8 +573,8 @@ const StaffPaymentSection = () => {
               animate={{ opacity: 1 }}
               className="py-12 text-center"
             >
-              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gray-100">
-                <Users className="h-8 w-8 text-gray-400" />
+              <div className="flex items-center justify-center w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full">
+                <Users className="w-8 h-8 text-gray-400" />
               </div>
               <h3 className="mb-2 text-lg font-medium text-gray-900">
                 No staff found
@@ -599,10 +598,10 @@ export default StaffPaymentSection
 
 // Skeleton loader component for table rows
 const TableRowSkeleton = () => (
-  <tr className="animate-pulse border-b border-gray-100">
+  <tr className="border-b border-gray-100 animate-pulse">
     {Array.from({ length: 7 }).map((_, index) => (
       <td key={index} className="px-6 py-4">
-        <div className="h-4 w-full rounded bg-gray-200"></div>
+        <div className="w-full h-4 bg-gray-200 rounded"></div>
       </td>
     ))}
   </tr>
@@ -610,13 +609,13 @@ const TableRowSkeleton = () => (
 
 // Skeleton loader for summary cards
 const SummaryCardSkeleton = () => (
-  <div className="animate-pulse rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+  <div className="p-6 bg-white border border-gray-100 shadow-sm animate-pulse rounded-xl">
     <div className="flex items-center justify-between">
       <div>
-        <div className="mb-2 h-4 w-24 rounded bg-gray-200"></div>
-        <div className="h-6 w-16 rounded bg-gray-200"></div>
+        <div className="w-24 h-4 mb-2 bg-gray-200 rounded"></div>
+        <div className="w-16 h-6 bg-gray-200 rounded"></div>
       </div>
-      <div className="h-10 w-10 rounded-lg bg-gray-200"></div>
+      <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
     </div>
   </div>
 )

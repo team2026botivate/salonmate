@@ -82,7 +82,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
   useEffect(() => {
     const fetchExtraServices = async () => {
       try {
-        // console.log("Fetching extra services...")
 
         // Create URL to fetch the Service DB sheet
         const serviceDBSheetName = 'Service DB'
@@ -868,7 +867,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
           name={header.id}
           value={displayValue}
           onChange={handleEditInputChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500"
+          className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500"
         />
       )
     }
@@ -885,7 +884,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
           name={header.id}
           value={dateValue}
           onChange={handleEditInputChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 "
+          className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-blue-500 "
         />
       )
     }
@@ -896,8 +895,8 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       !headerLabel.includes('price')
     ) {
       return (
-        <div className="mt-1 relative ">
-          <div className="block w-full rounded-md border border-gray-300 shadow-sm focus-within:border-pink-500 focus-within:ring-pink-500 overflow-hidden">
+        <div className="relative mt-1 ">
+          <div className="block w-full overflow-hidden border border-gray-300 rounded-md shadow-sm focus-within:border-pink-500 focus-within:ring-pink-500">
             {/* Selected services display */}
             <div className="p-2 min-h-[40px] bg-white">
               {selectedExtraServices.length > 0 ? (
@@ -905,7 +904,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
                   {selectedExtraServices.map((serviceName) => (
                     <span
                       key={serviceName}
-                      className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-pink-100 text-pink-800"
+                      className="inline-flex items-center px-2 py-1 text-xs font-medium text-pink-800 bg-pink-100 rounded-md"
                     >
                       {serviceName}
                       <button
@@ -923,14 +922,14 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
                   ))}
                 </div>
               ) : (
-                <span className="text-gray-400 text-sm">
+                <span className="text-sm text-gray-400">
                   Select extra services
                 </span>
               )}
             </div>
 
             {/* Dropdown with checkboxes */}
-            <div className="max-h-60 overflow-y-auto border-t border-gray-200 bg-gray-50">
+            <div className="overflow-y-auto border-t border-gray-200 max-h-60 bg-gray-50">
               {extraServices.map((service, index) => (
                 <div
                   key={index}
@@ -941,11 +940,11 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
                     id={`service-${index}`}
                     checked={selectedExtraServices.includes(service.name)}
                     onChange={() => handleExtraServiceCheckboxChange(service)}
-                    className="h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500"
+                    className="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500"
                   />
                   <label
                     htmlFor={`service-${index}`}
-                    className="ml-3 flex justify-between w-full"
+                    className="flex justify-between w-full ml-3"
                   >
                     <span className="text-sm text-gray-700">
                       {service.name}
@@ -990,7 +989,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
           min={0}
           step="0.01"
           readOnly={true} // Make read-only since it's calculated automatically
-          className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-pink-500 focus:ring-pink-500"
+          className="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-50 focus:border-pink-500 focus:ring-pink-500"
         />
       )
     }
@@ -1007,7 +1006,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
           min={0}
           step="0.01"
           readOnly={true} // Make read-only since it's calculated automatically
-          className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-pink-500 focus:ring-pink-500"
+          className="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-50 focus:border-pink-500 focus:ring-pink-500"
         />
       )
     }
@@ -1020,7 +1019,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
           name={header.id}
           value={editingTransaction[header.id] || ''}
           onChange={handleEditInputChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500"
+          className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500"
         >
           <option value="">Select Status</option>
           <option value="Completed">Completed</option>
@@ -1044,7 +1043,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
           onChange={handleEditInputChange}
           min={0}
           step="0.01"
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500"
+          className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500"
         />
       )
     }
@@ -1057,7 +1056,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
           name={header.id}
           value={editingTransaction[header.id] || ''}
           onChange={handleEditInputChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500"
+          className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500"
         >
           <option value="">Select Payment Method</option>
           <option value="Cash">Cash</option>
@@ -1076,7 +1075,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
         name={header.id}
         value={editingTransaction[header.id] || ''}
         onChange={handleEditInputChange}
-        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500"
+        className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500"
       />
     )
   }
@@ -1471,16 +1470,16 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       {/* Header - Updated with search bar and style matching Inventory */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <h2 className="text-2xl font-bold text-gray-800">Daily Entry</h2>
-        <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col gap-3 mt-4 md:mt-0 sm:flex-row">
           <div className="relative">
             <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2"
               size={18}
             />
             <input
               type="text"
               placeholder="Search transactions..."
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent  w-full"
+              className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -1488,21 +1487,21 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
           <div className="flex space-x-2">
             <div className="relative">
               <Calendar
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2"
                 size={18}
               />
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="py-2 pl-10 pr-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
             {/* Only show history button if not hidden */}
             {!hideHistoryButton && (
               <button
-                className="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 hover:cursor-pointer"
+                className="flex items-center px-4 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 hover:cursor-pointer"
                 onClick={handleHistoryClick}
               >
                 <History size={18} className="mr-2" />
@@ -1547,9 +1546,9 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
             }`}
           >
             {notification.type === 'success' ? (
-              <CheckCircle2 className="text-green-600 mr-3" size={20} />
+              <CheckCircle2 className="mr-3 text-green-600" size={20} />
             ) : (
-              <AlertCircle className="text-red-600 mr-3" size={20} />
+              <AlertCircle className="mr-3 text-red-600" size={20} />
             )}
             <p
               className={`font-medium ${
@@ -1579,7 +1578,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
@@ -1588,7 +1587,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
               className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-auto"
             >
               <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-bold text-pink-600">
                     Edit Transaction
                   </h3>
@@ -1601,7 +1600,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
                 </div>
 
                 <form onSubmit={handleEditSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     {/* Check if user is staff, only show specific fields */}
                     {tableHeaders.map((header) => {
                       // For staff users, only show specific fields
@@ -1648,14 +1647,14 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
                   {/* Discount Button and Mini Form */}
                   {!hideHistoryButton && (
                     <div className="col-span-full">
-                      <div className="flex items-center justify-between mb-2 mt-2 pt-2 border-t border-gray-200">
-                        <h4 className="text-md font-medium text-gray-700">
+                      <div className="flex items-center justify-between pt-2 mt-2 mb-2 border-t border-gray-200">
+                        <h4 className="font-medium text-gray-700 text-md">
                           Apply Discount
                         </h4>
 
                         {editingTransaction._appliedDiscount ? (
                           <div className="flex items-center">
-                            <span className="text-green-600 mr-4">
+                            <span className="mr-4 text-green-600">
                               {editingTransaction._appliedDiscount.code}{' '}
                               discount applied:
                               {editingTransaction._appliedDiscount.percentage}%
@@ -1664,7 +1663,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
                             <button
                               type="button"
                               onClick={handleRemoveDiscount}
-                              className="px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
+                              className="px-3 py-1 text-red-700 bg-red-100 rounded-md hover:bg-red-200"
                             >
                               Remove
                             </button>
@@ -1673,7 +1672,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
                           <button
                             type="button"
                             onClick={handleAddDiscountClick}
-                            className="px-3 py-1 bg-pink-100 text-pink-700 rounded-md hover:bg-pink-200 flex items-center"
+                            className="flex items-center px-3 py-1 text-pink-700 bg-pink-100 rounded-md hover:bg-pink-200"
                           >
                             <Plus size={16} className="mr-1" />
                             Add Discount
@@ -1682,10 +1681,10 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
                       </div>
                     </div>
                   )}
-                  <div className="flex justify-end space-x-3 pt-4 border-t border-pink-100">
+                  <div className="flex justify-end pt-4 space-x-3 border-t border-pink-100">
                     <button
                       type="button"
-                      className="px-4 py-2 border border-pink-300 rounded-md shadow-sm text-pink-700 bg-white hover:bg-pink-50 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                      className="px-4 py-2 text-pink-700 bg-white border border-pink-300 rounded-md shadow-sm hover:bg-pink-50 focus:outline-none focus:ring-2 focus:ring-pink-500"
                       onClick={() => setShowEditForm(false)}
                       disabled={submitting}
                     >
@@ -1693,12 +1692,12 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-pink-600 text-white rounded-md shadow-sm hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 transition-all duration-300 flex items-center"
+                      className="flex items-center px-4 py-2 text-white transition-all duration-300 bg-pink-600 rounded-md shadow-sm hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
                       disabled={submitting}
                     >
                       {submitting ? (
                         <>
-                          <div className="h-4 w-4 border-t-2 border-b-2 border-white rounded-full animate-spin mr-2"></div>
+                          <div className="w-4 h-4 mr-2 border-t-2 border-b-2 border-white rounded-full animate-spin"></div>
                           Updating...
                         </>
                       ) : (
@@ -1719,8 +1718,8 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       {/* Discount Form Modal - Place this outside of Edit Form Modal but inside the main component return */}
       {showDiscountForm && (
         <div className="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-[60]">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
+          <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-xl">
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-gray-900">
                 Apply Promo Discount
               </h3>
@@ -1734,15 +1733,15 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
 
             {loadingPromos ? (
               <div className="py-6 text-center">
-                <div className="inline-block animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-pink-500 mb-2"></div>
+                <div className="inline-block w-6 h-6 mb-2 border-t-2 border-b-2 border-pink-500 rounded-full animate-spin"></div>
                 <p className="text-gray-500">Loading promo cards...</p>
               </div>
             ) : promoCards.length === 0 ? (
-              <div className="py-6 text-center bg-gray-50 rounded-md">
+              <div className="py-6 text-center rounded-md bg-gray-50">
                 <p className="text-gray-500">No promo cards available</p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-60 overflow-y-auto">
+              <div className="space-y-3 overflow-y-auto max-h-60">
                 {promoCards.map((promo) => (
                   <div
                     key={promo.id}
@@ -1753,16 +1752,16 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
                         : 'border-gray-200 hover:border-pink-300'
                     }`}
                   >
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between">
                       <h4 className="font-medium text-gray-800">
                         {promo.code}
                       </h4>
-                      <span className="text-pink-600 font-bold">
+                      <span className="font-bold text-pink-600">
                         {promo.discount}% off
                       </span>
                     </div>
                     {promo.description && (
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="mt-1 text-sm text-gray-500">
                         {promo.description}
                       </p>
                     )}
@@ -1772,15 +1771,15 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
             )}
 
             {selectedPromo && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex justify-between text-sm mb-2">
+              <div className="pt-4 mt-4 border-t border-gray-200">
+                <div className="flex justify-between mb-2 text-sm">
                   <span className="text-gray-500">Discount amount:</span>
                   <span className="font-medium">₹{discountAmount}</span>
                 </div>
                 <button
                   type="button"
                   onClick={handleCloseDiscountForm}
-                  className="w-full mt-2 px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700"
+                  className="w-full px-4 py-2 mt-2 text-white bg-pink-600 rounded-md hover:bg-pink-700"
                 >
                   Apply Discount
                 </button>

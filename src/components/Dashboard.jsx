@@ -43,11 +43,11 @@ const COMPONENT_PERMISSION_MAP = {
 
 // AccessDenied component moved outside for better performance
 const AccessDenied = ({ message }) => (
-  <div className="flex h-full flex-col items-center justify-center rounded-lg bg-red-50 p-6 text-center">
-    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-500">
+  <div className="flex flex-col items-center justify-center h-full p-6 text-center rounded-lg bg-red-50">
+    <div className="flex items-center justify-center w-16 h-16 mb-4 text-red-500 bg-red-100 rounded-full">
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8"
+        className="w-8 h-8"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -72,7 +72,7 @@ const AccessDenied = ({ message }) => (
 )
 
 export default function Dashboard() {
-  const { navigate } = useNavigate()
+  const navigate = useNavigate()
   const { user, isAuthenticated, hasPermission } = useAuth()
 
   // State management
@@ -247,11 +247,11 @@ export default function Dashboard() {
   // Show loading or authentication check
   if (!isAuthenticated) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="mb-4 text-lg">Please log in to continue</div>
           <button
-            className="rounded bg-blue-500 px-4 py-2 text-white"
+            className="px-4 py-2 text-white bg-blue-500 rounded"
             onClick={() => navigate('/auth')}
           >
             redirect to login
@@ -262,7 +262,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-gradient-to-br from-blue-50 to-indigo-100 md:flex-row">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 to-indigo-100 md:flex-row">
       <Sidebar
         activeTab={activeTab}
         setActiveTab={handleTabChange}
@@ -273,7 +273,7 @@ export default function Dashboard() {
         allowedTabs={allowedTabs}
         userRole={user?.role}
       />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
@@ -285,11 +285,11 @@ export default function Dashboard() {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
           transition={{ duration: 0.3 }}
-          className="flex-1 overflow-y-auto p-4 md:p-6"
+          className="flex-1 p-4 overflow-y-auto md:p-6"
         >
           {renderContent()}
         </motion.main>
-        <footer className="w-full border-t border-gray-200 bg-blue-300 px-3 py-1 text-center text-xs text-black shadow-sm">
+        <footer className="w-full px-3 py-1 text-xs text-center text-black bg-blue-300 border-t border-gray-200 shadow-sm">
           <a
             href="https://botivate.in/"
             target="_blank"

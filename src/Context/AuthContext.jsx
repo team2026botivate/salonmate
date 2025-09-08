@@ -21,7 +21,27 @@ export const AuthProvider = ({ children }) => {
         const storedUser = localStorage.getItem('salon_user');
         if (storedUser) {
           const userData = JSON.parse(storedUser);
-          setUser(userData);
+          // Normalize permissions with current defaults for the role
+          const role = (userData?.role || 'staff').toLowerCase();
+          const defaultPerms = getPermissionsForRole(role);
+          const currentPerms = Array.isArray(userData?.permissions)
+            ? userData.permissions
+            : [];
+          const mergedPerms = Array.from(
+            new Set([
+              ...currentPerms,
+              ...defaultPerms,
+            ])
+          );
+
+          const normalizedUser = {
+            ...userData,
+            role,
+            permissions: role === 'admin' ? ['all'] : mergedPerms,
+          };
+
+          setUser(normalizedUser);
+          localStorage.setItem('salon_user', JSON.stringify(normalizedUser));
         }
       } catch (error) {
         console.error('Error loading stored user:', error);
@@ -34,12 +54,33 @@ export const AuthProvider = ({ children }) => {
     checkStoredUser(); // Load the stored user data on mount
   }, []);
 
-  // Login function - just stores user data
+  // Helper to compute permissions by role
+  const getPermissionsForRole = (role) => {
+    const normalizedRole = (role || 'staff').toLowerCase();
+    if (normalizedRole === 'admin') {
+      return ['all'];
+    }
+    // Staff: restrict to appointment-related areas by default
+    return [
+      'appointment',          // Booking
+      'runningappointment',   // DailyEntry / running
+      'appointmenthistory',   // Appointment History
+      'inventory',            // Inventory access for staff
+      // Add more if staff should see them:
+      // 'customers',
+      // 'whatsapptemplate',
+    ];
+  };
+
+  // Login function - stores user data with role-based permissions
   const login = (userData) => {
+    const role = userData?.role || 'staff';
     const enhancedUser = {
       ...userData,
-      role: userData.role || 'staff',
-      permissions: ['all'], // Default permissions
+      role,
+      permissions: userData?.permissions && Array.isArray(userData.permissions)
+        ? userData.permissions
+        : getPermissionsForRole(role),
     };
 
     setUser(enhancedUser);
@@ -53,12 +94,19 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('supabase_session');
   };
 
+  const hasPermission = (permission) => {
+    if (!permission) return false;
+    const perms = user?.permissions || [];
+    return perms.includes('all') || perms.includes(permission);
+  };
+
   const value = {
     user,
     loading,
     login,
     logout,
     isAuthenticated: !!user,
+    hasPermission,
   };
 
   return (

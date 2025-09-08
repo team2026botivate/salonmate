@@ -397,7 +397,6 @@ export const useDoStaffStatusActive = () => {
       if (currentStatus && currentStatus.toLowerCase() === 'active') {
         const timeInMilliseconds = minutes * 60 * 1000
 
-
         // Set timeout to change status back to available
         const timeoutId = setTimeout(async () => {
           try {
@@ -637,16 +636,31 @@ export const useCreateTransaction = () => {
   const createTransaction = async (payload) => {
     try {
       setLoading(true)
+      // Use totalDue directly if it's a finite number; otherwise, coerce and round
+      let finalAmountInt
+      if (
+        typeof payload?.totalDue === 'number' &&
+        Number.isFinite(payload.totalDue)
+      ) {
+        finalAmountInt = payload.totalDue
+      } else {
+        const coerced = Number(payload?.totalDue)
+        finalAmountInt = Number.isFinite(coerced) ? Math.round(coerced) : 0
+      }
+
+      const updateData = {
+        transactions_status: payload?.transactionStatus || 'paid',
+        transaction_note: payload?.notes || null,
+        transaction_id: payload?.transactionId || null,
+        transaction_final_amount: finalAmountInt, // DB expects integer
+        payment_method: payload?.payment?.method || null,
+        transactions_date: new Date().toISOString(),
+        gst_amount: payload?.gst_amount || null,
+      }
+
       const { data, error } = await supabase
         .from('appointment')
-        .update({
-          transactions_status: payload.transactionStatus,
-          transaction_note: payload.notes,
-          transaction_id: payload.transactionId,
-          transaction_final_amount: payload.totalDue,
-          payment_method: payload.payment.method,
-          transactions_date: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', payload.appointmentId)
       if (error) throw error
       setRefreshTransactionHookRefresh()
@@ -794,7 +808,9 @@ export const useGetAllAppointmentsHistory = () => {
 
   const getAllAppointmentsHistory = async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping all appointments history fetch')
+      console.warn(
+        'No store_id available, skipping all appointments history fetch'
+      )
       setLoading(false)
       return
     }
@@ -2230,7 +2246,6 @@ export const useCreateShopId = () => {
         })
         .select()
         .single()
-
 
       if (error) throw error
       return data

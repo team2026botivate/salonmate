@@ -235,7 +235,6 @@ const StaffUser = () => {
           // Refresh the staff list
           fetchStaffMembers();
         } catch (error) {
-          console.log("Couldn't access iframe content due to CORS, but form was submitted");
   
           // Even if we can't access the content, the form was submitted
           alert(isEditingStaff ? "Staff updated successfully!" : "Staff added successfully!");
@@ -465,18 +464,18 @@ const StaffUser = () => {
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 ">
       {/* Background Elements */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-0 right-0 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+        <div className="absolute top-0 left-0 bg-blue-500 rounded-full w-96 h-96 mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-0 right-0 bg-purple-500 rounded-full w-80 h-80 mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-0 left-0 bg-pink-500 rounded-full w-96 h-96 mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+      <div className="relative z-10 max-w-6xl px-4 py-12 mx-auto sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col items-center mb-12">
           <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg transform rotate-6"></div>
-              <div className="absolute inset-0 bg-white rounded-lg flex items-center justify-center">
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 transform rounded-lg bg-gradient-to-r from-blue-400 to-purple-500 rotate-6"></div>
+              <div className="absolute inset-0 flex items-center justify-center bg-white rounded-lg">
                 <svg
                   className="w-10 h-10 text-indigo-600"
                   viewBox="0 0 24 24"
@@ -518,16 +517,16 @@ const StaffUser = () => {
               Staff <span className="text-indigo-300">Management</span>
             </h1>
           </div>
-          <p className="text-indigo-200 text-center max-w-2xl">
+          <p className="max-w-2xl text-center text-indigo-200">
             Add, edit, and manage staff members and their login credentials
           </p>
         </div>
 
         {/* Navigation and Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-8 bg-white/10 backdrop-blur-lg rounded-xl p-4">
+        <div className="flex flex-col items-center justify-between p-4 mb-8 sm:flex-row bg-white/10 backdrop-blur-lg rounded-xl">
           <button
             onClick={() => navigate("/profile")}
-            className="flex items-center text-white hover:text-indigo-200 transition-colors mb-4 sm:mb-0"
+            className="flex items-center mb-4 text-white transition-colors hover:text-indigo-200 sm:mb-0"
           >
             <ArrowLeft size={20} className="mr-1" />
             <span>Back to Profile</span>
@@ -545,7 +544,7 @@ const StaffUser = () => {
                 permissions: []
               });
             }}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-indigo-500/30"
+            className="px-6 py-2 text-white transition-colors bg-indigo-600 rounded-lg shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30"
           >
             <Plus size={18} className="inline mr-2" />
             Add New Staff
@@ -555,7 +554,7 @@ const StaffUser = () => {
         {/* Search Bar */}
         <div className="mb-8">
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <Search size={18} className="text-indigo-300" />
             </div>
             <input
@@ -563,14 +562,14 @@ const StaffUser = () => {
               placeholder="Search staff by name, ID, or role..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white/10 border border-indigo-300/30 rounded-lg text-white placeholder-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full py-3 pl-10 pr-4 text-white placeholder-indigo-300 border rounded-lg bg-white/10 border-indigo-300/30 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-white flex items-start">
+          <div className="flex items-start p-4 mb-6 text-white border rounded-lg bg-red-500/20 border-red-500/50">
             <AlertCircle size={18} className="mr-2 flex-shrink-0 mt-0.5 text-red-300" />
             <span>{error}</span>
           </div>
@@ -578,9 +577,9 @@ const StaffUser = () => {
 
         {/* Add/Edit Staff Form */}
         {isAddingStaff && (
-          <div className="mb-8 bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden shadow-xl">
+          <div className="mb-8 overflow-hidden shadow-xl bg-white/10 backdrop-blur-lg rounded-2xl">
             <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-white">
                   {isEditingStaff ? `Edit ${formData.staffPosition || 'Staff Member'}` : "Add New Staff Member"}
                 </h3>
@@ -590,17 +589,17 @@ const StaffUser = () => {
               </div>
 
               <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
                   {/* User ID as a dropdown */}
                   <div>
-                    <label className="block text-sm font-medium text-indigo-200 mb-2">
+                    <label className="block mb-2 text-sm font-medium text-indigo-200">
                       User ID <span className="text-red-400">*</span>
                     </label>
                     <select
                       name="userId"
                       value={formData.userId}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white/5 border border-indigo-300/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-4 py-3 text-white border rounded-lg bg-white/5 border-indigo-300/30 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
                     >
                       <option value="">Select User ID</option>
@@ -614,7 +613,7 @@ const StaffUser = () => {
 
                   {/* Password */}
                   <div>
-                    <label className="block text-sm font-medium text-indigo-200 mb-2">
+                    <label className="block mb-2 text-sm font-medium text-indigo-200">
                       Password <span className="text-red-400">*</span>
                     </label>
                     <div className="relative">
@@ -624,12 +623,12 @@ const StaffUser = () => {
                         value={formData.password}
                         onChange={handleChange}
                         placeholder="Enter password"
-                        className="w-full px-4 py-3 bg-white/5 border border-indigo-300/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full px-4 py-3 text-white border rounded-lg bg-white/5 border-indigo-300/30 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         required
                       />
                       <button
                         type="button"
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-indigo-300 hover:text-white"
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-indigo-300 hover:text-white"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -640,11 +639,11 @@ const StaffUser = () => {
 
                 {/* Permissions Section */}
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-indigo-200 mb-4">
+                  <label className="block mb-4 text-sm font-medium text-indigo-200">
                     Permissions <span className="text-red-400">*</span>
                   </label>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                     {availablePermissions.map((permission) => (
                       <div key={permission.id} className="flex items-center">
                         <button
@@ -669,7 +668,7 @@ const StaffUser = () => {
                     ))}
                   </div>
                   
-                  <p className="text-xs text-indigo-300/70 mt-2">
+                  <p className="mt-2 text-xs text-indigo-300/70">
                     {formData.permissions.includes('all') 
                       ? "All permissions selected - this user will have full access"
                       : `Selected permissions: ${formData.permissions.length}`}
@@ -680,18 +679,18 @@ const StaffUser = () => {
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="px-4 py-2 border border-indigo-300/30 text-white rounded-lg hover:bg-white/10 transition-colors mr-3"
+                    className="px-4 py-2 mr-3 text-white transition-colors border rounded-lg border-indigo-300/30 hover:bg-white/10"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-indigo-500/30"
+                    className="px-6 py-2 text-white transition-colors bg-indigo-600 rounded-lg shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30"
                     disabled={isLoading}
                   >
                     {isLoading ? (
                       <>
-                        <div className="h-5 w-5 border-t-2 border-b-2 border-white rounded-full animate-spin mr-2 inline-block"></div>
+                        <div className="inline-block w-5 h-5 mr-2 border-t-2 border-b-2 border-white rounded-full animate-spin"></div>
                         Saving...
                       </>
                     ) : (
@@ -708,24 +707,24 @@ const StaffUser = () => {
         )}
 
         {/* Staff List */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden shadow-xl">
+        <div className="overflow-hidden shadow-xl bg-white/10 backdrop-blur-lg rounded-2xl">
           <div className="p-6">
-            <h3 className="text-xl font-bold text-white mb-6 flex items-center">
+            <h3 className="flex items-center mb-6 text-xl font-bold text-white">
               <User size={20} className="mr-2 text-indigo-300" />
               Staff Members
             </h3>
 
             {isLoading && !isAddingStaff ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="h-8 w-8 border-t-2 border-b-2 border-indigo-300 rounded-full animate-spin"></div>
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-t-2 border-b-2 border-indigo-300 rounded-full animate-spin"></div>
                 <span className="ml-3 text-indigo-200">Loading staff data...</span>
               </div>
             ) : filteredStaffMembers.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-500/20 mb-4">
+              <div className="py-12 text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-indigo-500/20">
                   <User size={32} className="text-indigo-300" />
                 </div>
-                <p className="text-indigo-200 text-lg">
+                <p className="text-lg text-indigo-200">
                   {searchQuery ? "No staff members match your search" : "No staff members found"}
                 </p>
                 <button
@@ -733,7 +732,7 @@ const StaffUser = () => {
                     setIsAddingStaff(true);
                     setIsEditingStaff(false);
                   }}
-                  className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="px-6 py-2 mt-4 text-white transition-colors bg-indigo-600 rounded-lg hover:bg-indigo-700"
                 >
                   <Plus size={18} className="inline mr-2" />
                   Add Your First Staff Member
@@ -744,13 +743,13 @@ const StaffUser = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="text-left border-b border-indigo-300/30">
-                      <th className="pb-3 text-indigo-200 font-medium">User ID</th>
-                      <th className="pb-3 text-indigo-200 font-medium">Password</th>
-                      <th className="pb-3 text-indigo-200 font-medium">Role</th>
-                      <th className="pb-3 text-indigo-200 font-medium">Position</th>
-                      {/* <th className="pb-3 text-indigo-200 font-medium">Columns</th> */}
-                      <th className="pb-3 text-indigo-200 font-medium">Permissions</th>
-                      <th className="pb-3 text-indigo-200 font-medium">Actions</th>
+                      <th className="pb-3 font-medium text-indigo-200">User ID</th>
+                      <th className="pb-3 font-medium text-indigo-200">Password</th>
+                      <th className="pb-3 font-medium text-indigo-200">Role</th>
+                      <th className="pb-3 font-medium text-indigo-200">Position</th>
+                      {/* <th className="pb-3 font-medium text-indigo-200">Columns</th> */}
+                      <th className="pb-3 font-medium text-indigo-200">Permissions</th>
+                      <th className="pb-3 font-medium text-indigo-200">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -819,11 +818,11 @@ const StaffUser = () => {
         {/* Footer */}
         <div className="mt-16 text-center">
           <div className="inline-flex items-center justify-center">
-            <div className="h-px w-16 bg-indigo-300/30"></div>
-            <span className="mx-4 text-indigo-200 text-sm">Powered by Botivate</span>
-            <div className="h-px w-16 bg-indigo-300/30"></div>
+            <div className="w-16 h-px bg-indigo-300/30"></div>
+            <span className="mx-4 text-sm text-indigo-200">Powered by Botivate</span>
+            <div className="w-16 h-px bg-indigo-300/30"></div>
           </div>
-          <p className="mt-4 text-indigo-300/60 text-sm">© 2025 SalonPro. All rights reserved.</p>
+          <p className="mt-4 text-sm text-indigo-300/60">© 2025 SalonPro. All rights reserved.</p>
         </div>
       </div>
 
