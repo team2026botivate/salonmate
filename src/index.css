@@ -15,7 +15,7 @@
   }
 
   .btn-bg-modern {
-    background-color: #000000; /* fallback for legacy */
+    background-color: #000000;  
   }
   .font-color {
     color: #000000;
@@ -36,6 +36,35 @@
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
+    }
+  }
+}
+
+@supports not selector(:focus-visible) {
+  @layer base {
+    button,
+    [role='button'],
+    .btn {
+      background-color: #000000;
+      color: #ffffff;
+    }
+
+    .bg-white,
+    .btn-white {
+      background-color: #ffffff;
+      color: #111827;
+    }
+
+    button.bg-transparent,
+    [role='button'].bg-transparent,
+    .btn-transparent {
+      background-color: transparent;
+      color: inherit;
+    }
+
+    .btn-fallback-light {
+      background-color: #ffffff;
+      color: #111827;
     }
   }
 }
