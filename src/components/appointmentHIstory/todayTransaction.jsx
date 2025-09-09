@@ -11,89 +11,84 @@ import {
   LoaderCircle,
   User,
   XCircle,
-} from 'lucide-react'
-import React, { useEffect, useState } from 'react'
-import { formateCurrency } from '../../utils/formateCurrency.utils'
-import TransactionsPanel from './transactionWrapper'
-import { useGetSelectedExtraServiceDataForTransaction } from '../../hook/dbOperation'
-import { formatDateTime } from '../../utils/getDateAndtimeform'
-import { cn } from '../../utils/cn'
-import { pdf } from '@react-pdf/renderer'
-import { InvoicePDF } from '../inVoice/invoicePdf'
-import supabase from '@/dataBase/connectdb'
+} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { formateCurrency } from '../../utils/formateCurrency.utils';
+import TransactionsPanel from './transactionWrapper';
+import { useGetSelectedExtraServiceDataForTransaction } from '../../hook/dbOperation';
+import { formatDateTime } from '../../utils/getDateAndtimeform';
+import { cn } from '../../utils/cn';
+import { pdf } from '@react-pdf/renderer';
+import { InvoicePDF } from '../inVoice/invoicePdf';
+import supabase from '@/dataBase/connectdb';
 
 const TodayTransaction = ({ searchItem, filterDate }) => {
-  const { data, loading } = useGetSelectedExtraServiceDataForTransaction()
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const { data, loading } = useGetSelectedExtraServiceDataForTransaction();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [transactionPanelData, setTransactionPanelData] = useState({
     id: '',
     service_price: '',
     service_name: '',
     extra_services: '',
-  })
+  });
 
-  const [expandedRows, setExpandedRows] = useState(new Set())
+  const [expandedRows, setExpandedRows] = useState(new Set());
 
   //todo i have to check here for one time
   const toggleRowExpansion = (id) => {
-    const newExpanded = new Set(expandedRows)
+    const newExpanded = new Set(expandedRows);
     if (newExpanded.has(id)) {
-      newExpanded.delete(id)
+      newExpanded.delete(id);
     } else {
-      newExpanded.add(id)
+      newExpanded.add(id);
     }
-    setExpandedRows(newExpanded)
-  }
+    setExpandedRows(newExpanded);
+  };
 
   const getStatusIcon = (status) => {
     switch (status) {
       case 'done':
-        return <CheckCircle className="w-4 h-4 text-blue-600" />
+        return <CheckCircle className="w-4 h-4 text-blue-600" />;
       case 'pending':
-        return <AlertCircle className="w-4 h-4 text-yellow-600" />
+        return <AlertCircle className="w-4 h-4 text-yellow-600" />;
       case 'cancelled':
-        return <XCircle className="w-4 h-4 text-red-600" />
+        return <XCircle className="w-4 h-4 text-red-600" />;
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   const getStatusBadge = (status) => {
-    const baseClasses =
-      'px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1'
+    const baseClasses = 'px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1';
     switch (status) {
       case 'done':
-        return `${baseClasses} bg-blue-100 text-blue-800`
+        return `${baseClasses} bg-blue-100 text-blue-800`;
       case 'pending':
-        return `${baseClasses} bg-yellow-100 text-yellow-800`
+        return `${baseClasses} bg-yellow-100 text-yellow-800`;
       case 'cancelled':
-        return `${baseClasses} bg-red-100 text-red-800`
+        return `${baseClasses} bg-red-100 text-red-800`;
       default:
-        return baseClasses
+        return baseClasses;
     }
-  }
+  };
 
-  const list = Array.isArray(data) ? data : []
-  const query = (searchItem || '').toString().toLowerCase()
+  const list = Array.isArray(data) ? data : [];
+  const query = (searchItem || '').toString().toLowerCase();
   const filteredTransactions = list.filter((transaction) => {
-    const name = String(transaction?.['Customer Name'] ?? '').toLowerCase()
-    const txnId = String(transaction?.['transaction_id'] ?? '').toLowerCase()
-    const services = String(transaction?.Services ?? '').toLowerCase()
+    const name = String(transaction?.['Customer Name'] ?? '').toLowerCase();
+    const txnId = String(transaction?.['transaction_id'] ?? '').toLowerCase();
+    const services = String(transaction?.Services ?? '').toLowerCase();
     const matchesSearch = query
-      ? name.includes(query) ||
-        txnId.includes(query) ||
-        services.includes(query)
-      : true
-    const matchesDate = filterDate ? transaction?.date === filterDate : true
-    return matchesDate && matchesSearch
-  })
+      ? name.includes(query) || txnId.includes(query) || services.includes(query)
+      : true;
+    const matchesDate = filterDate ? transaction?.date === filterDate : true;
+    return matchesDate && matchesSearch;
+  });
 
   const handleTransaction = async (transaction) => {
     if (!transaction?.transaction_id || !transaction?.transactions_date) {
-      console.warn(
-        'Invoice not available: missing transaction_id or transactions_date'
-      )
-      return
+      console.warn('Invoice not available: missing transaction_id or transactions_date');
+      return;
     }
 
     const { data, error } = await supabase
@@ -101,7 +96,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
       .select('*')
       .eq('id', transaction?.store_id)
       .single()
-      .select()
+      .select();
     try {
       // Map transaction data to InvoicePDF props
       const salonInfo = {
@@ -109,32 +104,26 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
         address: data?.shop_address,
         phone: data?.shop_number,
         gst: data?.gst_number,
-      }
+      };
 
       const customerInfo = {
         name: transaction?.['Customer Name'] || 'Customer',
-        phone:
-          transaction?.['Mobile Number'] ||
-          transaction?.phone ||
-          transaction?.['Phone'] ||
-          '',
+        phone: transaction?.['Mobile Number'] || transaction?.phone || transaction?.['Phone'] || '',
         date:
-          transaction?.transactions_date ||
-          transaction?.['Slot Date'] ||
-          new Date().toISOString(),
-      }
+          transaction?.transactions_date || transaction?.['Slot Date'] || new Date().toISOString(),
+      };
 
       // Base service row
       const baseServicePrice = Number(
         transaction?.['Service Price'] ?? transaction?.service_price ?? 0
-      )
+      );
       const services = [
         {
           name: String(transaction?.Services || 'Service'),
           qty: 1,
           price: isNaN(baseServicePrice) ? 0 : baseServicePrice,
         },
-      ]
+      ];
 
       // Extra services rows
       const mappedExtras = Array.isArray(transaction?.extra_Services)
@@ -143,44 +132,37 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
             qty: 1,
             price: Number(s?.base_price ?? s?.price ?? 0) || 0,
           }))
-        : []
+        : [];
 
-      const extrasSubtotal = mappedExtras.reduce(
-        (sum, s) => sum + (Number(s.price) || 0),
-        0
-      )
+      const extrasSubtotal = mappedExtras.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
       // If final amount equals base service price (and no tax/discount), assume extras weren't charged
-      const finalAmount = Number(transaction?.transaction_final_amount)
-      const discount = Number(transaction?.transaction_discount ?? 0) || 0
-      const tax = Number(transaction?.gst_amount ?? 0) || 0
+      const finalAmount = Number(transaction?.transaction_final_amount);
+      const discount = Number(transaction?.transaction_discount ?? 0) || 0;
+      const tax = Number(transaction?.gst_amount ?? 0) || 0;
 
       const includeExtras = !(
         !isNaN(finalAmount) &&
         Math.abs(finalAmount - (services[0]?.price || 0)) < 0.01 &&
         discount === 0 &&
         tax === 0
-      )
+      );
 
       // Always pass extra services so they are visible in the PDF
-      const extraServices = mappedExtras
+      const extraServices = mappedExtras;
       // But only add extras to subtotal if they were charged
-      const subtotal =
-        (services[0]?.price || 0) + (includeExtras ? extrasSubtotal : 0)
+      const subtotal = (services[0]?.price || 0) + (includeExtras ? extrasSubtotal : 0);
 
       // In this dataset, discount appears to be an absolute amount
-      const computedTotal = Math.max(0, subtotal - discount + tax)
-      const total = Number(transaction?.transaction_final_amount)
+      const computedTotal = Math.max(0, subtotal - discount + tax);
+      const total = Number(transaction?.transaction_final_amount);
       const summary = {
         subtotal,
         discount,
         tax,
         total: isNaN(total) ? computedTotal : total,
-      }
+      };
 
-      const invoiceNumber =
-        String(transaction?.transaction_id || '').trim() || `INV-${Date.now()}`
-
-      
+      const invoiceNumber = String(transaction?.transaction_id || '').trim() || `INV-${Date.now()}`;
 
       const blob = await pdf(
         <InvoicePDF
@@ -191,25 +173,22 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
           summary={summary}
           invoiceNumber={invoiceNumber}
         />
-      ).toBlob()
+      ).toBlob();
 
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
       // Use a more descriptive filename
-      const safeName = (customerInfo.name || 'customer').replace(
-        /[^a-z0-9\-_. ]/gi,
-        '_'
-      )
-      link.download = `${invoiceNumber}-${safeName}.pdf`
-      link.click()
+      const safeName = (customerInfo.name || 'customer').replace(/[^a-z0-9\-_. ]/gi, '_');
+      link.download = `${invoiceNumber}-${safeName}.pdf`;
+      link.click();
 
-      URL.revokeObjectURL(url) // cleanup
+      URL.revokeObjectURL(url); // cleanup
     } catch (err) {
-      console.error('Failed to generate invoice PDF:', err)
-      alert('Failed to generate invoice. Please try again.')
+      console.error('Failed to generate invoice PDF:', err);
+      alert('Failed to generate invoice. Please try again.');
     }
-  }
+  };
 
   return (
     <div className="relative p-5 shadow-md rounded-xl bg-gradient-to-b to-blue-50">
@@ -332,16 +311,13 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                     <React.Fragment key={transaction.id}>
                       <tr className="transition-colors hover:bg-gray-50">
                         <td className="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
-                          {formatDateTime(transaction.transactions_date) ||
-                            'N/A'}
+                          {formatDateTime(transaction.transactions_date) || 'N/A'}
                         </td>
                         <td className="px-4 py-4 font-mono text-sm text-gray-600 whitespace-nowrap">
                           {transaction.transaction_id || 'N/A'}
                         </td>
                         <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
-                          {new Date(
-                            transaction['Slot Date']
-                          ).toLocaleDateString()}
+                          {new Date(transaction['Slot Date']).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-4 font-mono text-sm text-gray-600 whitespace-nowrap">
                           {transaction['Booking ID']}
@@ -383,9 +359,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                           )}
                         </td>
                         <td className="px-4 py-4 text-sm font-bold text-gray-900 whitespace-nowrap">
-                          {formateCurrency(
-                            transaction.transaction_final_amount
-                          )}
+                          {formateCurrency(transaction.transaction_final_amount)}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           <span className={getStatusBadge(transaction.status)}>
@@ -432,8 +406,8 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                                   service_price: transaction['Service Price'],
                                   service_name: transaction?.Services,
                                   extra_services: transaction?.extra_Services,
-                                }))
-                                setIsEditModalOpen(true)
+                                }));
+                                setIsEditModalOpen(true);
                               }}
                               className={cn(
                                 'rounded p-1 transition-colors hover:cursor-pointer hover:bg-red-50',
@@ -449,20 +423,17 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                         <td className="flex items-center justify-center px-4 py-4 whitespace-nowrap">
                           <button
                             disabled={
-                              !transaction?.transaction_id ||
-                              !transaction?.transactions_date
+                              !transaction?.transaction_id || !transaction?.transactions_date
                             }
                             onClick={() => handleTransaction(transaction)}
                             className={cn(
                               'rounded p-2 transition-colors',
-                              !transaction?.transaction_id ||
-                                !transaction?.transactions_date
+                              !transaction?.transaction_id || !transaction?.transactions_date
                                 ? 'cursor-not-allowed text-gray-400'
                                 : 'hover:cursor-pointer hover:bg-green-50 hover:text-green-600'
                             )}
                             title={
-                              !transaction?.transaction_id ||
-                              !transaction?.transactions_date
+                              !transaction?.transaction_id || !transaction?.transactions_date
                                 ? 'Invoice will be available after payment is recorded'
                                 : 'Download invoice'
                             }
@@ -478,25 +449,21 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                             <td colSpan={15} className="px-4 py-4">
                               <div className="ml-8">
                                 <div className="grid grid-cols-3 gap-3 md:grid-cols-4 lg:grid-cols-5">
-                                  {transaction.extra_Services.map(
-                                    (service, index) => (
-                                      <div
-                                        key={index}
-                                        className="p-3 bg-white border border-blue-200 rounded-lg"
-                                      >
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-sm font-medium text-gray-800">
-                                            {service.service_name}
-                                          </span>
-                                          <span className="text-sm font-semibold text-green-600">
-                                            {formateCurrency(
-                                              service.base_price
-                                            )}
-                                          </span>
-                                        </div>
+                                  {transaction.extra_Services.map((service, index) => (
+                                    <div
+                                      key={index}
+                                      className="p-3 bg-white border border-blue-200 rounded-lg"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-sm font-medium text-gray-800">
+                                          {service.service_name}
+                                        </span>
+                                        <span className="text-sm font-semibold text-green-600">
+                                          {formateCurrency(service.base_price)}
+                                        </span>
                                       </div>
-                                    )
-                                  )}
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             </td>
@@ -511,7 +478,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default TodayTransaction
+export default TodayTransaction;

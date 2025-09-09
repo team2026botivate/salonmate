@@ -1,31 +1,31 @@
-import supabase from '../dataBase/connectdb'
-import { useState, useEffect, useCallback } from 'react'
-import { useAppData } from '../zustand/appData'
+import supabase from '../dataBase/connectdb';
+import { useState, useEffect, useCallback } from 'react';
+import { useAppData } from '../zustand/appData';
 
 export const useGetallAppointmentData = () => {
   // const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const { setAppointments, refreshAppointments, store_id } = useAppData()
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { setAppointments, refreshAppointments, store_id } = useAppData();
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const dayAfterTomorrow = new Date()
-  dayAfterTomorrow.setDate(today.getDate() + 2)
-  dayAfterTomorrow.setHours(23, 59, 59, 999)
+  const dayAfterTomorrow = new Date();
+  dayAfterTomorrow.setDate(today.getDate() + 2);
+  dayAfterTomorrow.setHours(23, 59, 59, 999);
 
-  const oneDayAgo = new Date()
-  oneDayAgo.setDate(oneDayAgo.getDate() - 1)
+  const oneDayAgo = new Date();
+  oneDayAgo.setDate(oneDayAgo.getDate() - 1);
 
   const fetchAppointments = async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping appointment fetch')
-      setLoading(false)
-      return []
+      console.warn('No store_id available, skipping appointment fetch');
+      setLoading(false);
+      return [];
     }
     try {
-      setLoading(true)
+      setLoading(true);
       const { data: appointments, error } = await supabase
         .from('appointment')
         .select('*')
@@ -37,38 +37,36 @@ export const useGetallAppointmentData = () => {
         .gte('"Slot Date"', today.toISOString())
         .lt('"Slot Date"', dayAfterTomorrow.toISOString())
 
-        .order('"Slot Date"', { ascending: false })
+        .order('"Slot Date"', { ascending: false });
 
-      if (error) throw error
+      if (error) throw error;
 
       // setData(appointments || [])
-      setAppointments([...appointments] || [])
-      return [...appointments]
+      setAppointments([...appointments] || []);
+      return [...appointments];
     } catch (err) {
-      console.error('Error fetching appointments:', err)
-      setError(err.message)
-      return []
+      console.error('Error fetching appointments:', err);
+      setError(err.message);
+      return [];
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchAppointments()
-  }, [refreshAppointments])
+    fetchAppointments();
+  }, [refreshAppointments]);
 
-  return { loading, error, refetch: fetchAppointments }
-}
+  return { loading, error, refetch: fetchAppointments };
+};
 
 export const useUpdateAppointmentById = () => {
-  const [loading, setLoading] = useState(false)
-  const setRefreshAppointments = useAppData(
-    (state) => state.setRefreshAppointments
-  )
+  const [loading, setLoading] = useState(false);
+  const setRefreshAppointments = useAppData((state) => state.setRefreshAppointments);
 
   const getAppointments = async (id, updates, onCancel) => {
     try {
-      setLoading(true)
+      setLoading(true);
       const { data, error } = await supabase
         .from('appointment')
         .update({
@@ -80,58 +78,58 @@ export const useUpdateAppointmentById = () => {
           'Slot Number': updates.slotNumber,
         })
         .eq('id', id)
-        .select()
+        .select();
 
-      if (error) throw error
-      setRefreshAppointments()
-      onCancel()
+      if (error) throw error;
+      setRefreshAppointments();
+      onCancel();
     } catch (error) {
-      console.error('Error updating appointment:', error)
-      setLoading(false)
-      onCancel()
+      console.error('Error updating appointment:', error);
+      setLoading(false);
+      onCancel();
     }
-  }
-  return { getAppointments, loading }
-}
+  };
+  return { getAppointments, loading };
+};
 
 export const useGetStaffData = () => {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   const fetchStaffData = async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping staff data fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping staff data fetch');
+      setLoading(false);
+      return;
     }
     try {
-      setLoading(true)
+      setLoading(true);
       const { data } = await supabase
         .from('staff_info')
-        .select('status,mobile_number,staff_name,id,status')
-        .eq('store_id', store_id)
+        .select('status,mobile_number,staff_name,id,email_id,status')
+        .eq('store_id', store_id);
 
-      setData(data)
+      setData(data);
     } catch (error) {
-      setError('Failed to load staff data')
-      console.error('Error fetching staff data:', error)
+      setError('Failed to load staff data');
+      console.error('Error fetching staff data:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchStaffData()
-  }, [])
+    fetchStaffData();
+  }, []);
 
-  return { data, loading, error, refetch: fetchStaffData }
-}
+  return { data, loading, error, refetch: fetchStaffData };
+};
 
 export const useUpdateStaffStatus = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // const updateStaffStatusById = async (id, status = 'busy') => {
   //   try {
@@ -154,115 +152,107 @@ export const useUpdateStaffStatus = () => {
 
   const updateStaffStatusByName = async (staff_id, status = 'Active') => {
     try {
-      setLoading(true)
+      setLoading(true);
       const { data, error } = await supabase
         .from('staff_info')
         .update({ status })
         .ilike('id', staff_id)
-        .select()
+        .select();
 
-      if (error) throw error
-      return data
+      if (error) throw error;
+      return data;
     } catch (err) {
-      console.error('Error updating staff status by name:', err)
-      setError(err.message)
-      return null
+      console.error('Error updating staff status by name:', err);
+      setError(err.message);
+      return null;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  return { updateStaffStatusByName, loading, error }
-}
+  return { updateStaffStatusByName, loading, error };
+};
 
 export const usegetUserByPhoneNumber = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   const getUserByPhoneNumber = async (phoneNumber) => {
     if (!store_id) {
-      console.warn('No store_id available')
-      return null
+      console.warn('No store_id available');
+      return null;
     }
     try {
-      setLoading(true)
+      setLoading(true);
       const { data, error } = await supabase
         .from('customer_info')
         .select('id, customer_name, mobile_number')
         .eq('store_id', store_id)
-        .ilike('mobile_number', phoneNumber)
-      if (error) throw error
-      return data
+        .ilike('mobile_number', phoneNumber);
+      if (error) throw error;
+      return data;
     } catch (err) {
-      console.error('Error fetching user by phone number:', err)
-      setError(err.message)
-      return null
+      console.error('Error fetching user by phone number:', err);
+      setError(err.message);
+      return null;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  return { getUserByPhoneNumber, loading, error }
-}
+  return { getUserByPhoneNumber, loading, error };
+};
 
 export const useGetServicesList = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [data, setData] = useState([])
-  const { store_id } = useAppData()
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [data, setData] = useState([]);
+  const { store_id } = useAppData();
 
   const getServices = async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping services fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping services fetch');
+      setLoading(false);
+      return;
     }
     try {
-      setLoading(true)
+      setLoading(true);
       const { data, error } = await supabase
         .from('hair_service')
         .select('service_name, base_price,time_duration')
-        .eq('store_id', store_id)
-      if (error) throw error
-      setData(data)
+        .eq('store_id', store_id);
+      if (error) throw error;
+      setData(data);
     } catch (err) {
-      console.error('Error fetching services:', err)
-      setError(err.message)
+      console.error('Error fetching services:', err);
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
   useEffect(() => {
-    getServices()
-  }, [])
+    getServices();
+  }, []);
 
-  return { loading, error, data }
-}
+  return { loading, error, data };
+};
 
 export const useCreatenewAppointment = () => {
-  const setRefreshAppointments = useAppData(
-    (state) => state.setRefreshAppointments
-  )
-  const { store_id } = useAppData()
+  const setRefreshAppointments = useAppData((state) => state.setRefreshAppointments);
+  const { store_id } = useAppData();
 
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
 
-  const createNewAppointment = async (
-    appointmentData,
-    newStatus,
-    onCancel,
-    isNewUser
-  ) => {
-    setLoading(true)
+  const createNewAppointment = async (appointmentData, newStatus, onCancel, isNewUser) => {
+    setLoading(true);
 
     try {
       // Check if staff is provided and validate only if provided
-      const hasStaff = appointmentData.id && appointmentData.id.trim() !== ''
+      const hasStaff = appointmentData.id && appointmentData.id.trim() !== '';
 
       // Check if selected staff is busy (only if staff is provided)
-      const isStaffBusy =
-        hasStaff && appointmentData.staffStatus?.toLowerCase() === 'busy'
+      const isStaffBusy = hasStaff && appointmentData.staffStatus?.toLowerCase() === 'busy';
 
       // Prepare appointment data with conditional staff_id
       const appointmentInsertData = {
@@ -272,27 +262,19 @@ export const useCreatenewAppointment = () => {
         'Slot Date': appointmentData.slotDate,
         'Slot Number': appointmentData.slotNumber,
         'Slot Time': appointmentData.slotTime,
-        'Staff Name': hasStaff
-          ? isStaffBusy
-            ? ''
-            : appointmentData.staffName
-          : '',
-        'Staff Number': hasStaff
-          ? isStaffBusy
-            ? ''
-            : appointmentData.staffNumber
-          : '',
+        'Staff Name': hasStaff ? (isStaffBusy ? '' : appointmentData.staffName) : '',
+        'Staff Number': hasStaff ? (isStaffBusy ? '' : appointmentData.staffNumber) : '',
         Services: appointmentData.service,
         'Service Price': appointmentData.servicePrice,
         'Booking Status': appointmentData.bookingStatus,
         TimeStamp: new Date().toISOString(),
         created_at: new Date().toISOString(),
         store_id: store_id,
-      }
+      };
 
       // Only add staff_id if staff is provided and valid
       if (hasStaff) {
-        appointmentInsertData.staff_id = appointmentData.id
+        appointmentInsertData.staff_id = appointmentData.id;
       }
       if (isNewUser) {
         const { error } = await supabase.from('customer_info').insert({
@@ -300,153 +282,145 @@ export const useCreatenewAppointment = () => {
           mobile_number: appointmentData.mobileNumber,
           timestamp: new Date().toISOString(),
           store_id: store_id,
-        })
-        if (error) throw error
+        });
+        if (error) throw error;
       }
-      const { error } = await supabase
-        .from('appointment')
-        .insert(appointmentInsertData)
+      const { error } = await supabase.from('appointment').insert(appointmentInsertData);
 
       if (!error) {
-        setRefreshAppointments()
+        setRefreshAppointments();
       }
-      if (error) throw error
+      if (error) throw error;
 
       // Only update staff status if we have a valid staff ID
       if (hasStaff) {
         const { data: staffData, error: staffError } = await supabase
           .from('staff_info')
           .update({ status: newStatus })
-          .eq('id', appointmentData.id)
-        if (staffError) throw staffError
+          .eq('id', appointmentData.id);
+        if (staffError) throw staffError;
       }
     } catch (err) {
-      console.error('Error creating new appointment:', err)
-      return null
+      console.error('Error creating new appointment:', err);
+      return null;
     } finally {
-      setLoading(false)
-      onCancel()
+      setLoading(false);
+      onCancel();
     }
-  }
+  };
 
-  return { createNewAppointment, loading }
-}
+  return { createNewAppointment, loading };
+};
 
 export const useDoStaffStatusActive = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [activeTimeouts, setActiveTimeouts] = useState(new Map())
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [activeTimeouts, setActiveTimeouts] = useState(new Map());
 
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
-      activeTimeouts.forEach((timeoutId) => clearTimeout(timeoutId))
-    }
-  }, [activeTimeouts])
+      activeTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+    };
+  }, [activeTimeouts]);
 
   const updateStaffStatus = async (staff_id, newStatus) => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       const { data, error } = await supabase
         .from('staff_info')
         .update({ status: newStatus })
         .eq('id', staff_id)
-        .select()
+        .select();
 
-      if (error) throw error
+      if (error) throw error;
 
-      return data
+      return data;
     } catch (err) {
-      console.error('Error updating staff status:', err)
-      setError(err.message)
-      return null
+      console.error('Error updating staff status:', err);
+      setError(err.message);
+      return null;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const doStaffStatusActive = async (
-    staff_id,
-    serviceTimeMinutes,
-    currentStatus
-  ) => {
+  const doStaffStatusActive = async (staff_id, serviceTimeMinutes, currentStatus) => {
     try {
       // Input validation
       if (!staff_id) {
-        throw new Error('Staff ID is required')
+        throw new Error('Staff ID is required');
       }
 
-      const minutes = parseInt(serviceTimeMinutes) || 0
+      const minutes = parseInt(serviceTimeMinutes) || 0;
       if (minutes <= 0) {
-        throw new Error('Service time must be greater than 0')
+        throw new Error('Service time must be greater than 0');
       }
 
       // Clear any existing timeout for this staff member
       if (activeTimeouts.has(staff_id)) {
-        clearTimeout(activeTimeouts.get(staff_id))
+        clearTimeout(activeTimeouts.get(staff_id));
         setActiveTimeouts((prev) => {
-          const newMap = new Map(prev)
-          newMap.delete(staff_id)
-          return newMap
-        })
+          const newMap = new Map(prev);
+          newMap.delete(staff_id);
+          return newMap;
+        });
       }
 
       // Only proceed if staff is currently busy/active with a service
       if (currentStatus && currentStatus.toLowerCase() === 'active') {
-        const timeInMilliseconds = minutes * 60 * 1000
+        const timeInMilliseconds = minutes * 60 * 1000;
 
         // Set timeout to change status back to available
         const timeoutId = setTimeout(async () => {
           try {
-            await updateStaffStatus(staff_id, 'available')
+            await updateStaffStatus(staff_id, 'available');
             // Remove timeout from active list
             setActiveTimeouts((prev) => {
-              const newMap = new Map(prev)
-              newMap.delete(staff_id)
-              return newMap
-            })
+              const newMap = new Map(prev);
+              newMap.delete(staff_id);
+              return newMap;
+            });
           } catch (err) {
-            console.error('Error in timeout callback:', err)
-            setError(
-              `Failed to update staff status after service completion: ${err.message}`
-            )
+            console.error('Error in timeout callback:', err);
+            setError(`Failed to update staff status after service completion: ${err.message}`);
           }
-        }, timeInMilliseconds)
+        }, timeInMilliseconds);
 
         // Store timeout ID for cleanup
-        setActiveTimeouts((prev) => new Map(prev).set(staff_id, timeoutId))
+        setActiveTimeouts((prev) => new Map(prev).set(staff_id, timeoutId));
 
-        return { success: true, timeoutId, minutes }
+        return { success: true, timeoutId, minutes };
       } else {
         throw new Error(
           `Staff status must be 'active' to set timer. Current status: ${currentStatus}`
-        )
+        );
       }
     } catch (err) {
-      console.error('doStaffStatusActive error:', err)
-      setError(err.message)
-      return { success: false, error: err.message }
+      console.error('doStaffStatusActive error:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
     }
-  }
+  };
 
   const cancelStaffTimer = (staff_id) => {
     if (activeTimeouts.has(staff_id)) {
-      clearTimeout(activeTimeouts.get(staff_id))
+      clearTimeout(activeTimeouts.get(staff_id));
       setActiveTimeouts((prev) => {
-        const newMap = new Map(prev)
-        newMap.delete(staff_id)
-        return newMap
-      })
-      return true
+        const newMap = new Map(prev);
+        newMap.delete(staff_id);
+        return newMap;
+      });
+      return true;
     }
-    return false
-  }
+    return false;
+  };
 
   const getActiveTimers = () => {
-    return Array.from(activeTimeouts.keys())
-  }
+    return Array.from(activeTimeouts.keys());
+  };
 
   return {
     doStaffStatusActive,
@@ -455,37 +429,37 @@ export const useDoStaffStatusActive = () => {
     updateStaffStatus,
     loading,
     error,
-  }
-}
+  };
+};
 
 //*  Running Appointment db operation starting form here
 
 export const useGetRunningAppointment = () => {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const refreshExtraServicesHookRefresh = useAppData(
     (state) => state.refreshExtraServicesHookRefresh
-  )
-  const { store_id } = useAppData()
+  );
+  const { store_id } = useAppData();
 
   const getRunningAppointment = async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping running appointments fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping running appointments fetch');
+      setLoading(false);
+      return;
     }
     try {
-      setLoading(true)
+      setLoading(true);
       // Define date range: from start of yesterday to start of day after tomorrow (exclusive)
-      const now = new Date()
-      const startOfYesterday = new Date(now)
-      startOfYesterday.setDate(now.getDate() - 1)
-      startOfYesterday.setHours(0, 0, 0, 0)
+      const now = new Date();
+      const startOfYesterday = new Date(now);
+      startOfYesterday.setDate(now.getDate() - 1);
+      startOfYesterday.setHours(0, 0, 0, 0);
 
-      const startOfDayAfterTomorrow = new Date(now)
-      startOfDayAfterTomorrow.setDate(now.getDate() + 2)
-      startOfDayAfterTomorrow.setHours(0, 0, 0, 0)
+      const startOfDayAfterTomorrow = new Date(now);
+      startOfDayAfterTomorrow.setDate(now.getDate() + 2);
+      startOfDayAfterTomorrow.setHours(0, 0, 0, 0);
 
       const { data, error } = await supabase
         .from('appointment')
@@ -497,152 +471,150 @@ export const useGetRunningAppointment = () => {
         .or('status.is.null,status.neq.done') // ✅ null bhi allow aur 'done' ke alawa sab
         .gte('"Slot Date"', startOfYesterday.toISOString().split('T')[0])
         .lte('"Slot Date"', startOfDayAfterTomorrow.toISOString().split('T')[0])
-        .order('"Slot Date"', { ascending: false })
+        .order('"Slot Date"', { ascending: false });
 
-      if (error) throw error
-      setData(data)
+      if (error) throw error;
+      setData(data);
     } catch (err) {
-      console.error('Error fetching running appointments:', err)
-      setError(err.message)
+      console.error('Error fetching running appointments:', err);
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
   useEffect(() => {
-    getRunningAppointment()
-  }, [refreshExtraServicesHookRefresh])
+    getRunningAppointment();
+  }, [refreshExtraServicesHookRefresh]);
 
-  return { loading, error, data }
-}
+  return { loading, error, data };
+};
 
 export const useGetExtraServiceDataFetch = () => {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const refreshExtraServicesHookRefresh = useAppData(
     (state) => state.refreshExtraServicesHookRefresh
-  )
-  const { store_id } = useAppData()
+  );
+  const { store_id } = useAppData();
 
   const getExtraServiceData = async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping extra services fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping extra services fetch');
+      setLoading(false);
+      return;
     }
     try {
-      setLoading(true)
+      setLoading(true);
       const { data, error } = await supabase
         .from('hair_service')
         .select('service_name,base_price')
-        .eq('store_id', store_id)
+        .eq('store_id', store_id);
 
-      if (error) throw error
-      setData(data)
+      if (error) throw error;
+      setData(data);
     } catch (err) {
-      console.error('Error fetching extra service data:', err)
-      setError(err.message)
+      console.error('Error fetching extra service data:', err);
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
   useEffect(() => {
-    getExtraServiceData()
-  }, [refreshExtraServicesHookRefresh])
+    getExtraServiceData();
+  }, [refreshExtraServicesHookRefresh]);
 
-  return { loading, error, data }
-}
+  return { loading, error, data };
+};
 
 export const useCreateExtraService = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const setRefreshExtraServicesHookRefresh = useAppData(
     (state) => state.setRefreshExtraServicesHookRefresh
-  )
+  );
 
   const createExtraService = async (appointmentId, updates, status) => {
     try {
-      setLoading(true)
+      setLoading(true);
       const { data, error } = await supabase
         .from('appointment')
         .update({
           status: status,
           extra_Services: updates,
         })
-        .eq('id', appointmentId)
-      if (error) throw error
+        .eq('id', appointmentId);
+      if (error) throw error;
 
-      setRefreshExtraServicesHookRefresh()
-      return data
+      setRefreshExtraServicesHookRefresh();
+      return data;
     } catch (err) {
-      console.error('Error updating running appointment:', err)
-      setError(err.message)
-      return null
+      console.error('Error updating running appointment:', err);
+      setError(err.message);
+      return null;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  return { createExtraService, loading, error }
-}
+  return { createExtraService, loading, error };
+};
 
 //* Appointment History
 
 export const useGetSelectedExtraServiceDataForTransaction = () => {
-  const refreshTransactionHookRefresh = useAppData(
-    (state) => state.refreshTransactionHookRefresh
-  )
-  const { store_id } = useAppData()
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const refreshTransactionHookRefresh = useAppData((state) => state.refreshTransactionHookRefresh);
+  const { store_id } = useAppData();
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const getSelectedExtraServiceDataForTransaction = async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping transaction data fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping transaction data fetch');
+      setLoading(false);
+      return;
     }
     try {
-      setLoading(true)
+      setLoading(true);
       const { data, error } = await supabase
         .from('appointment')
         .select('*')
         .eq('store_id', store_id)
         .eq('status', 'done')
-        .order('"Slot Date"', { ascending: false })
-      if (error) throw error
-      setData(data)
+        .order('"Slot Date"', { ascending: false });
+      if (error) throw error;
+      setData(data);
     } catch (err) {
-      console.error('Error fetching selected extra service data:', err)
-      setError(err.message)
+      console.error('Error fetching selected extra service data:', err);
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    getSelectedExtraServiceDataForTransaction()
-  }, [refreshTransactionHookRefresh])
-  return { loading, error, data }
-}
+    getSelectedExtraServiceDataForTransaction();
+  }, [refreshTransactionHookRefresh]);
+  return { loading, error, data };
+};
 
 export const useCreateTransaction = () => {
   const setRefreshTransactionHookRefresh = useAppData(
     (state) => state.setRefreshTransactionHookRefresh
-  )
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const createTransaction = async (payload) => {
     try {
-      setLoading(true)
+      setLoading(true);
       // Coerce and round to satisfy integer column type in DB
       const finalAmountInt = (() => {
-        const n = Number(payload?.totalDue)
-        if (!Number.isFinite(n)) return 0
+        const n = Number(payload?.totalDue);
+        if (!Number.isFinite(n)) return 0;
         // Ensure integer as a true number, not a string
-        return parseInt(n.toFixed(0), 10)
-      })()
+        return parseInt(n.toFixed(0), 10);
+      })();
 
       const updateData = {
         transactions_status: payload?.transactionStatus || 'paid',
@@ -652,252 +624,242 @@ export const useCreateTransaction = () => {
         payment_method: payload?.payment?.method || null,
         transactions_date: new Date().toISOString(),
         gst_amount: payload?.gst_amount || null,
-      }
+      };
 
       const { data, error } = await supabase
         .from('appointment')
         .update(updateData)
-        .eq('id', payload.appointmentId)
+        .eq('id', payload.appointmentId);
 
       if (error) {
-        console.error('Error updating running appointment:', error)
-        setError(error.message)
-        throw new Error('Error while payment ')
+        console.error('Error updating running appointment:', error);
+        setError(error.message);
+        throw new Error('Error while payment ');
       }
-      setRefreshTransactionHookRefresh()
-      return data
+      setRefreshTransactionHookRefresh();
+      return data;
     } catch (err) {
-      console.error('Error updating running appointment:', err)
-      setError(err.message)
-      return null
+      console.error('Error updating running appointment:', err);
+      setError(err.message);
+      return null;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  return { createTransaction, loading, error }
-}
+  return { createTransaction, loading, error };
+};
 
 export const useGetHeaderCardData = () => {
-  const refreshTransactionHookRefresh = useAppData(
-    (state) => state.refreshTransactionHookRefresh
-  )
-  const { store_id } = useAppData()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [data, setData] = useState({ total: 0, average: 0, count: 0 })
+  const refreshTransactionHookRefresh = useAppData((state) => state.refreshTransactionHookRefresh);
+  const { store_id } = useAppData();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [data, setData] = useState({ total: 0, average: 0, count: 0 });
 
   const getTotalRevenueAndAverageSale = async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping header card data fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping header card data fetch');
+      setLoading(false);
+      return;
     }
     try {
-      setLoading(true)
+      setLoading(true);
       // Fetch amounts only; aggregate client-side to avoid PostgREST aggregate restriction
       const { data: rows, error } = await supabase
         .from('appointment')
         .select('transaction_final_amount')
         .eq('store_id', store_id)
-        .not('transaction_final_amount', 'is', null)
+        .not('transaction_final_amount', 'is', null);
 
-      if (error) throw error
-      const amounts = (rows || []).map(
-        (r) => Number(r.transaction_final_amount) || 0
-      )
-      const total = amounts.reduce((acc, n) => acc + n, 0)
-      const count = amounts.length
-      const average = count ? total / count : 0
-      setData({ total, average, count })
+      if (error) throw error;
+      const amounts = (rows || []).map((r) => Number(r.transaction_final_amount) || 0);
+      const total = amounts.reduce((acc, n) => acc + n, 0);
+      const count = amounts.length;
+      const average = count ? total / count : 0;
+      setData({ total, average, count });
     } catch (err) {
-      console.error('Error fetching selected extra service data:', err)
-      setError(err.message)
+      console.error('Error fetching selected extra service data:', err);
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    getTotalRevenueAndAverageSale()
-  }, [refreshTransactionHookRefresh])
-  return { loading, error, data }
-}
+    getTotalRevenueAndAverageSale();
+  }, [refreshTransactionHookRefresh]);
+  return { loading, error, data };
+};
 
 export const useGetMonthlyEarnings = () => {
-  const refreshTransactionHookRefresh = useAppData(
-    (state) => state.refreshTransactionHookRefresh
-  )
-  const { store_id } = useAppData()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [data, setData] = useState()
+  const refreshTransactionHookRefresh = useAppData((state) => state.refreshTransactionHookRefresh);
+  const { store_id } = useAppData();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [data, setData] = useState();
 
   const getMonthlyEarnings = async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping monthly earnings fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping monthly earnings fetch');
+      setLoading(false);
+      return;
     }
     try {
-      setLoading(true)
+      setLoading(true);
       const { data, error } = await supabase
         .from('appointment')
         // Only fetch the amount for now; if date is needed later, use:
         // .select('transaction_final_amount, "Slot Date" as slot_date')
         .select('transaction_final_amount,created_at')
         .eq('store_id', store_id)
-        .not('transaction_final_amount', 'is', null)
+        .not('transaction_final_amount', 'is', null);
 
-      if (error) throw error
-      setData(data)
+      if (error) throw error;
+      setData(data);
     } catch (err) {
-      console.error('Error fetching selected extra service data:', err)
-      setError(err.message)
+      console.error('Error fetching selected extra service data:', err);
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    getMonthlyEarnings()
-  }, [refreshTransactionHookRefresh])
-  return { loading, error, data }
-}
+    getMonthlyEarnings();
+  }, [refreshTransactionHookRefresh]);
+  return { loading, error, data };
+};
 
 export const useGetSelectedExtraServiceDataForTransactionHistory = () => {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
   const getSelectedExtraServiceDataForTransaction = async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping transaction history fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping transaction history fetch');
+      setLoading(false);
+      return;
     }
     try {
-      setLoading(true)
+      setLoading(true);
       const { data, error } = await supabase
         .from('appointment')
         .select('*')
         .eq('store_id', store_id)
         .eq('transactions_status', 'paid')
-        .order('"Slot Date"', { ascending: false })
-      if (error) throw error
-      setData(data)
+        .order('"Slot Date"', { ascending: false });
+      if (error) throw error;
+      setData(data);
     } catch (err) {
-      console.error('Error fetching selected extra service data:', err)
-      setError(err.message)
+      console.error('Error fetching selected extra service data:', err);
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    getSelectedExtraServiceDataForTransaction()
-  }, [])
-  return { loading, error, data }
-}
+    getSelectedExtraServiceDataForTransaction();
+  }, []);
+  return { loading, error, data };
+};
 
 // Hook to get ALL appointments history for the store
 export const useGetAllAppointmentsHistory = () => {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   const getAllAppointmentsHistory = async () => {
     if (!store_id) {
-      console.warn(
-        'No store_id available, skipping all appointments history fetch'
-      )
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping all appointments history fetch');
+      setLoading(false);
+      return;
     }
     try {
-      setLoading(true)
+      setLoading(true);
       const { data, error } = await supabase
         .from('appointment')
         .select('*')
         .eq('store_id', store_id)
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      setData(data)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setData(data);
     } catch (err) {
-      console.error('Error fetching all appointments history:', err)
-      setError(err.message)
+      console.error('Error fetching all appointments history:', err);
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    getAllAppointmentsHistory()
-  }, [store_id])
+    getAllAppointmentsHistory();
+  }, [store_id]);
 
-  return { loading, error, data, refetch: getAllAppointmentsHistory }
-}
+  return { loading, error, data, refetch: getAllAppointmentsHistory };
+};
 
 // getting the promoCard section
 
 export const useGetPromoCardData = () => {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   const getPromoCardData = useCallback(async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping promo card data fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping promo card data fetch');
+      setLoading(false);
+      return;
     }
     try {
-      setLoading(true)
+      setLoading(true);
       const { data: promoCardData, error } = await supabase
         .from('promo_card')
         .select('*')
-        .eq('store_id', store_id)
-      if (error) throw error
+        .eq('store_id', store_id);
+      if (error) throw error;
 
       const filteredPromoCardData = promoCardData.filter(
-        (promoCard) =>
-          promoCard.deleted === false &&
-          new Date(promoCard.end_date) >= new Date()
-      )
+        (promoCard) => promoCard.deleted === false && new Date(promoCard.end_date) >= new Date()
+      );
 
-      setData(filteredPromoCardData)
+      setData(filteredPromoCardData);
     } catch (err) {
-      console.error('Error fetching dashboard summary:', err)
-      setError(err.message)
+      console.error('Error fetching dashboard summary:', err);
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [store_id])
+  }, [store_id]);
 
   useEffect(() => {
-    getPromoCardData()
-  }, [getPromoCardData])
+    getPromoCardData();
+  }, [getPromoCardData]);
 
-  return { loading, error, data }
-}
+  return { loading, error, data };
+};
 //managing thie staff attendance
 
 export const useStaffAttendance = (selectedDate) => {
-  const [attendance, setAttendance] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [attendance, setAttendance] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   // Fetch attendance for selected date (show all staff even if no attendance yet)
   const fetchAttendance = async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping attendance fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping attendance fetch');
+      setLoading(false);
+      return;
     }
-    setLoading(true)
+    setLoading(true);
     try {
       // 1) Fetch all staff
       const { data: staffList, error: staffErr } = await supabase
@@ -905,22 +867,22 @@ export const useStaffAttendance = (selectedDate) => {
         .select('id, staff_name, position')
         .eq('store_id', store_id)
         .neq('delete_flag', true)
-        .order('staff_name', { ascending: true })
-      if (staffErr) throw staffErr
+        .order('staff_name', { ascending: true });
+      if (staffErr) throw staffErr;
 
       // 2) Fetch attendance for the selected date
       const { data: attRows, error: attErr } = await supabase
         .from('staff_attendance')
         .select('staff_id, status, in_time, out_time, remark')
         .eq('store_id', store_id)
-        .eq('date', selectedDate)
-      if (attErr) throw attErr
+        .eq('date', selectedDate);
+      if (attErr) throw attErr;
 
-      const attMap = new Map((attRows || []).map((r) => [r.staff_id, r]))
+      const attMap = new Map((attRows || []).map((r) => [r.staff_id, r]));
 
       // 3) Merge so every staff member appears
       const merged = (staffList || []).map((s) => {
-        const a = attMap.get(s.id)
+        const a = attMap.get(s.id);
         return {
           id: a?.id, // attendance row id may be undefined if none
           staff_id: s.id,
@@ -930,26 +892,20 @@ export const useStaffAttendance = (selectedDate) => {
           in_time: a?.in_time || null,
           out_time: a?.out_time || null,
           remark: a?.remark || '',
-        }
-      })
+        };
+      });
 
-      setAttendance(merged)
+      setAttendance(merged);
     } catch (err) {
-      console.error('Error fetching attendance:', err)
-      setError(err)
+      console.error('Error fetching attendance:', err);
+      setError(err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Update staff status
-  const updateStatus = async (
-    staffId,
-    newStatus,
-    inTime = null,
-    outTime = null,
-    remark = ''
-  ) => {
+  const updateStatus = async (staffId, newStatus, inTime = null, outTime = null, remark = '') => {
     try {
       // Try update first
       const { data: upd, error: updErr } = await supabase
@@ -963,24 +919,22 @@ export const useStaffAttendance = (selectedDate) => {
         })
         .eq('staff_id', staffId)
         .eq('date', selectedDate)
-        .select('staff_id')
+        .select('staff_id');
 
-      if (updErr) throw updErr
+      if (updErr) throw updErr;
 
       // If no row updated, insert a new one
       if (!upd || upd.length === 0) {
-        const { error: insErr } = await supabase
-          .from('staff_attendance')
-          .insert({
-            staff_id: staffId,
-            date: selectedDate,
-            status: newStatus,
-            in_time: inTime,
-            out_time: outTime,
-            remark,
-            update_at: new Date().toISOString(),
-          })
-        if (insErr) throw insErr
+        const { error: insErr } = await supabase.from('staff_attendance').insert({
+          staff_id: staffId,
+          date: selectedDate,
+          status: newStatus,
+          in_time: inTime,
+          out_time: outTime,
+          remark,
+          update_at: new Date().toISOString(),
+        });
+        if (insErr) throw insErr;
       }
 
       // Optimistically update local state
@@ -996,34 +950,34 @@ export const useStaffAttendance = (selectedDate) => {
               }
             : item
         )
-      )
+      );
     } catch (err) {
-      console.error('Error updating attendance:', err)
+      console.error('Error updating attendance:', err);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchAttendance()
-  }, [selectedDate])
+    fetchAttendance();
+  }, [selectedDate]);
 
-  return { attendance, loading, error, fetchAttendance, updateStatus }
-}
+  return { attendance, loading, error, fetchAttendance, updateStatus };
+};
 
 // CRUD for staff_info
 export const useStaffInfo = () => {
-  const [staff, setStaff] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [staff, setStaff] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   const fetchStaff = useCallback(async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping staff info fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping staff info fetch');
+      setLoading(false);
+      return;
     }
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
       const { data, error: err } = await supabase
         .from('staff_info')
@@ -1031,17 +985,17 @@ export const useStaffInfo = () => {
           `id, staff_name, mobile_number, email_id, position, id_proof, joining_date, status, delete_flag, created_at`
         )
         .eq('store_id', store_id)
-        .order('staff_name', { ascending: true })
-      if (err) throw err
+        .order('staff_name', { ascending: true });
+      if (err) throw err;
 
-      setStaff(data || [])
+      setStaff(data || []);
     } catch (e) {
-      console.error('fetchStaff error:', e)
-      setError(e)
+      console.error('fetchStaff error:', e);
+      setError(e);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   const addStaff = async (payload) => {
     // payload keys expected in DB shape
@@ -1049,16 +1003,16 @@ export const useStaffInfo = () => {
       const { data, error: err } = await supabase
         .from('staff_info')
         .insert({ ...payload, store_id: store_id })
-        .select()
-      if (err) throw err
+        .select();
+      if (err) throw err;
       // append
-      setStaff((prev) => [...prev, ...(data || [])])
-      return data?.[0]
+      setStaff((prev) => [...prev, ...(data || [])]);
+      return data?.[0];
     } catch (e) {
-      console.error('addStaff error:', e)
-      throw e
+      console.error('addStaff error:', e);
+      throw e;
     }
-  }
+  };
 
   const updateStaff = async (id, updates) => {
     try {
@@ -1066,34 +1020,31 @@ export const useStaffInfo = () => {
         .from('staff_info')
         .update({ ...updates })
         .eq('id', id)
-        .select()
-      if (err) throw err
-      const row = data?.[0]
-      setStaff((prev) => prev.map((s) => (s.id === id ? row : s)))
-      return row
+        .select();
+      if (err) throw err;
+      const row = data?.[0];
+      setStaff((prev) => prev.map((s) => (s.id === id ? row : s)));
+      return row;
     } catch (e) {
-      console.error('updateStaff error:', e)
-      throw e
+      console.error('updateStaff error:', e);
+      throw e;
     }
-  }
+  };
 
   const softDeleteStaff = async (id, flag = true) => {
-    return updateStaff(id, { delete_flag: flag })
-  }
+    return updateStaff(id, { delete_flag: flag });
+  };
 
   const deleteStaff = async (id) => {
     try {
-      const { error: err } = await supabase
-        .from('staff_info')
-        .delete()
-        .eq('id', id)
-      if (err) throw err
-      setStaff((prev) => prev.filter((s) => s.id !== id))
+      const { error: err } = await supabase.from('staff_info').delete().eq('id', id);
+      if (err) throw err;
+      setStaff((prev) => prev.filter((s) => s.id !== id));
     } catch (e) {
-      console.error('deleteStaff error:', e)
-      throw e
+      console.error('deleteStaff error:', e);
+      throw e;
     }
-  }
+  };
 
   return {
     staff,
@@ -1104,60 +1055,54 @@ export const useStaffInfo = () => {
     updateStaff,
     softDeleteStaff,
     deleteStaff,
-  }
-}
+  };
+};
 
 // Fetch staff attendance/history for a specific date and map to UI-friendly shape
 export const useStaffHistory = (selectedDate) => {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   const fetchForDate = useCallback(async () => {
-    if (!selectedDate || !store_id) return
-    setLoading(true)
-    setError(null)
+    if (!selectedDate || !store_id) return;
+    setLoading(true);
+    setError(null);
     try {
       // 1) Fetch all staff (include even deleted? default exclude deleted)
       const { data: staffList, error: staffErr } = await supabase
         .from('staff_info')
         .select('id, staff_name, position, delete_flag')
         .eq('store_id', store_id)
-        .order('staff_name', { ascending: true })
-      if (staffErr) throw staffErr
+        .order('staff_name', { ascending: true });
+      if (staffErr) throw staffErr;
 
       // 2) Fetch attendance rows for that date
       const { data: attRows, error: attErr } = await supabase
         .from('staff_attendance')
         .select('id, staff_id, status, in_time, out_time, remark, date')
-        .eq('date', selectedDate)
-      if (attErr) throw attErr
+        .eq('date', selectedDate);
+      if (attErr) throw attErr;
 
-      const attMap = new Map()
-      ;(attRows || []).forEach((a) => attMap.set(a.staff_id, a))
+      const attMap = new Map();
+      (attRows || []).forEach((a) => attMap.set(a.staff_id, a));
 
       // 3) Merge and map for UI
       const merged = (staffList || [])
         .filter((s) => s.delete_flag !== true) // hide soft-deleted by default
         .map((s) => {
-          const a = attMap.get(s.id)
+          const a = attMap.get(s.id);
           const normalizeStatus = (val) => {
             const sv = String(val || '')
               .trim()
-              .toLowerCase()
-            if (sv === 'present' || sv === 'active' || sv === 'p')
-              return 'Present'
-            if (sv === 'absent' || sv === 'a') return 'Absent'
-            if (
-              sv === 'leave' ||
-              sv === 'onleave' ||
-              sv === 'half_day' ||
-              sv === 'l'
-            )
-              return 'Half Day'
-            return 'Absent' // default to Absent if undefined or unknown
-          }
+              .toLowerCase();
+            if (sv === 'present' || sv === 'active' || sv === 'p') return 'Present';
+            if (sv === 'absent' || sv === 'a') return 'Absent';
+            if (sv === 'leave' || sv === 'onleave' || sv === 'half_day' || sv === 'l')
+              return 'Half Day';
+            return 'Absent'; // default to Absent if undefined or unknown
+          };
           return {
             id: s.id,
             name: s.staff_name,
@@ -1167,68 +1112,68 @@ export const useStaffHistory = (selectedDate) => {
             checkOutTime: a?.out_time || null,
             date: selectedDate,
             remark: a?.remark || '',
-          }
-        })
+          };
+        });
 
-      setData(merged)
+      setData(merged);
     } catch (e) {
-      console.error('useStaffHistory error:', e)
-      setError(e)
+      console.error('useStaffHistory error:', e);
+      setError(e);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [selectedDate])
+  }, [selectedDate]);
 
   useEffect(() => {
-    fetchForDate()
-  }, [fetchForDate])
+    fetchForDate();
+  }, [fetchForDate]);
 
-  return { data, loading, error, refetch: fetchForDate }
-}
+  return { data, loading, error, refetch: fetchForDate };
+};
 
 //* inventory db operation starting from here
 
 // Promo Card database operations
 export const usePromoCardOperations = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [promoCards, setPromoCards] = useState([])
-  const { store_id } = useAppData()
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [promoCards, setPromoCards] = useState([]);
+  const { store_id } = useAppData();
 
   // Fetch all promo cards
   const fetchPromoCards = useCallback(async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping promo cards fetch')
-      setLoading(false)
-      return []
+      console.warn('No store_id available, skipping promo cards fetch');
+      setLoading(false);
+      return [];
     }
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       const { data, error } = await supabase
         .from('promo_card')
         .select('*')
         .eq('store_id', store_id)
         .eq('deleted', false)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false });
 
-      if (error) throw error
-      setPromoCards(data || [])
-      return data || []
+      if (error) throw error;
+      setPromoCards(data || []);
+      return data || [];
     } catch (err) {
-      console.error('Error fetching promo cards:', err)
-      setError(err.message)
-      return []
+      console.error('Error fetching promo cards:', err);
+      setError(err.message);
+      return [];
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   // Add new promo card
   const addPromoCard = async (promoData) => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       const { data, error } = await supabase
         .from('promo_card')
         .insert({
@@ -1242,27 +1187,27 @@ export const usePromoCardOperations = () => {
           store_id: store_id,
         })
         .select()
-        .single()
+        .single();
 
-      if (error) throw error
+      if (error) throw error;
 
       // Update local state
-      setPromoCards((prev) => [data, ...prev])
-      return { success: true, data }
+      setPromoCards((prev) => [data, ...prev]);
+      return { success: true, data };
     } catch (err) {
-      console.error('Error adding promo card:', err)
-      setError(err.message)
-      return { success: false, error: err.message }
+      console.error('Error adding promo card:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Update promo card
   const updatePromoCard = async (id, promoData) => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       const { data, error } = await supabase
         .from('promo_card')
         .update({
@@ -1275,50 +1220,48 @@ export const usePromoCardOperations = () => {
         })
         .eq('id', id)
         .select()
-        .single()
+        .single();
 
-      if (error) throw error
+      if (error) throw error;
 
       // Update local state
-      setPromoCards((prev) =>
-        prev.map((promo) => (promo.id === id ? data : promo))
-      )
-      return { success: true, data }
+      setPromoCards((prev) => prev.map((promo) => (promo.id === id ? data : promo)));
+      return { success: true, data };
     } catch (err) {
-      console.error('Error updating promo card:', err)
-      setError(err.message)
-      return { success: false, error: err.message }
+      console.error('Error updating promo card:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Soft delete promo card
   const deletePromoCard = async (id) => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       const { error } = await supabase
         .from('promo_card')
         .update({
           deleted: true,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', id)
+        .eq('id', id);
 
-      if (error) throw error
+      if (error) throw error;
 
       // Remove from local state
-      setPromoCards((prev) => prev.filter((promo) => promo.id !== id))
-      return { success: true }
+      setPromoCards((prev) => prev.filter((promo) => promo.id !== id));
+      return { success: true };
     } catch (err) {
-      console.error('Error deleting promo card:', err)
-      setError(err.message)
-      return { success: false, error: err.message }
+      console.error('Error deleting promo card:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Check if promo code exists
   const checkPromoCodeExists = async (code, excludeId = null) => {
@@ -1328,37 +1271,37 @@ export const usePromoCardOperations = () => {
         .select('id')
         .eq('store_id', store_id)
         .eq('code', code)
-        .eq('deleted', false)
+        .eq('deleted', false);
 
       if (excludeId) {
-        query = query.neq('id', excludeId)
+        query = query.neq('id', excludeId);
       }
 
-      const { data, error } = await query
-      if (error) throw error
+      const { data, error } = await query;
+      if (error) throw error;
 
-      return data && data.length > 0
+      return data && data.length > 0;
     } catch (err) {
-      console.error('Error checking promo code:', err)
-      return false
+      console.error('Error checking promo code:', err);
+      return false;
     }
-  }
+  };
 
   // Get active promo cards
   const getActivePromoCards = useCallback(() => {
-    const today = new Date()
+    const today = new Date();
     return promoCards.filter((promo) => {
-      if (!promo.start_date || !promo.end_date) return true
-      const startDate = new Date(promo.start_date)
-      const endDate = new Date(promo.end_date)
-      return today >= startDate && today <= endDate
-    })
-  }, [promoCards])
+      if (!promo.start_date || !promo.end_date) return true;
+      const startDate = new Date(promo.start_date);
+      const endDate = new Date(promo.end_date);
+      return today >= startDate && today <= endDate;
+    });
+  }, [promoCards]);
 
   // Initialize data fetch
   useEffect(() => {
-    fetchPromoCards()
-  }, [])
+    fetchPromoCards();
+  }, []);
 
   return {
     promoCards,
@@ -1370,54 +1313,51 @@ export const usePromoCardOperations = () => {
     deletePromoCard,
     checkPromoCodeExists,
     getActivePromoCards,
-  }
-}
+  };
+};
 
 export const useGetInventoryData = () => {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   const fetchInventoryData = async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping inventory data fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping inventory data fetch');
+      setLoading(false);
+      return;
     }
     try {
-      setLoading(true)
-      const { data } = await supabase
-        .from('inventory')
-        .select('*')
-        .eq('store_id', store_id)
-      setData(data)
+      setLoading(true);
+      const { data } = await supabase.from('inventory').select('*').eq('store_id', store_id);
+      setData(data);
     } catch (error) {
-      setError('Failed to load inventory data')
-      console.error('Error fetching inventory data:', error)
+      setError('Failed to load inventory data');
+      console.error('Error fetching inventory data:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchInventoryData()
-  }, [])
+    fetchInventoryData();
+  }, []);
 
-  return { data, loading, error, refetch: fetchInventoryData }
-}
+  return { data, loading, error, refetch: fetchInventoryData };
+};
 
 // Create/Update inventory items
 export const useInventoryMutations = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   // uiProduct: { name, stockQuantity, purchaseDate, costPrice, stockStatus }
   const addProduct = async (uiProduct) => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       const payload = {
         product_name: uiProduct.name,
         stock_quantity: uiProduct.stockQuantity,
@@ -1425,106 +1365,102 @@ export const useInventoryMutations = () => {
         cost_price: uiProduct.costPrice,
         stock_status: uiProduct.stockStatus,
         store_id: store_id,
-      }
-      const { data, error } = await supabase
-        .from('inventory')
-        .insert(payload)
-        .select()
-        .single()
-      if (error) throw error
-      return data
+      };
+      const { data, error } = await supabase.from('inventory').insert(payload).select().single();
+      if (error) throw error;
+      return data;
     } catch (e) {
-      console.error('addProduct error:', e)
-      setError(e.message || 'Failed to add product')
-      return null
+      console.error('addProduct error:', e);
+      setError(e.message || 'Failed to add product');
+      return null;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // uiProduct: must include id (maps to product_id)
   const updateProduct = async (uiProduct) => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       const payload = {
         product_name: uiProduct.name,
         stock_quantity: uiProduct.stockQuantity,
         purchase_date: uiProduct.purchaseDate,
         cost_price: uiProduct.costPrice,
         stock_status: uiProduct.stockStatus,
-      }
+      };
       const { data, error } = await supabase
         .from('inventory')
         .update(payload)
         .eq('product_id', uiProduct.id)
         .select()
-        .single()
-      if (error) throw error
-      return data
+        .single();
+      if (error) throw error;
+      return data;
     } catch (e) {
-      console.error('updateProduct error:', e)
-      setError(e.message || 'Failed to update product')
-      return null
+      console.error('updateProduct error:', e);
+      setError(e.message || 'Failed to update product');
+      return null;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  return { addProduct, updateProduct, loading, error }
-}
+  return { addProduct, updateProduct, loading, error };
+};
 
 //* Service section started from here
 
 // Get all services from hair_service table
 export const useGetServices = () => {
-  const [services, setServices] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   const fetchServices = useCallback(async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping services fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping services fetch');
+      setLoading(false);
+      return;
     }
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       const { data, error: err } = await supabase
         .from('hair_service')
         .select('*')
         .eq('store_id', store_id)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false });
 
-      if (err) throw err
-      setServices(data || [])
+      if (err) throw err;
+      setServices(data || []);
     } catch (e) {
-      console.error('fetchServices error:', e)
-      setError(e.message || 'Failed to fetch services')
+      console.error('fetchServices error:', e);
+      setError(e.message || 'Failed to fetch services');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    fetchServices()
-  }, [fetchServices])
+    fetchServices();
+  }, [fetchServices]);
 
-  return { services, loading, error, refetch: fetchServices }
-}
+  return { services, loading, error, refetch: fetchServices };
+};
 
 // Add new service
 export const useAddService = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   const addService = async (serviceData) => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       const payload = {
         service_name: serviceData.name,
@@ -1534,31 +1470,31 @@ export const useAddService = () => {
         delete_flag: false,
         created_at: new Date().toISOString(),
         store_id: store_id,
-      }
+      };
 
       const { data, error: err } = await supabase
         .from('hair_service')
         .insert(payload)
         .select()
-        .single()
+        .single();
 
-      if (err) throw err
-      return data
+      if (err) throw err;
+      return data;
     } catch (e) {
-      console.error('addService error:', e)
-      setError(e.message || 'Failed to add service')
-      return null
+      console.error('addService error:', e);
+      setError(e.message || 'Failed to add service');
+      return null;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  return { addService, loading, error }
-}
+  return { addService, loading, error };
+};
 
 // Dashboard Home hooks
 export const useDashboardSummary = () => {
-  const { store_id } = useAppData()
+  const { store_id } = useAppData();
   const [data, setData] = useState({
     upcomingBookings: 0,
     totalClients: 0,
@@ -1570,53 +1506,49 @@ export const useDashboardSummary = () => {
     inactiveServices: 0,
     totalStaff: 0,
     absentStaff: 0,
-  })
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchDashboardSummary = useCallback(async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping dashboard summary fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping dashboard summary fetch');
+      setLoading(false);
+      return;
     }
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       // Get today's date range
-      const today = new Date()
-      const todayStart = new Date(today)
-      todayStart.setHours(0, 0, 0, 0)
-      const todayEnd = new Date(today)
-      todayEnd.setHours(23, 59, 59, 999)
+      const today = new Date();
+      const todayStart = new Date(today);
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(today);
+      todayEnd.setHours(23, 59, 59, 999);
 
       // Get week date range
-      const weekStart = new Date(today)
-      weekStart.setDate(today.getDate() - today.getDay())
-      weekStart.setHours(0, 0, 0, 0)
-      const weekEnd = new Date(weekStart)
-      weekEnd.setDate(weekStart.getDate() + 6)
-      weekEnd.setHours(23, 59, 59, 999)
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
 
       // Get month date range
-      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
-      const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-      monthEnd.setHours(23, 59, 59, 999)
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      monthEnd.setHours(23, 59, 59, 999);
 
       // Get previous week and month for growth calculation
-      const prevWeekStart = new Date(weekStart)
-      prevWeekStart.setDate(weekStart.getDate() - 7)
-      const prevWeekEnd = new Date(weekEnd)
-      prevWeekEnd.setDate(weekEnd.getDate() - 7)
+      const prevWeekStart = new Date(weekStart);
+      prevWeekStart.setDate(weekStart.getDate() - 7);
+      const prevWeekEnd = new Date(weekEnd);
+      prevWeekEnd.setDate(weekEnd.getDate() - 7);
 
-      const prevMonthStart = new Date(
-        today.getFullYear(),
-        today.getMonth() - 1,
-        1
-      )
-      const prevMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0)
-      prevMonthEnd.setHours(23, 59, 59, 999)
+      const prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const prevMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+      prevMonthEnd.setHours(23, 59, 59, 999);
 
       // Fetch upcoming bookings (today and future)
       const { data: upcomingBookings, error: bookingsError } = await supabase
@@ -1624,17 +1556,17 @@ export const useDashboardSummary = () => {
         .select('id')
         .eq('store_id', store_id)
         .gte('"Slot Date"', todayStart.toISOString())
-        .in('"Booking Status"', ['confirmed', 'pending'])
+        .in('"Booking Status"', ['confirmed', 'pending']);
 
-      if (bookingsError) throw bookingsError
+      if (bookingsError) throw bookingsError;
 
       // Fetch total unique clients
       const { data: totalClients, error: clientsError } = await supabase
         .from('customer_info')
         .select('id')
-        .eq('store_id', store_id)
+        .eq('store_id', store_id);
 
-      if (clientsError) throw clientsError
+      if (clientsError) throw clientsError;
 
       // Fetch week revenue
       const { data: weekRevenue, error: weekRevenueError } = await supabase
@@ -1644,9 +1576,9 @@ export const useDashboardSummary = () => {
         .gte('transactions_date', weekStart.toISOString())
         .lte('transactions_date', weekEnd.toISOString())
         .eq('transactions_status', 'paid')
-        .not('transaction_final_amount', 'is', null)
+        .not('transaction_final_amount', 'is', null);
 
-      if (weekRevenueError) throw weekRevenueError
+      if (weekRevenueError) throw weekRevenueError;
 
       // Fetch month revenue
       const { data: monthRevenue, error: monthRevenueError } = await supabase
@@ -1656,9 +1588,9 @@ export const useDashboardSummary = () => {
         .gte('transactions_date', monthStart.toISOString())
         .lte('transactions_date', monthEnd.toISOString())
         .eq('transactions_status', 'paid')
-        .not('transaction_final_amount', 'is', null)
+        .not('transaction_final_amount', 'is', null);
 
-      if (monthRevenueError) throw monthRevenueError
+      if (monthRevenueError) throw monthRevenueError;
 
       // Fetch previous week revenue for growth calculation
       const { data: prevWeekRevenue, error: prevWeekError } = await supabase
@@ -1668,9 +1600,9 @@ export const useDashboardSummary = () => {
         .gte('transactions_date', prevWeekStart.toISOString())
         .lte('transactions_date', prevWeekEnd.toISOString())
         .eq('transactions_status', 'paid')
-        .not('transaction_final_amount', 'is', null)
+        .not('transaction_final_amount', 'is', null);
 
-      if (prevWeekError) throw prevWeekError
+      if (prevWeekError) throw prevWeekError;
 
       // Fetch previous month revenue for growth calculation
       const { data: prevMonthRevenue, error: prevMonthError } = await supabase
@@ -1680,81 +1612,72 @@ export const useDashboardSummary = () => {
         .gte('transactions_date', prevMonthStart.toISOString())
         .lte('transactions_date', prevMonthEnd.toISOString())
         .eq('transactions_status', 'paid')
-        .not('transaction_final_amount', 'is', null)
+        .not('transaction_final_amount', 'is', null);
 
-      if (prevMonthError) throw prevMonthError
+      if (prevMonthError) throw prevMonthError;
 
       // Fetch services
       const { data: services, error: servicesError } = await supabase
         .from('hair_service')
         .select('id, delete_flag')
-        .eq('store_id', store_id)
+        .eq('store_id', store_id);
 
-      if (servicesError) throw servicesError
+      if (servicesError) throw servicesError;
 
       // Fetch staff
       const { data: staff, error: staffError } = await supabase
         .from('staff_info')
         .select('id, status, delete_flag')
         .eq('store_id', store_id)
-        .neq('delete_flag', true)
+        .neq('delete_flag', true);
 
-      if (staffError) throw staffError
+      if (staffError) throw staffError;
 
       // Fetch today's staff attendance
       const { data: attendance, error: attendanceError } = await supabase
         .from('staff_attendance')
         .select('staff_id, status')
         .eq('store_id', store_id)
-        .eq('date', today.toISOString().split('T')[0])
+        .eq('date', today.toISOString().split('T')[0]);
 
-      if (attendanceError) throw attendanceError
+      if (attendanceError) throw attendanceError;
 
       // Calculate metrics
       const weekRevenueTotal = (weekRevenue || []).reduce(
         (sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0),
         0
-      )
+      );
       const monthRevenueTotal = (monthRevenue || []).reduce(
         (sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0),
         0
-      )
+      );
       const prevWeekRevenueTotal = (prevWeekRevenue || []).reduce(
         (sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0),
         0
-      )
+      );
       const prevMonthRevenueTotal = (prevMonthRevenue || []).reduce(
         (sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0),
         0
-      )
+      );
 
       const weekGrowth =
         prevWeekRevenueTotal > 0
-          ? ((weekRevenueTotal - prevWeekRevenueTotal) / prevWeekRevenueTotal) *
-            100
-          : 0
+          ? ((weekRevenueTotal - prevWeekRevenueTotal) / prevWeekRevenueTotal) * 100
+          : 0;
       const monthGrowth =
         prevMonthRevenueTotal > 0
-          ? ((monthRevenueTotal - prevMonthRevenueTotal) /
-              prevMonthRevenueTotal) *
-            100
-          : 0
+          ? ((monthRevenueTotal - prevMonthRevenueTotal) / prevMonthRevenueTotal) * 100
+          : 0;
 
-      const activeServices = (services || []).filter(
-        (s) => !s.delete_flag
-      ).length
-      const inactiveServices = (services || []).filter(
-        (s) => s.delete_flag
-      ).length
+      const activeServices = (services || []).filter((s) => !s.delete_flag).length;
+      const inactiveServices = (services || []).filter((s) => s.delete_flag).length;
 
-      const totalStaff = (staff || []).length
-      const attendanceMap = new Map(
-        (attendance || []).map((a) => [a.staff_id, a.status])
-      )
+      const totalStaff = (staff || []).length;
+      const attendanceMap = new Map((attendance || []).map((a) => [a.staff_id, a.status]));
       const absentStaff = (staff || []).filter((s) => {
-        const attendanceStatus = attendanceMap.get(s.id)
-        return !attendanceStatus || attendanceStatus.toLowerCase() === 'absent'
-      }).length
+        const attendanceStatus = attendanceMap.get(s.id);
+        return !attendanceStatus || attendanceStatus.toLowerCase() === 'absent';
+      }).length;
 
       setData({
         upcomingBookings: (upcomingBookings || []).length,
@@ -1767,36 +1690,36 @@ export const useDashboardSummary = () => {
         inactiveServices,
         totalStaff,
         absentStaff,
-      })
+      });
     } catch (e) {
-      console.error('fetchDashboardSummary error:', e)
-      setError(e.message || 'Failed to fetch dashboard summary')
+      console.error('fetchDashboardSummary error:', e);
+      setError(e.message || 'Failed to fetch dashboard summary');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    fetchDashboardSummary()
-  }, [fetchDashboardSummary])
+    fetchDashboardSummary();
+  }, [fetchDashboardSummary]);
 
-  return { data, loading, error, refetch: fetchDashboardSummary }
-}
+  return { data, loading, error, refetch: fetchDashboardSummary };
+};
 
 export const useRecentBookings = () => {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   const fetchRecentBookings = useCallback(async () => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
-      const today = new Date()
-      const threeDaysAgo = new Date(today)
-      threeDaysAgo.setDate(today.getDate() - 3)
+      const today = new Date();
+      const threeDaysAgo = new Date(today);
+      threeDaysAgo.setDate(today.getDate() - 3);
 
       const { data: bookings, error: bookingsError } = await supabase
         .from('appointment')
@@ -1806,9 +1729,9 @@ export const useRecentBookings = () => {
         .eq('store_id', store_id)
         .gte('"Slot Date"', threeDaysAgo.toISOString())
         .order('"Slot Date"', { ascending: false })
-        .limit(5)
+        .limit(5);
 
-      if (bookingsError) throw bookingsError
+      if (bookingsError) throw bookingsError;
 
       const formattedBookings = (bookings || []).map((booking) => ({
         id: booking.id,
@@ -1817,34 +1740,34 @@ export const useRecentBookings = () => {
         time: booking['Slot Time'] || 'No time',
         status: booking['Booking Status'] || 'pending',
         amount: parseFloat(booking['Service Price']) || 0,
-      }))
+      }));
 
-      setData(formattedBookings)
+      setData(formattedBookings);
     } catch (e) {
-      console.error('fetchRecentBookings error:', e)
-      setError(e.message || 'Failed to fetch recent bookings')
+      console.error('fetchRecentBookings error:', e);
+      setError(e.message || 'Failed to fetch recent bookings');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    fetchRecentBookings()
-  }, [fetchRecentBookings])
+    fetchRecentBookings();
+  }, [fetchRecentBookings]);
 
-  return { data, loading, error, refetch: fetchRecentBookings }
-}
+  return { data, loading, error, refetch: fetchRecentBookings };
+};
 
 export const useRecentTransactions = () => {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   const fetchRecentTransactions = useCallback(async () => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       const { data: transactions, error: transactionsError } = await supabase
         .from('appointment')
@@ -1855,9 +1778,9 @@ export const useRecentTransactions = () => {
         .not('transaction_id', 'is', null)
         .not('transactions_status', 'is', null)
         .order('transactions_date', { ascending: false })
-        .limit(5)
+        .limit(5);
 
-      if (transactionsError) throw transactionsError
+      if (transactionsError) throw transactionsError;
 
       const formattedTransactions = (transactions || []).map((transaction) => ({
         id:
@@ -1870,43 +1793,43 @@ export const useRecentTransactions = () => {
             ? 'completed'
             : transaction.transactions_status || 'pending',
         amount: parseFloat(transaction.transaction_final_amount) || 0,
-      }))
+      }));
 
-      setData(formattedTransactions)
+      setData(formattedTransactions);
     } catch (e) {
-      console.error('fetchRecentTransactions error:', e)
-      setError(e.message || 'Failed to fetch recent transactions')
+      console.error('fetchRecentTransactions error:', e);
+      setError(e.message || 'Failed to fetch recent transactions');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    fetchRecentTransactions()
-  }, [fetchRecentTransactions])
+    fetchRecentTransactions();
+  }, [fetchRecentTransactions]);
 
-  return { data, loading, error, refetch: fetchRecentTransactions }
-}
+  return { data, loading, error, refetch: fetchRecentTransactions };
+};
 
 // Staff Payment/Commission hooks
 export const useStaffPaymentData = () => {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const { store_id } = useAppData()
+  const { store_id } = useAppData();
 
   const fetchStaffPaymentData = useCallback(async () => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       // Get current month for attendance calculation
-      const now = new Date()
-      const currentMonth = now.getMonth() + 1
-      const currentYear = now.getFullYear()
-      const monthStart = new Date(currentYear, currentMonth - 1, 1)
-      const monthEnd = new Date(currentYear, currentMonth, 0)
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      const monthStart = new Date(currentYear, currentMonth - 1, 1);
+      const monthEnd = new Date(currentYear, currentMonth, 0);
 
       // Fetch all active staff
       const { data: staffList, error: staffError } = await supabase
@@ -1916,32 +1839,28 @@ export const useStaffPaymentData = () => {
         )
         .neq('delete_flag', true)
         .order('staff_name', { ascending: true })
-        .eq('store_id', store_id)
+        .eq('store_id', store_id);
 
-      if (staffError) throw staffError
+      if (staffError) throw staffError;
 
       // Fetch attendance data for current month for each staff member
       const staffWithPaymentData = await Promise.all(
         (staffList || []).map(async (staff) => {
           try {
             // Get attendance count for current month
-            const { data: attendanceData, error: attendanceError } =
-              await supabase
-                .from('staff_attendance')
-                .select('status')
-                .eq('staff_id', staff.id)
-                .gte('date', monthStart.toISOString().split('T')[0])
-                .lte('date', monthEnd.toISOString().split('T')[0])
-                .in('status', ['present', 'active', 'p'])
+            const { data: attendanceData, error: attendanceError } = await supabase
+              .from('staff_attendance')
+              .select('status')
+              .eq('staff_id', staff.id)
+              .gte('date', monthStart.toISOString().split('T')[0])
+              .lte('date', monthEnd.toISOString().split('T')[0])
+              .in('status', ['present', 'active', 'p']);
 
             if (attendanceError) {
-              console.warn(
-                `Error fetching attendance for ${staff.staff_name}:`,
-                attendanceError
-              )
+              console.warn(`Error fetching attendance for ${staff.staff_name}:`, attendanceError);
             }
 
-            const totalPresent = (attendanceData || []).length
+            const totalPresent = (attendanceData || []).length;
 
             // Get total revenue generated by this staff member for commission calculation
             const { data: revenueData, error: revenueError } = await supabase
@@ -1951,38 +1870,33 @@ export const useStaffPaymentData = () => {
               .eq('transactions_status', 'paid')
               .gte('transactions_date', monthStart.toISOString())
               .lte('transactions_date', monthEnd.toISOString())
-              .not('transaction_final_amount', 'is', null)
+              .not('transaction_final_amount', 'is', null);
 
             if (revenueError) {
-              console.warn(
-                `Error fetching revenue for ${staff.staff_name}:`,
-                revenueError
-              )
+              console.warn(`Error fetching revenue for ${staff.staff_name}:`, revenueError);
             }
 
             const totalRevenue = (revenueData || []).reduce(
-              (sum, item) =>
-                sum + (parseFloat(item.transaction_final_amount) || 0),
+              (sum, item) => sum + (parseFloat(item.transaction_final_amount) || 0),
               0
-            )
+            );
 
             // Get values from database columns
-            const baseSalary = parseFloat(staff.base_salary) || 25000
-            const commissionRate = parseFloat(staff.commission_rate) || 10
-            const commissionType = staff.commission_type || 'percentage'
+            const baseSalary = parseFloat(staff.base_salary) || 25000;
+            const commissionRate = parseFloat(staff.commission_rate) || 10;
+            const commissionType = staff.commission_type || 'percentage';
 
             // Calculate pro-rated salary based on attendance
             // Formula: (base_salary / total_days_in_month) * days_present
-            const totalDaysInMonth = monthEnd.getDate()
-            const proRatedSalary =
-              (baseSalary / totalDaysInMonth) * totalPresent
+            const totalDaysInMonth = monthEnd.getDate();
+            const proRatedSalary = (baseSalary / totalDaysInMonth) * totalPresent;
 
             // Calculate commission based on type
-            let calculatedCommission = 0
+            let calculatedCommission = 0;
             if (commissionType === 'percentage') {
-              calculatedCommission = totalRevenue * (commissionRate / 100)
+              calculatedCommission = totalRevenue * (commissionRate / 100);
             } else {
-              calculatedCommission = commissionRate
+              calculatedCommission = commissionRate;
             }
 
             return {
@@ -1997,12 +1911,12 @@ export const useStaffPaymentData = () => {
               calculatedCommission: calculatedCommission,
               totalRevenue: totalRevenue,
               paymentStatus: staff.payment_status || 'pending',
-            }
+            };
           } catch (err) {
-            console.error(`Error processing staff ${staff.staff_name}:`, err)
-            const baseSalary = parseFloat(staff.base_salary) || 25000
-            const totalDaysInMonth = monthEnd.getDate()
-            const proRatedSalary = (baseSalary / totalDaysInMonth) * 0 // 0 days present in error case
+            console.error(`Error processing staff ${staff.staff_name}:`, err);
+            const baseSalary = parseFloat(staff.base_salary) || 25000;
+            const totalDaysInMonth = monthEnd.getDate();
+            const proRatedSalary = (baseSalary / totalDaysInMonth) * 0; // 0 days present in error case
 
             return {
               id: staff.id,
@@ -2016,42 +1930,41 @@ export const useStaffPaymentData = () => {
               calculatedCommission: 0,
               totalRevenue: 0,
               paymentStatus: 'pending',
-            }
+            };
           }
         })
-      )
+      );
 
-      setData(staffWithPaymentData)
+      setData(staffWithPaymentData);
     } catch (e) {
-      console.error('fetchStaffPaymentData error:', e)
-      setError(e.message || 'Failed to fetch staff payment data')
+      console.error('fetchStaffPaymentData error:', e);
+      setError(e.message || 'Failed to fetch staff payment data');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    fetchStaffPaymentData()
-  }, [fetchStaffPaymentData])
+    fetchStaffPaymentData();
+  }, [fetchStaffPaymentData]);
 
-  return { data, loading, error, refetch: fetchStaffPaymentData }
-}
+  return { data, loading, error, refetch: fetchStaffPaymentData };
+};
 
 export const useUpdateStaffPaymentStatus = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const { store_id } = useAppData()
+  const { store_id } = useAppData();
 
   const updatePaymentStatus = async (staffData) => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
-      const now = new Date()
-      const currentMonth = now.toISOString().slice(0, 7) // YYYY-MM format
-      const totalSalary =
-        staffData.proRatedSalary + staffData.calculatedCommission
+      const now = new Date();
+      const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM format
+      const totalSalary = staffData.proRatedSalary + staffData.calculatedCommission;
 
       // Insert payment record into staff_payments table
       const { data: paymentData, error: paymentError } = await supabase
@@ -2067,40 +1980,41 @@ export const useUpdateStaffPaymentStatus = () => {
           notes: `Salary: ₹${staffData.proRatedSalary} (${staffData.totalPresent}/${staffData.totalDaysInMonth} days) + Commission: ₹${staffData.calculatedCommission}`,
         })
         .select()
-        .single()
+        .single();
+        
 
-      if (paymentError) throw paymentError
+      if (paymentError) throw paymentError;
 
       // Update payment status in staff_info table
       const { error: statusError } = await supabase
         .from('staff_info')
         .update({ payment_status: 'paid' })
-        .eq('id', staffData.id)
+        .eq('id', staffData.id);
 
-      if (statusError) throw statusError
+      if (statusError) throw statusError;
 
-      return paymentData
+      return paymentData;
     } catch (e) {
-      console.error('updatePaymentStatus error:', e)
-      setError(e.message || 'Failed to update payment status')
-      return null
+      console.error('updatePaymentStatus error:', e);
+      setError(e.message || 'Failed to update payment status');
+      return null;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  return { updatePaymentStatus, loading, error }
-}
+  return { updatePaymentStatus, loading, error };
+};
 
 // Update service
 export const useUpdateService = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const updateService = async (id, serviceData) => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       const payload = {
         service_name: serviceData.name,
@@ -2108,38 +2022,38 @@ export const useUpdateService = () => {
         base_price: parseFloat(serviceData.price),
         time_duration: serviceData.duration,
         updated_at: new Date().toISOString(),
-      }
+      };
 
       const { data, error: err } = await supabase
         .from('hair_service')
         .update(payload)
         .eq('id', id)
         .select()
-        .single()
+        .single();
 
-      if (err) throw err
-      return data
+      if (err) throw err;
+      return data;
     } catch (e) {
-      console.error('updateService error:', e)
-      setError(e.message || 'Failed to update service')
-      return null
+      console.error('updateService error:', e);
+      setError(e.message || 'Failed to update service');
+      return null;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  return { updateService, loading, error }
-}
+  return { updateService, loading, error };
+};
 
 // Soft delete/restore service
 export const useToggleServiceDelete = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const toggleDelete = async (id, isDeleted) => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       const { data, error: err } = await supabase
         .from('hair_service')
@@ -2147,97 +2061,94 @@ export const useToggleServiceDelete = () => {
           delete_flag: isDeleted,
         })
         .eq('id', id)
-        .select()
+        .select();
 
-      if (err) throw err
-      return { success: true, data }
+      if (err) throw err;
+      return { success: true, data };
     } catch (e) {
-      console.error('toggleDelete error:', e)
-      setError(e.message || 'Failed to toggle service delete status')
-      return false
+      console.error('toggleDelete error:', e);
+      setError(e.message || 'Failed to toggle service delete status');
+      return false;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  return { toggleDelete, loading, error }
-}
+  return { toggleDelete, loading, error };
+};
 
-// Permanently delete service
+
 export const useDeleteService = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const deleteService = async (id) => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
-      const { error: err } = await supabase
-        .from('hair_service')
-        .delete()
-        .eq('id', id)
+      const { error: err } = await supabase.from('hair_service').delete().eq('id', id);
 
-      if (err) throw err
-      return true
+      if (err) throw err;
+      return true;
     } catch (e) {
-      console.error('deleteService error:', e)
-      setError(e.message || 'Failed to delete service')
-      return false
+      console.error('deleteService error:', e);
+      setError(e.message || 'Failed to delete service');
+      return false;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  return { deleteService, loading, error }
-}
+  return { deleteService, loading, error };
+};
 
 //* customer db operation starting from here
 
 export const useGetCustomerDataFetch = () => {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   const getCustomerData = async () => {
     if (!store_id) {
-      console.warn('No store_id available, skipping customer data fetch')
-      setLoading(false)
-      return
+      console.warn('No store_id available, skipping customer data fetch');
+      setLoading(false);
+      return;
     }
     try {
-      setLoading(true)
+      setLoading(true);
       const { data, error } = await supabase
         .from('customer_info')
         .select('*')
-        .eq('store_id', store_id)
-      if (error) throw error
-      setData(data)
+        .eq('store_id', store_id);
+      if (error) throw error;
+      setData(data);
     } catch (err) {
-      console.error('Error fetching customer data:', err)
-      setError(err.message)
+      console.error('Error fetching customer data:', err);
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    getCustomerData()
-  }, [])
+    getCustomerData();
+  }, []);
 
-  return { loading, error, data }
-}
+  return { loading, error, data };
+};
 
 //* create the shoap id
 
 export const useCreateShopId = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const createShopId = async (shoapName, address, mobileNumber) => {
     try {
-      setLoading(true)
+      setLoading(true);
       const { data, error } = await supabase
         .from('stores')
         .insert({
@@ -2246,42 +2157,42 @@ export const useCreateShopId = () => {
           shop_address: address,
         })
         .select()
-        .single()
+        .single();
 
-      if (error) throw error
-      return data
+      if (error) throw error;
+      return data;
     } catch (err) {
-      console.error('Error creating shop ID:', err)
-      setError(err.message)
+      console.error('Error creating shop ID:', err);
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  return { createShopId, loading, error }
-}
+  return { createShopId, loading, error };
+};
 
 //* create staff
 
 export const useCreateStaff = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const { store_id } = useAppData()
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
 
   // Creates Supabase Auth user for staff and upserts into profiles table (like Admin signup)
   const createStaff = async (staffData) => {
     try {
-      setLoading(true)
+      setLoading(true);
 
       // Be flexible with input keys coming from StaffDb form
-      const email = staffData.email || staffData.emailId
-      const password = staffData.password
-      const fullName = staffData.name || staffData.staffName || ''
-      const phone = staffData.mobileNumber || staffData.phone_number || ''
-      const address = staffData.address || ''
+      const email = staffData.email || staffData.emailId;
+      const password = staffData.password;
+      const fullName = staffData.name || staffData.staffName || '';
+      const phone = staffData.mobileNumber || staffData.phone_number || '';
+      const address = staffData.address || '';
 
       if (!email || !password) {
-        throw new Error('Email and password are required to create staff user')
+        throw new Error('Email and password are required to create staff user');
       }
 
       const { data, error: signUpError } = await supabase.auth.signUp({
@@ -2296,11 +2207,11 @@ export const useCreateStaff = () => {
             store_id: store_id || null,
           },
         },
-      })
+      });
 
-      if (signUpError) throw signUpError
+      if (signUpError) throw signUpError;
 
-      const user = data?.user
+      const user = data?.user;
       if (user) {
         // Upsert into profiles like in AuthPage.jsx
         const profilePayload = {
@@ -2311,27 +2222,27 @@ export const useCreateStaff = () => {
           phone_number: phone,
           address,
           store_id: store_id || null,
-        }
+        };
 
         const { error: profileError } = await supabase
           .from('profiles')
-          .upsert(profilePayload, { onConflict: 'id' })
+          .upsert(profilePayload, { onConflict: 'id' });
 
         if (profileError) {
           // Log but do not block; caller can still proceed to Step 2
-          console.error('Profile upsert error (staff):', profileError.message)
+          console.error('Profile upsert error (staff):', profileError.message);
         }
       }
 
-      return data
+      return data;
     } catch (err) {
-      console.error('Error creating staff:', err)
-      setError(err.message)
-      throw err
+      console.error('Error creating staff:', err);
+      setError(err.message);
+      throw err;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  return { createStaff, loading, error }
-}
+  return { createStaff, loading, error };
+};

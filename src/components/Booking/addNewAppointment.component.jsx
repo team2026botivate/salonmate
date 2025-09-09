@@ -105,6 +105,37 @@ const AddNewAppointment = ({
   useEffect(() => {
     if (!data || !Array.isArray(data)) return
 
+    // If staff user is logged in, resolve their staff_info row
+    if (user?.role === 'staff') {
+      // 1) Try to match by email first
+      let me = null
+      if (user?.email) {
+        me = data.find((s) => String(s.email_id || '').toLowerCase() === String(user.email || '').toLowerCase())
+      }
+      // 2) Fallback to matching by id (if your auth id equals staff_info.id)
+      if (!me) {
+        me = data.find((s) => String(s.id) === String(user.id))
+      }
+
+      if (me) {
+        setFormData((prev) => ({
+          ...prev,
+          staffName: me.staff_name,
+          staffNumber: me.mobile_number,
+          id: me.id,               // use staff_info.id as staff_id
+          staffStatus: me.status,
+        }))
+        return
+      } else {
+        // Fall back: ensure staff_id is at least set to auth user id
+        setFormData((prev) => ({
+          ...prev,
+          id: String(user.id || ''),
+        }))
+      }
+    }
+
+    // Non-staff or if staff didn't match, keep existing behavior
     if (!formData.staffName && data.length > 0) {
       setFormData((prev) => ({
         ...prev,
@@ -116,9 +147,7 @@ const AddNewAppointment = ({
       return
     }
 
-    const selected = data.find(
-      (staff) => staff.staff_name === formData.staffName
-    )
+    const selected = data.find((staff) => staff.staff_name === formData.staffName)
     if (selected) {
       setFormData((prev) => ({
         ...prev,
@@ -127,58 +156,30 @@ const AddNewAppointment = ({
         staffStatus: selected.status || '',
       }))
     }
-  }, [formData.staffName, data])
+  }, [formData.staffName, data, user])
 
-  // API call moved to onSubmit to avoid firing on each change
+  
+  // Helper: format a Date to local yyyy-MM-dd string
+  const toLocalYMD = (d) => {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
-  // Keep staffNumber in sync when staffName changes
-  // useEffect(() => {
-  //   if (!data || !Array.isArray(data)) return
-  //   const selected = data.find((staff) => staff.staff_name === formData.staffName)
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     staffNumber: selected?.mobile_number || '',
-  //   }))
-  // }, [formData.staffName, data])
-
-  // const validateForm = () => {
-  //   const newErrors = {};
-
-  //   if (!formData.bookingId.trim()) newErrors.bookingId = 'Booking ID is required';
-  //   if (!formData.mobileNumber.trim()) newErrors.mobileNumber = 'Mobile number is required';
-  //   if (!formData.customerName.trim()) newErrors.customerName = 'Customer name is required';
-  //   if (!formData.slotDate) newErrors.slotDate = 'Slot date is required';
-  //   if (!formData.slotTime) newErrors.slotTime = 'Slot time is required';
-  //   if (!formData.staffName.trim()) newErrors.staffName = 'Staff name is required';
-  //   if (!formData.staffNumber.trim()) newErrors.staffNumber = 'Staff number is required';
-  //   if (!formData.service) newErrors.service = 'Service is required';
-  //   if (formData.servicePrice <= 0) newErrors.servicePrice = 'Service price must be greater than 0';
-
-  //   // Validate mobile number format
-  //   const mobileRegex = /^\+?[1-9]\d{1,14}$/;
-  //   if (formData.mobileNumber && !mobileRegex.test(formData.mobileNumber.replace(/\s/g, ''))) {
-  //     newErrors.mobileNumber = 'Please enter a valid mobile number';
-  //   }
-
-  //   setErrors(newErrors);
-  //   return Object.keys(newErrors).length === 0;
-  // };
-
-  // Check if selected date allows staff selection (today or tomorrow only)
   const isStaffSelectionAllowed = () => {
     if (!formData.slotDate) return false
-    
-    const selectedDate = new Date(formData.slotDate)
+
+    // input[type=date] gives yyyy-MM-dd. Compare as local yyyy-MM-dd strings to avoid timezone drift
+    const selectedStr = String(formData.slotDate)
     const today = new Date()
     const tomorrow = new Date(today)
     tomorrow.setDate(today.getDate() + 1)
-    
-    // Reset time to compare only dates
-    selectedDate.setHours(0, 0, 0, 0)
-    today.setHours(0, 0, 0, 0)
-    tomorrow.setHours(0, 0, 0, 0)
-    
-    return selectedDate.getTime() === today.getTime() || selectedDate.getTime() === tomorrow.getTime()
+
+    const todayStr = toLocalYMD(today)
+    const tomorrowStr = toLocalYMD(tomorrow)
+
+    return selectedStr === todayStr || selectedStr === tomorrowStr
   }
 
   const handleChange = (e) => {
@@ -190,17 +191,17 @@ const AddNewAppointment = ({
     
     // Clear staff selection if date is changed to future date
     if (name === 'slotDate') {
-      const selectedDate = new Date(value)
+      // Compare as local yyyy-MM-dd strings to avoid timezone issues
+      const selectedStr = String(value)
       const today = new Date()
       const tomorrow = new Date(today)
       tomorrow.setDate(today.getDate() + 1)
-      
-      selectedDate.setHours(0, 0, 0, 0)
-      today.setHours(0, 0, 0, 0)
-      tomorrow.setHours(0, 0, 0, 0)
-      
-      const isAllowed = selectedDate.getTime() === today.getTime() || selectedDate.getTime() === tomorrow.getTime()
-      
+
+      const todayStr = toLocalYMD(today)
+      const tomorrowStr = toLocalYMD(tomorrow)
+
+      const isAllowed = selectedStr === todayStr || selectedStr === tomorrowStr
+
       if (!isAllowed) {
         setFormData((prev) => ({
           ...prev,
@@ -243,17 +244,17 @@ const AddNewAppointment = ({
       
       {/* Customer Information */}
       <div>
-        <h3 className="mb-4 flex items-center text-lg font-semibold text-gray-900">
-          <User className="mr-2 h-5 w-5" />
+        <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
+          <User className="w-5 h-5 mr-2" />
           Customer Information
         </h3>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-1">
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Mobile Number
             </label>
             <div className="relative">
-              <Phone className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
+              <Phone className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 top-1/2 left-3" />
               <input
                 name="mobileNumber"
                 type="tel"
@@ -274,7 +275,7 @@ const AddNewAppointment = ({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Customer Name
             </label>
             <input
@@ -296,13 +297,13 @@ const AddNewAppointment = ({
 
       {/* Appointment Schedule */}
       <div>
-        <h3 className="mb-4 flex items-center text-lg font-semibold text-gray-900">
-          <Calendar className="mr-2 h-5 w-5" />
+        <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
+          <Calendar className="w-5 h-5 mr-2" />
           Appointment Schedule
         </h3>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Slot Date
             </label>
             <input
@@ -320,11 +321,11 @@ const AddNewAppointment = ({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Slot Time
             </label>
             <div className="relative">
-              <Clock className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
+              <Clock className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 top-1/2 left-3" />
               <input
                 type="time"
                 name="slotTime"
@@ -344,18 +345,18 @@ const AddNewAppointment = ({
 
       {/* Staff Information */}
       <div>
-        <h3 className="mb-4 flex items-center text-lg font-semibold text-gray-900">
-          <User className="mr-2 h-5 w-5" />
+        <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
+          <User className="w-5 h-5 mr-2" />
           Staff Information
         </h3>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-1">
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Staff Name
             </label>
             <select
               name="staffName"
-              disabled={!isStaffSelectionAllowed() || loading}
+              disabled={user?.role === 'staff' || !isStaffSelectionAllowed() || loading}
               type="text"
               value={formData.staffName}
               onChange={handleChange}
@@ -380,13 +381,13 @@ const AddNewAppointment = ({
               {isStaffSelectionAllowed() && !loading &&
                 data.map((staff) => (
                   <option
-                    className="flex items-center justify-between rounded-md bg-white"
+                    className="flex items-center justify-between bg-white rounded-md"
                     key={staff.staff_name}
                     value={staff.staff_name}
                     disabled={staff.status?.toLowerCase() === 'busy'}
                   >
                     {staff.staff_name}
-                    <span className="ml-5 inline-block font-bold">{`(${staff.status})`}</span>
+                    <span className="inline-block ml-5 font-bold">{`(${staff.status})`}</span>
                   </option>
                 ))}
             </select>
@@ -399,13 +400,13 @@ const AddNewAppointment = ({
 
       {/* Service Information */}
       <div>
-        <h3 className="mb-4 flex items-center text-lg font-semibold text-gray-900">
-          <CreditCard className="mr-2 h-5 w-5" />
+        <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
+          <CreditCard className="w-5 h-5 mr-2" />
           Service Information
         </h3>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-1">
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Service
             </label>
             <select
@@ -420,7 +421,7 @@ const AddNewAppointment = ({
               <option value="">Select Service</option>
               {serviceslist?.map((service) => (
                 <option
-                  className="rounded-md bg-white"
+                  className="bg-white rounded-md"
                   key={service.id}
                   value={service.service_name}
                 >
@@ -437,21 +438,21 @@ const AddNewAppointment = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-end space-x-4 border-t border-gray-200 pt-6">
+      <div className="flex items-center justify-end pt-6 space-x-4 border-t border-gray-200">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg bg-gray-100 px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+          className="px-6 py-3 font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isLoading}
-          className="flex items-center space-x-2 rounded-lg bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+          className="flex items-center px-8 py-3 space-x-2 font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
           <span>{isLoading ? 'Creating...' : 'Create'}</span>
-          <ArrowRight className="h-5 w-5" />
+          <ArrowRight className="w-5 h-5" />
         </button>
       </div>
     </form>

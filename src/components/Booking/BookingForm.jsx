@@ -64,10 +64,6 @@ const BookingForm = ({
 
   const { getAppointments, loading: isLoading } = useUpdateAppointmentById()
   const { data, loading } = useGetStaffData()
-  // const { updateStaffStatusByName, loading: updatingStaff } =
-  //   useUpdateStaffStatus()
-
-
   useEffect(() => {
     if (!data || !Array.isArray(data) || data.length === 0) return
     const selected = data.find(
@@ -146,7 +142,7 @@ const BookingForm = ({
       {/* Booking Status */}
       <div className="flex items-center justify-end">
         <div className="w-full md:w-64">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block mb-2 text-sm font-medium text-gray-700">
             Booking Status
           </label>
           <select
@@ -166,17 +162,17 @@ const BookingForm = ({
 
       {/* Customer Information */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
           <User className="w-5 h-5 mr-2" />
           Customer Information
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Mobile Number
             </label>
             <div className="relative">
-              <Phone className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <Phone className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
               <input
                 disabled
                 name="mobileNumber"
@@ -191,12 +187,12 @@ const BookingForm = ({
               />
             </div>
             {errors.mobileNumber && (
-              <p className="text-red-500 text-sm mt-1">{errors.mobileNumber}</p>
+              <p className="mt-1 text-sm text-red-500">{errors.mobileNumber}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Customer Name
             </label>
             <input
@@ -211,7 +207,7 @@ const BookingForm = ({
               placeholder="Enter customer name"
             />
             {errors.customerName && (
-              <p className="text-red-500 text-sm mt-1">{errors.customerName}</p>
+              <p className="mt-1 text-sm text-red-500">{errors.customerName}</p>
             )}
           </div>
         </div>
@@ -219,13 +215,13 @@ const BookingForm = ({
 
       {/* Appointment Schedule */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
           <Calendar className="w-5 h-5 mr-2" />
           Appointment Schedule
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Slot Date
             </label>
             <input
@@ -241,18 +237,18 @@ const BookingForm = ({
               )}
             />
             {errors.slotDate && (
-              <p className="text-red-500 text-sm mt-1">{errors.slotDate}</p>
+              <p className="mt-1 text-sm text-red-500">{errors.slotDate}</p>
             )}
           </div>
 
           
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Slot Time
             </label>
             <div className="relative">
-              <Clock className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <Clock className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
               <input
                 type="time"
                 name="slotTime"
@@ -267,7 +263,7 @@ const BookingForm = ({
               />
             </div>
             {errors.slotTime && (
-              <p className="text-red-500 text-sm mt-1">{errors.slotTime}</p>
+              <p className="mt-1 text-sm text-red-500">{errors.slotTime}</p>
             )}
           </div>
         </div>
@@ -275,18 +271,19 @@ const BookingForm = ({
 
       {/* Staff Information */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
           <User className="w-5 h-5 mr-2" />
           Staff Information
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Staff Name
             </label>
             <select
               name="staffName"
-              disabled={loading || user?.role === 'staff'}
+              disabled={user?.role === 'staff'}
+              aria-busy={loading ? 'true' : 'false'}
               type="text"
               value={formData.staffName}
               onChange={handleChange}
@@ -304,18 +301,18 @@ const BookingForm = ({
               {!loading &&
                 data.map((staff) => (
                   <option
-                    className="bg-white rounded-md flex items-center justify-between "
+                    className="flex items-center justify-between bg-white rounded-md "
                     key={staff.staff_name}
                     value={staff.staff_name}
                     disabled={staff.status?.toLowerCase() === 'busy'}
                   >
                     {staff.staff_name}
-                    <span className="ml-5 inline-block font-bold">{`(${staff.status})`}</span>
+                    <span className="inline-block ml-5 font-bold">{`(${staff.status})`}</span>
                   </option>
                 ))}
             </select>
             {errors.staffName && (
-              <p className="text-red-500 text-sm mt-1">{errors.staffName}</p>
+              <p className="mt-1 text-sm text-red-500">{errors.staffName}</p>
             )}
           </div>
 
@@ -325,13 +322,13 @@ const BookingForm = ({
 
       {/* Service Information */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
           <CreditCard className="w-5 h-5 mr-2" />
           Service Information
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Service
             </label>
             <input
@@ -344,7 +341,7 @@ const BookingForm = ({
               }`}
             />
             {errors.service && (
-              <p className="text-red-500 text-sm mt-1">{errors.service}</p>
+              <p className="mt-1 text-sm text-red-500">{errors.service}</p>
             )}
           </div>
 
@@ -353,18 +350,18 @@ const BookingForm = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+      <div className="flex items-center justify-end pt-6 space-x-4 border-t border-gray-200">
         <button
           type="button"
           onClick={onCancel}
-          className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+          className="px-6 py-3 font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isLoading}
-          className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center space-x-2 transition-colors disabled:opacity-50"
+          className="flex items-center px-8 py-3 space-x-2 font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
           <Save className="w-5 h-5" />
           <span>{isLoading ? 'Saving...' : 'Save Changes'}</span>

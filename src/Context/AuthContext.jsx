@@ -24,15 +24,8 @@ export const AuthProvider = ({ children }) => {
           // Normalize permissions with current defaults for the role
           const role = (userData?.role || 'staff').toLowerCase();
           const defaultPerms = getPermissionsForRole(role);
-          const currentPerms = Array.isArray(userData?.permissions)
-            ? userData.permissions
-            : [];
-          const mergedPerms = Array.from(
-            new Set([
-              ...currentPerms,
-              ...defaultPerms,
-            ])
-          );
+          const currentPerms = Array.isArray(userData?.permissions) ? userData.permissions : [];
+          const mergedPerms = Array.from(new Set([...currentPerms, ...defaultPerms]));
 
           const normalizedUser = {
             ...userData,
@@ -62,10 +55,10 @@ export const AuthProvider = ({ children }) => {
     }
     // Staff: restrict to appointment-related areas by default
     return [
-      'appointment',          // Booking
-      'runningappointment',   // DailyEntry / running
-      'appointmenthistory',   // Appointment History
-      'inventory',            // Inventory access for staff
+      'appointment', // Booking
+      'runningappointment', // DailyEntry / running
+      'appointmenthistory', // Appointment History
+      'inventory', // Inventory access for staff
       // Add more if staff should see them:
       // 'customers',
       // 'whatsapptemplate',
@@ -78,9 +71,10 @@ export const AuthProvider = ({ children }) => {
     const enhancedUser = {
       ...userData,
       role,
-      permissions: userData?.permissions && Array.isArray(userData.permissions)
-        ? userData.permissions
-        : getPermissionsForRole(role),
+      permissions:
+        userData?.permissions && Array.isArray(userData.permissions)
+          ? userData.permissions
+          : getPermissionsForRole(role),
     };
 
     setUser(enhancedUser);

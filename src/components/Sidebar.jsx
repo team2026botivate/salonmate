@@ -222,7 +222,7 @@ export default function Sidebar({
             return (
               <li key={item.id}>
                 {item.hasSubmenu ? (
-                  <div className="space-y-1">
+                  <div className="space-y-1 ">
                     <motion.button
                       onClick={toggleStaffMenu}
                       whileHover={{ scale: 1.02 }}

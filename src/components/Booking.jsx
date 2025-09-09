@@ -8,6 +8,7 @@ import {
   useGetallAppointmentData,
   useUpdateAppointmentById,
   useGetAllAppointmentsHistory,
+  useGetStaffData,
 } from '../hook/dbOperation.js'
 import BookingForm from './Booking/BookingForm'
 import BookingHistoryModal from './Booking/BookingHistoryModal'
@@ -32,9 +33,14 @@ const STATUS_TYPES = {
 const Booking = ({ hideHistoryButton = false }) => {
   const { user } = useAuth()
   const isStaff = user?.role === 'staff'
+  const { data: staffData, loading: staffLoading } = useGetStaffData()
 
   // Global state
   const { appointments, setAppointments } = useAppData()
+
+
+  console.log(appointments,"appointmentdat")
+  
 
   // Local state - grouped by purpose
   const [dataState, setDataState] = useState({
@@ -165,11 +171,80 @@ const Booking = ({ hideHistoryButton = false }) => {
     }
   }, [appointments, isStaff, user])
 
-  // Memoized filtered appointments
-  const filteredAppointments = useMemo(() => {
-    if (!uiState.searchTerm) return appointments
+  // Staff-only filtering base list
+  const staffFilteredAppointments = useMemo(() => {
+    if (!Array.isArray(appointments)) return []
+    if (!isStaff) return appointments
+    if (staffLoading) return appointments
 
-    return appointments.filter((appointment) =>
+    // Resolve staff identity from staff_info using email first, then id
+    let me = null
+    if (user?.email && Array.isArray(staffData)) {
+      me = staffData.find(
+        (s) => String(s.email_id || '').toLowerCase() === String(user.email || '').toLowerCase(),
+      )
+    }
+    if (!me && Array.isArray(staffData)) {
+      me = staffData.find((s) => String(s.id) === String(user?.id))
+    }
+
+    const ids = [user?.staffId, user?.id, me?.id]
+      .filter((v) => v !== undefined && v !== null)
+      .map((v) => String(v))
+
+    const names = [user?.staffName, user?.name, user?.email, me?.staff_name]
+      .filter(Boolean)
+      .map((s) => String(s).trim().toLowerCase())
+
+    const mobiles = [me?.mobile_number]
+      .filter(Boolean)
+      .map((s) => String(s).trim())
+
+    const matchById = (apt) => ids.length > 0 && ids.includes(String(apt?.staff_id ?? ''))
+
+    const matchByName = (apt) => {
+      const staffName = (
+        apt?.staffName ||
+        apt?.['Staff Name'] ||
+        apt?.staff ||
+        apt?.['Assigned Staff'] ||
+        ''
+      )
+        .toString()
+        .trim()
+        .toLowerCase()
+      return names.length > 0 && names.includes(staffName)
+    }
+
+    const matchByMobile = (apt) => {
+      const staffNumber = String(apt?.['Staff Number'] ?? '').trim()
+      return mobiles.length > 0 && mobiles.includes(staffNumber)
+    }
+
+    const filtered = appointments.filter((apt) => matchById(apt) || matchByName(apt) || matchByMobile(apt))
+
+    // Debug logging to assist diagnosis if still empty
+    if (filtered.length === 0) {
+      // eslint-disable-next-line no-console
+      console.log('[Staff Filter Debug]', {
+        user: { id: user?.id, email: user?.email, staffName: user?.staffName },
+        me,
+        ids,
+        names,
+        mobiles,
+        sampleAppointment: appointments[0],
+      })
+    }
+
+    return filtered
+  }, [appointments, isStaff, user, staffData, staffLoading])
+
+  // Memoized filtered appointments (search on top of staff filter)
+  const filteredAppointments = useMemo(() => {
+    const base = staffFilteredAppointments
+    if (!uiState.searchTerm) return base
+
+    return base.filter((appointment) =>
       Object.values(appointment).some((value) =>
         value
           ?.toString()
@@ -177,7 +252,7 @@ const Booking = ({ hideHistoryButton = false }) => {
           .includes(uiState.searchTerm.toLowerCase())
       )
     )
-  }, [appointments, uiState.searchTerm])
+  }, [staffFilteredAppointments, uiState.searchTerm])
 
   const { data: allHistoryAppointments, loading: historyLoading, error: historyError } = useGetAllAppointmentsHistory()
 
@@ -610,19 +685,19 @@ const Booking = ({ hideHistoryButton = false }) => {
       >
         {/* Header Section */}
         <div className="flex flex-col gap-5 md:items-center md:justify-between lg:flex-row lg:gap-0">
-          <h2 className="text-center text-2xl font-bold text-blue-800">
+          <h2 className="text-2xl font-bold text-center text-blue-800">
             Appointments
           </h2>
-          <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row md:mt-0">
+          <div className="flex flex-col justify-between gap-3 mt-4 sm:flex-row md:mt-0">
             <div className="relative">
               <Search
-                className="absolute top-1/2 left-3 -translate-y-1/2 transform text-blue-400"
+                className="absolute text-blue-400 transform -translate-y-1/2 top-1/2 left-3"
                 size={18}
               />
               <input
                 type="text"
                 placeholder="Search appointments..."
-                className="w-full rounded-md bg-white py-2 pr-4 pl-10 focus:outline-none"
+                className="w-full py-2 pl-10 pr-4 bg-white rounded-md focus:outline-none"
                 value={uiState.searchTerm}
                 onChange={(e) => updateUiState({ searchTerm: e.target.value })}
               />
@@ -630,7 +705,7 @@ const Booking = ({ hideHistoryButton = false }) => {
             <div className="flex space-x-2">
               {!isStaff && (
                 <button
-                  className="flex items-center justify-center gap-3 rounded-md bg-blue-600 px-4 py-2 text-white hover:cursor-pointer hover:bg-blue-700"
+                  className="flex items-center justify-center gap-3 px-4 py-2 text-white bg-blue-600 rounded-md hover:cursor-pointer hover:bg-blue-700"
                   onClick={handleNewAppointmentClick}
                 >
                   <Plus className="hidden lg:inline" size={18} />
@@ -639,7 +714,7 @@ const Booking = ({ hideHistoryButton = false }) => {
               )}
               {!hideHistoryButton && (
                 <button
-                  className="flex items-center justify-center gap-3 rounded-md bg-red-600 px-4 py-2 text-white hover:cursor-pointer hover:bg-red-700"
+                  className="flex items-center justify-center gap-3 px-4 py-2 text-white bg-red-600 rounded-md hover:cursor-pointer hover:bg-red-700"
                   onClick={() => updateUiState({ showHistoryModal: true })}
                 >
                   <History size={18} className="hidden lg:inline" />
@@ -655,11 +730,11 @@ const Booking = ({ hideHistoryButton = false }) => {
         {/* Main Content */}
         {loading ? (
           <div className="py-10 text-center">
-            <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-t-2 border-b-2 border-blue-500"></div>
+            <div className="inline-block w-8 h-8 mb-4 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin"></div>
             <p className="text-blue-600">Loading appointments...</p>
           </div>
         ) : dataState.error ? (
-          <div className="rounded-md p-4 text-center text-red-800">
+          <div className="p-4 text-center text-red-800 rounded-md">
             {dataState.error}
             <button
               className="ml-2 underline"
@@ -684,7 +759,7 @@ const Booking = ({ hideHistoryButton = false }) => {
           {uiState.showNewAppointmentForm && (
             <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.6)] backdrop-blur-sm md:p-4">
               <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg bg-white shadow-xl">
-                <div className="border-b p-6">
+                <div className="p-6 border-b">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-bold text-black">
                       Add New Appointment
@@ -699,7 +774,7 @@ const Booking = ({ hideHistoryButton = false }) => {
                     </button>
                   </div>
                 </div>
-                <div className="hideScrollBar flex-1 overflow-y-auto p-6">
+                <div className="flex-1 p-6 overflow-y-auto hideScrollBar">
                   <AddNewAppointment
                     tableHeaders={dataState.tableHeaders}
                     formData={formState.newAppointment}
@@ -721,7 +796,7 @@ const Booking = ({ hideHistoryButton = false }) => {
           {uiState.showEditAppointmentForm && (
             <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.6)] p-4 backdrop-blur-sm">
               <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg bg-white shadow-xl">
-                <div className="border-b p-6">
+                <div className="p-6 border-b">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-bold text-black">
                       Edit Appointment
@@ -736,7 +811,7 @@ const Booking = ({ hideHistoryButton = false }) => {
                     </button>
                   </div>
                 </div>
-                <div className="hideScrollBar flex-1 overflow-y-auto p-6">
+                <div className="flex-1 p-6 overflow-y-auto hideScrollBar">
                   <BookingForm
                     tableHeaders={dataState.tableHeaders}
                     formData={formState.editingAppointment}
