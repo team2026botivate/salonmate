@@ -17,43 +17,12 @@ import {
   IndianRupee,
 } from 'lucide-react';
 import NotificationSystem from './notificationSystem';
+import { useMembershipOperations } from '../../hook/dbOperation';
 
 const Membership = () => {
-  // Mock data
-  const mockMemberships = [
-    {
-      id: 1,
-      name: 'Gold Membership',
-      price: 499,
-      duration: '3 Months',
-      benefits: ['Priority Support', 'Exclusive Content', 'Advanced Features', 'Monthly Webinars'],
-      featured: true,
-    },
-    {
-      id: 2,
-      name: 'Silver Membership',
-      price: 299,
-      duration: '2 Months',
-      benefits: ['Standard Support', 'Basic Features', 'Community Access'],
-    },
-    {
-      id: 3,
-      name: 'Platinum Membership',
-      price: 999,
-      duration: '6 Months',
-      benefits: [
-        '24/7 Priority Support',
-        'All Premium Features',
-        'Personal Account Manager',
-        'Custom Integrations',
-      ],
-      featured: true,
-    },
-  ];
-
-  // State
-  const [memberships] = useState(mockMemberships);
-  const [loading] = useState(false);
+  // DB hook
+  const { memberships, loading, error, addMembership, updateMembership, deleteMembership } =
+    useMembershipOperations();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -131,17 +100,29 @@ const Membership = () => {
         return;
       }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const payload = {
+        name: newMembership.name,
+        price: newMembership.price,
+        duration: newMembership.duration,
+        benefits: filteredBenefits,
+        featured: false,
+        is_active: true,
+      };
 
-      setShowAddForm(false);
-      setNewMembership({
-        name: '',
-        price: '',
-        duration: '',
-        benefits: [''],
-      });
-      showNotification('Membership plan created successfully!');
+      const result = await addMembership(payload);
+
+      if (result?.success) {
+        setShowAddForm(false);
+        setNewMembership({
+          name: '',
+          price: '',
+          duration: '',
+          benefits: [''],
+        });
+        showNotification('Membership plan created successfully!');
+      } else {
+        showNotification(`Failed to create membership plan: ${result?.error || 'Unknown error'}`, 'error');
+      }
     } catch (error) {
       showNotification('Failed to create membership plan.', 'error');
     } finally {
@@ -186,12 +167,22 @@ const Membership = () => {
         return;
       }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const payload = {
+        name: newMembership.name,
+        price: newMembership.price,
+        duration: newMembership.duration,
+        benefits: filteredBenefits,
+      };
 
-      setEditingMembershipId(null);
-      setShowEditForm(false);
-      showNotification('Membership plan updated successfully!');
+      const result = await updateMembership(editingMembershipId, payload);
+
+      if (result?.success) {
+        setEditingMembershipId(null);
+        setShowEditForm(false);
+        showNotification('Membership plan updated successfully!');
+      } else {
+        showNotification(`Failed to update membership plan: ${result?.error || 'Unknown error'}`, 'error');
+      }
     } catch (error) {
       showNotification('Failed to update membership plan.', 'error');
     } finally {
@@ -209,11 +200,12 @@ const Membership = () => {
   const confirmDelete = async () => {
     try {
       setSubmitting(true);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      showNotification('Membership plan removed successfully!');
+      const result = await deleteMembership(membershipToDelete.id);
+      if (result?.success) {
+        showNotification('Membership plan removed successfully!');
+      } else {
+        showNotification(`Failed to remove membership plan: ${result?.error || 'Unknown error'}`, 'error');
+      }
     } catch (error) {
       showNotification('Failed to remove membership plan.', 'error');
     } finally {
@@ -343,7 +335,7 @@ const Membership = () => {
                       </div>
 
                       <div className="flex items-baseline mb-4">
-                        <DollarSign className="text-green-600" size={20} />
+                        <IndianRupee className="text-green-600" size={20} />
                         <span className="text-3xl font-bold text-gray-900">{membership.price}</span>
                         <span className="ml-2 text-gray-600">/ {membership.duration}</span>
                       </div>
@@ -487,14 +479,14 @@ const Membership = () => {
 
       {/* Add Membership Modal */}
       {showAddForm && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div className="fixed inset-0 z-50 overflow-y-auto ">
+          <div className="flex items-center justify-center h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div
               className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
               onClick={() => setShowAddForm(false)}
             ></div>
 
-            <div className="inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+            <div className="inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl ">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-gray-900">Create New Membership Plan</h3>
                 <button

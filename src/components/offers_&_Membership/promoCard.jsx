@@ -115,13 +115,13 @@ const PromoCard = () => {
           startDate: '',
           endDate: '',
         });
-        showNotification('Promotional card created successfully!');
+        showNotification('Promoal card created successfully!');
       } else {
-        showNotification(`Failed to create promotional card: ${result.error}`, 'error');
+        showNotification(`Failed to create Promoal card: ${result.error}`, 'error');
       }
     } catch (error) {
       console.error('Error adding promo:', error);
-      showNotification(`Failed to create promotional card: ${error.message}`, 'error');
+      showNotification(`Failed to create Promoal card: ${error.message}`, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -187,16 +187,16 @@ const PromoCard = () => {
       if (result.success) {
         setEditingPromoId(null);
         setShowEditForm(false);
-        showNotification('Promotional card updated successfully!');
+        showNotification('Promoal card updated successfully!');
       } else {
         showNotification(
-          `Failed to update promotional card: ${result.error}`,
+          `Failed to update Promoal card: ${result.error}`,
           'error'
         );
       }
     } catch (error) {
       console.error('Error updating promo:', error);
-      showNotification(`Failed to update promotional card: ${error.message}`, 'error');
+      showNotification(`Failed to update Promoal card: ${error.message}`, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -216,16 +216,16 @@ const PromoCard = () => {
       const result = await deletePromoCard(promoToDelete.id);
 
       if (result.success) {
-        showNotification('Promotional card removed successfully!');
-      } else {
+        showNotification('Promo card removed successfully!');
+      } else {  
         showNotification(
-          `Failed to remove promotional card: ${result.error}`,
+          `Failed to remove Promo card: ${result.error}`,
           'error'
         );
       }
     } catch (error) {
       console.error('Error deleting promo:', error);
-      showNotification(`Failed to remove promotional card: ${error.message}`, 'error');
+      showNotification(`Failed to remove promo card: ${error.message}`, 'error');
     } finally {
       setSubmitting(false);
       setShowDeleteModal(false);
@@ -281,9 +281,9 @@ const PromoCard = () => {
       {/* Header */}
       <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Promotional Cards</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Promo Cards</h2>
           <p className="mt-1 text-sm text-gray-600">
-            Create and manage discount codes and promotional campaigns
+            Create and manage discount codes and Promo cards
           </p>
         </div>
         <div className="flex items-center space-x-3">
@@ -314,7 +314,7 @@ const PromoCard = () => {
             className="flex items-center px-4 py-2 space-x-2 text-white transition-colors duration-200 bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700"
           >
             <Plus size={18} />
-            <span>Add Promotion</span>
+            <span>Add Promo</span>
           </button>
         </div>
       </div>
@@ -329,7 +329,7 @@ const PromoCard = () => {
             />
             <input
               type="text"
-              placeholder="Search promotions..."
+              placeholder="Search Promos..."
               className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -354,7 +354,7 @@ const PromoCard = () => {
       {loading ? (
         <div className="p-12 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
           <div className="inline-block w-8 h-8 mb-4 border-2 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-          <p className="text-gray-600">Loading promotional cards...</p>
+          <p className="text-gray-600">Loading Promoal cards...</p>
         </div>
       ) : error ? (
         <div className="p-4 text-center text-red-800 rounded-md bg-red-50">
@@ -423,15 +423,15 @@ const PromoCard = () => {
               ) : (
                 <div className="p-12 text-center bg-white border border-gray-200 rounded-lg shadow-sm col-span-full">
                   <Tag className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <h3 className="mb-2 text-lg font-medium text-gray-900">No promotions found</h3>
+                  <h3 className="mb-2 text-lg font-medium text-gray-900">No Promos found</h3>
                   <p className="mb-4 text-gray-600">
-                    Get started by creating your first promotional campaign.
+                    Get started by creating your first Promoal campaign.
                   </p>
                   <button
                     onClick={handleAddPromoClick}
                     className="px-4 py-2 text-white transition-colors duration-200 bg-blue-600 rounded-lg hover:bg-blue-700"
                   >
-                    Add Promotion
+                    Add Promo
                   </button>
                 </div>
               )}
@@ -513,7 +513,7 @@ const PromoCard = () => {
                       <tr>
                         <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                           <Tag className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                          <div>No promotional cards found</div>
+                          <div>No Promoal cards found</div>
                         </td>
                       </tr>
                     )}
@@ -536,7 +536,7 @@ const PromoCard = () => {
 
             <div className="inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">Create New Promotion</h3>
+                <h3 className="text-xl font-semibold text-gray-900">Create New Promo</h3>
                 <button
                   onClick={() => setShowAddForm(false)}
                   className="text-gray-400 transition-colors hover:text-gray-600"
@@ -549,7 +549,7 @@ const PromoCard = () => {
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <div>
                     <label className="block mb-2 text-sm font-medium text-gray-700">
-                      Promotion Code
+                      Promo Code
                     </label>
                     <input
                       type="text"
@@ -646,7 +646,7 @@ const PromoCard = () => {
                     ) : (
                       <>
                         <Save size={16} className="mr-2" />
-                        Create Promotion
+                        Create Promo
                       </>
                     )}
                   </button>
@@ -668,7 +668,7 @@ const PromoCard = () => {
 
             <div className="inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">Edit Promotion</h3>
+                <h3 className="text-xl font-semibold text-gray-900">Edit Promo</h3>
                 <button
                   onClick={() => setShowEditForm(false)}
                   className="text-gray-400 transition-colors hover:text-gray-600"
@@ -681,7 +681,7 @@ const PromoCard = () => {
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <div>
                     <label className="block mb-2 text-sm font-medium text-gray-700">
-                      Promotion Code
+                      Promo Code
                     </label>
                     <input
                       type="text"
@@ -778,7 +778,7 @@ const PromoCard = () => {
                     ) : (
                       <>
                         <Save size={16} className="mr-2" />
-                        Update Promotion
+                        Update Promo
                       </>
                     )}
                   </button>
@@ -806,9 +806,9 @@ const PromoCard = () => {
               </div>
 
               <div className="text-center">
-                <h3 className="mb-2 text-lg font-medium text-gray-900">Delete Promotion</h3>
+                <h3 className="mb-2 text-lg font-medium text-gray-900">Delete Promo</h3>
                 <p className="mb-6 text-sm text-gray-500">
-                  Are you sure you want to delete this promotional card? This action cannot be
+                  Are you sure you want to delete this Promoal card? This action cannot be
                   undone.
                   {promoToDelete && (
                     <span className="block mt-2 font-medium text-gray-900">

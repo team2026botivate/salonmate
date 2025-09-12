@@ -1316,6 +1316,153 @@ export const usePromoCardOperations = () => {
   };
 };
 
+// Membership operations
+export const useMembershipOperations = () => {
+  const [memberships, setMemberships] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
+
+  // Fetch memberships for current store
+  const fetchMemberships = useCallback(async () => {
+    if (!store_id) {
+      console.warn('No store_id available, skipping memberships fetch');
+      setLoading(false);
+      return [];
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const { data, error } = await supabase
+        .from('membership')
+        .select('*')
+        .eq('store_id', store_id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setMemberships(data || []);
+      return data || [];
+    } catch (err) {
+      console.error('Error fetching memberships:', err);
+      setError(err.message);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, [store_id]);
+
+  // Add a membership
+  const addMembership = async (payload) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const insertData = {
+        name: payload.name,
+        price: parseInt(payload.price, 10) || 0,
+        duration: payload.duration,
+        benefits: Array.isArray(payload.benefits) ? payload.benefits : [],
+        featured: Boolean(payload.featured) || false,
+        is_active: payload.is_active === undefined ? true : Boolean(payload.is_active),
+        store_id: store_id,
+        created_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase
+        .from('membership')
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setMemberships((prev) => [data, ...prev]);
+      return { success: true, data };
+    } catch (err) {
+      console.error('Error adding membership:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update a membership
+  const updateMembership = async (id, payload) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const updateData = {
+        name: payload.name,
+        price: parseInt(payload.price, 10) || 0,
+        duration: payload.duration,
+        benefits: Array.isArray(payload.benefits) ? payload.benefits : [],
+        featured: payload.featured === undefined ? undefined : Boolean(payload.featured),
+        is_active: payload.is_active === undefined ? undefined : Boolean(payload.is_active),
+        
+      };
+
+      // Remove undefined keys to avoid overwriting with null
+      Object.keys(updateData).forEach((k) => updateData[k] === undefined && delete updateData[k]);
+
+      const { data, error } = await supabase
+        .from('membership')
+        .update(updateData)
+        .eq('id', id)
+        .eq('store_id', store_id)
+        .select()
+        .single();
+
+      
+
+      if (error) throw error;
+      setMemberships((prev) => prev.map((m) => (m.id === id ? data : m)));
+      return { success: true, data };
+    } catch (err) {
+      console.error('Error updating membership:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete a membership (hard delete)
+  const deleteMembership = async (id) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { error } = await supabase
+        .from('membership')
+        .delete()
+        .eq('id', id)
+        .eq('store_id', store_id);
+      if (error) throw error;
+      setMemberships((prev) => prev.filter((m) => m.id !== id));
+      return { success: true };
+    } catch (err) {
+      console.error('Error deleting membership:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initialize
+  useEffect(() => {
+    fetchMemberships();
+  }, [fetchMemberships]);
+
+  return {
+    memberships,
+    loading,
+    error,
+    fetchMemberships,
+    addMembership,
+    updateMembership,
+    deleteMembership,
+  };
+};
+
 export const useGetInventoryData = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2245,4 +2392,143 @@ export const useCreateStaff = () => {
   };
 
   return { createStaff, loading, error };
+};
+
+
+//* membership section 
+
+
+// Membership assignment operations (membership_users table)
+export const useMembershipUserOperations = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
+
+  // Assign membership to a customer
+  // payload: { customer_id, membership_id | membership, start_date?: string, end_date?: string, is_active?: boolean }
+  const assignMembershipToUser = async (payload) => {
+    try {
+      if (!store_id) throw new Error('Missing store_id');
+      if (!payload?.customer_id) throw new Error('customer_id is required');
+      if (!payload?.membership_id && !payload?.membership) throw new Error('membership id is required');
+
+      setLoading(true);
+      setError(null);
+
+      // Coerce to 'date' (YYYY-MM-DD) because table columns are date types
+      const toDateOnly = (d) => {
+        if (!d) return null;
+        const dt = new Date(d);
+        if (isNaN(dt)) return null;
+        return dt.toISOString().split('T')[0];
+      };
+
+      const insertData = {
+        customer_id: payload.customer_id,
+        // DB column is 'membership' (bigint) not 'membership_id'
+        membership: payload.membership ?? payload.membership_id,
+        start_date: toDateOnly(payload.start_date) || toDateOnly(new Date()),
+        end_date: toDateOnly(payload.end_date),
+        is_active: payload.is_active === undefined ? true : Boolean(payload.is_active),
+        store_id: store_id,
+        created_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase
+        .from('membership_users')
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (err) {
+      console.error('assignMembershipToUser error:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get current active membership(s) for a customer
+  const getActiveMembershipsForCustomer = async (customer_id) => {
+    try {
+      if (!store_id) throw new Error('Missing store_id');
+      setLoading(true);
+      setError(null);
+      const { data, error } = await supabase
+        .from('membership_users')
+        .select('*')
+        .eq('store_id', store_id)
+        .eq('customer_id', customer_id)
+        .eq('is_active', true)
+        .order('start_date', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('getActiveMembershipsForCustomer error:', err);
+      setError(err.message);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { assignMembershipToUser, getActiveMembershipsForCustomer, loading, error };
+};
+
+// List recent membership assignments for the current store
+export const useRecentMembershipAssignments = (limit = 25) => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
+
+  const fetchRecentAssignments = useCallback(async () => {
+    if (!store_id) {
+      setLoading(false);
+      setData([]);
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const { data, error } = await supabase
+        .from('membership_users')
+        .select(
+          `id, created_at, start_date, end_date, is_active,
+           customer:customer_info(id, customer_name, mobile_number),
+           membership:membership(id, name, price, duration)`
+        )
+        .eq('store_id', store_id)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+
+      // Normalize for UI
+      const rows = (data || []).map((row) => ({
+        id: row.id,
+        created_at: row.created_at,
+        start_date: row.start_date,
+        end_date: row.end_date,
+        is_active: !!row.is_active,
+        customer: row.customer || {},
+        membership: row.membership || {},
+      }));
+      setData(rows);
+    } catch (e) {
+      console.error('fetchRecentAssignments error:', e);
+      setError(e.message || 'Failed to load membership assignments');
+    } finally {
+      setLoading(false);
+    }
+  }, [store_id, limit]);
+
+  useEffect(() => {
+    fetchRecentAssignments();
+  }, [fetchRecentAssignments]);
+
+  return { data, loading, error, refetch: fetchRecentAssignments };
 };
