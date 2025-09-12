@@ -1133,11 +1133,11 @@ export const useStaffHistory = (selectedDate) => {
 
 //* inventory db operation starting from here
 
-// Promo Card database operations
+// Hook for Promo Card operations
 export const usePromoCardOperations = () => {
+  const [promoCards, setPromoCards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [promoCards, setPromoCards] = useState([]);
   const { store_id } = useAppData();
 
   // Fetch all promo cards
@@ -1145,7 +1145,7 @@ export const usePromoCardOperations = () => {
     if (!store_id) {
       console.warn('No store_id available, skipping promo cards fetch');
       setLoading(false);
-      return [];
+      return;
     }
     try {
       setLoading(true);
@@ -1167,7 +1167,7 @@ export const usePromoCardOperations = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [store_id]);
 
   // Add new promo card
   const addPromoCard = async (promoData) => {
@@ -1219,6 +1219,7 @@ export const usePromoCardOperations = () => {
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
+        .eq('store_id', store_id)
         .select()
         .single();
 
@@ -1301,13 +1302,12 @@ export const usePromoCardOperations = () => {
   // Initialize data fetch
   useEffect(() => {
     fetchPromoCards();
-  }, []);
+  }, [fetchPromoCards]);
 
   return {
     promoCards,
     loading,
     error,
-    fetchPromoCards,
     addPromoCard,
     updatePromoCard,
     deletePromoCard,

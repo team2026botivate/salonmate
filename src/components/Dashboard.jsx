@@ -22,6 +22,7 @@ import AppointmentHistory from '../AppointmentHistory.jsx';
 import WhatsappTemplate from '../WhattsappTemplate.jsx';
 import { useNavigate } from 'react-router-dom';
 import Footer from './footer.jsx';
+import OffersAndMemberships from './layout/Offers_&_Memberships.jsx';
 
 // Map component names to identifiers used in permissions
 const COMPONENT_PERMISSION_MAP = {
@@ -74,7 +75,6 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user, isAuthenticated, hasPermission } = useAuth();
 
-  console.log(user)
 
   // State management
   const [activeTab, setActiveTab] = useState('');
@@ -199,7 +199,7 @@ export default function Dashboard() {
       services: () => <Services isAdmin={user?.role === 'admin'} />,
       paymentCommission: () => <PaymentCommission isAdmin={user?.role === 'admin'} />,
       customerDb: () => <CustomerDb />,
-      promoCard: () => <PromoCard />,
+      promoCard: () => <OffersAndMemberships />,
       license: () => <License />,
       whatsappTemplate: () => <WhatsappTemplate />,
     };

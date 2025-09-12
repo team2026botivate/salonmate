@@ -149,7 +149,7 @@ export default function Sidebar({
       icon: <DollarSign size={20} />,
     },
     { id: 'customerDb', label: 'Customers', icon: <Users size={20} /> },
-    { id: 'promoCard', label: 'Promo Cards', icon: <Tag size={20} /> },
+    { id: 'promoCard', label: 'Offers & Membership', icon: <Tag size={20} /> },
     { id: 'license', label: 'License', icon: <KeyRound size={20} /> },
 
     //todo i have to add this in future

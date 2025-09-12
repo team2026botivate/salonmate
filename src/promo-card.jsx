@@ -15,7 +15,7 @@ import {
 import { usePromoCardOperations } from './hook/dbOperation'
 
 const PromoCard = () => {
-  // Use custom hook for database operations
+
   const {
     promoCards,
     loading,
