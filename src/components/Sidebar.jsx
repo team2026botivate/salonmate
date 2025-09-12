@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   Calendar,
@@ -53,6 +53,19 @@ export default function Sidebar({
 }) {
   const [isStaffMenuOpen, setIsStaffMenuOpen] = useState(false)
   const { user, hasPermission } = useAuth()
+
+  // Detect older browsers (e.g., Windows 7 with IE/old Chrome) and provide a basic fallback UI
+  const [isLegacy, setIsLegacy] = useState(false)
+  useEffect(() => {
+    try {
+      const ua = navigator.userAgent || ''
+      // Windows 7 (NT 6.1), IE (MSIE/Trident), very old Chrome (<49 often on Win7)
+      const legacyMatch = /MSIE|Trident|Windows NT 6\.1/.test(ua)
+      setIsLegacy(legacyMatch)
+    } catch (_) {
+      setIsLegacy(false)
+    }
+  }, [])
 
   // Helper function to check if a specific component is allowed
   const isComponentAllowed = (componentId) => {
@@ -161,6 +174,40 @@ export default function Sidebar({
     // },
   ]
 
+  // Basic fallback for legacy browsers: simple, static buttons without animations/transforms
+  if (isLegacy) {
+    return (
+      <div className="w-full p-4 bg-white border-r border-gray-200 md:w-64">
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-gray-900">Dashboard</h2>
+          {user && (
+            <p className="mt-1 text-sm text-gray-600">Welcome, <span className="font-semibold text-gray-900">{user.name}</span></p>
+          )}
+        </div>
+        <nav>
+          <ul>
+            {menuItems.map((item) => {
+              const staffHidden = new Set(['staff','services','paymentCommission','customerDb','promoCard','license','whatsappTemplate','dashboardHome','appointmentHistory'])
+              if (user?.role === 'staff' && staffHidden.has(item.id)) return null
+              if (!isComponentAllowed(item.id)) return null
+              return (
+                <li key={item.id} className="mb-2">
+                  <button
+                    onClick={() => handleTabClick(item.id)}
+                    className={`w-full text-left px-3 py-2 rounded border border-gray-300 ${activeTab === item.id ? 'bg-blue-600 text-white' : 'bg-white text-gray-800'} hover:bg-gray-100`}
+                  >
+                    <span className="inline-block mr-2 align-middle">•</span>
+                    <span className="align-middle">{item.label}</span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
+      </div>
+    )
+  }
+
   return (
     <motion.div
       className={`hideScrollBar fixed inset-0 z-20 w-full transform overflow-y-auto bg-white shadow-xl border-r border-gray-200 md:relative md:w-72 ${
@@ -170,7 +217,7 @@ export default function Sidebar({
       } transition-all duration-500 ease-out`}
       initial={{ opacity:0 }}
       animate={{ opacity:1 }}
-      transition={{ duration: 1, ease: "easeInOut" }}
+      transition={{ duration: 0.6, ease: "easeInOut" }}
     >
       {/* Header Section */}
       <div className="relative p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
