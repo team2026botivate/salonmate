@@ -177,14 +177,14 @@ export default function Sidebar({
   // Basic fallback for legacy browsers: simple, static buttons without animations/transforms
   if (isLegacy) {
     return (
-      <div className="w-full p-4 bg-white border-r border-gray-200 md:w-64">
+      <div className="flex flex-col w-full h-screen p-4 bg-white border-r border-gray-200 md:w-64">
         <div className="mb-4">
           <h2 className="text-xl font-bold text-gray-900">Dashboard</h2>
           {user && (
             <p className="mt-1 text-sm text-gray-600">Welcome, <span className="font-semibold text-gray-900">{user.name}</span></p>
           )}
         </div>
-        <nav>
+        <nav className="flex-1 overflow-y-auto hideScrollBar">
           <ul>
             {menuItems.map((item) => {
               const staffHidden = new Set(['staff','services','paymentCommission','customerDb','promoCard','license','whatsappTemplate','dashboardHome','appointmentHistory'])
@@ -210,7 +210,7 @@ export default function Sidebar({
 
   return (
     <motion.div
-      className={`hideScrollBar fixed inset-0 z-20 w-full transform overflow-y-auto bg-white shadow-xl border-r border-gray-200 md:relative md:w-72 ${
+      className={`hideScrollBar fixed inset-0 z-20 w-full h-screen transform bg-white shadow-xl border-r border-gray-200 md:relative md:w-72 flex flex-col ${
         isMobileMenuOpen
           ? 'translate-x-0'
           : '-translate-x-full md:translate-x-0'
@@ -241,7 +241,7 @@ export default function Sidebar({
       </div>
 
       {/* Navigation */}
-      <nav className="p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto hideScrollBar">
         <ul className="space-y-1">
           {menuItems.map((item) => {
             // Additional UI rule: hide certain sections for staff regardless of permissions
