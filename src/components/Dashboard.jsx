@@ -19,7 +19,6 @@ import CustomerDb from '../customer-db.jsx';
 import PromoCard from '../promo-card.jsx';
 import License from '../license.jsx';
 import AppointmentHistory from '../AppointmentHistory.jsx';
-import WhatsappTemplate from '../WhattsappTemplate.jsx';
 import { useNavigate } from 'react-router-dom';
 import Footer from './footer.jsx';
 import OffersAndMemberships from './layout/Offers_&_Memberships.jsx';
@@ -40,7 +39,6 @@ const COMPONENT_PERMISSION_MAP = {
   customerDb: 'customers',
   promoCard: 'promocards',
   license: 'license',
-  whatsappTemplate: 'whatsapptemplate',
 };
 
 // AccessDenied component moved outside for better performance
@@ -85,6 +83,14 @@ export default function Dashboard() {
   // Memoize permission checking function for better performance
   const isComponentAllowed = useCallback(
     (componentId) => {
+      // Admins can see everything
+      if (String(user?.role).toLowerCase() === 'admin') return true;
+
+      // Staff baseline: always allow Appointment and Running Appointment
+      if (String(user?.role).toLowerCase() === 'staff' && (componentId === 'booking' || componentId === 'dailyEntry')) {
+        return true;
+      }
+
       if (!user?.permissions) return false;
 
       // Special case: if user has 'all' permission, allow everything
@@ -98,13 +104,11 @@ export default function Dashboard() {
       // Check if user has this specific permission
       return permissionName && user?.permissions.includes(permissionName);
     },
-    [user?.permissions]
+    [user?.permissions, user?.role]
   );
 
   // Memoize allowed tabs calculation
   const allowedTabs = useMemo(() => {
-    if (!user?.permissions) return [];
-
     const allPossibleTabs = [
       'dashboardHome',
       'booking',
@@ -117,11 +121,21 @@ export default function Dashboard() {
       'customerDb',
       'promoCard',
       'license',
-      'whatsappTemplate',
+      
     ];
 
+    // Admins automatically get all tabs
+    if (String(user?.role).toLowerCase() === 'admin') return allPossibleTabs;
+
+    // Staff baseline: if no permissions found, still show Appointment + Running Appointment
+    if (String(user?.role).toLowerCase() === 'staff' && (!user?.permissions || user.permissions.length === 0)) {
+      return ['booking','dailyEntry'];
+    }
+
+    if (!user?.permissions) return [];
+
     return allPossibleTabs.filter((tab) => isComponentAllowed(tab));
-  }, [isComponentAllowed]);
+  }, [isComponentAllowed, user?.role, user?.permissions]);
 
   // Set initial active tab based on user role and permissions
   useEffect(() => {
@@ -201,7 +215,7 @@ export default function Dashboard() {
       customerDb: () => <CustomerDb />,
       promoCard: () => <OffersAndMemberships />,
       license: () => <License />,
-      whatsappTemplate: () => <WhatsappTemplate />,
+      
     };
 
     const ComponentRenderer = componentMap[activeTab];

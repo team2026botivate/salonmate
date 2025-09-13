@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import supabase from '@/dataBase/connectdb';
 
 const AuthContext = createContext();
 
@@ -47,21 +48,96 @@ export const AuthProvider = ({ children }) => {
     checkStoredUser(); // Load the stored user data on mount
   }, []);
 
+  // Live refresh permissions from Supabase when user/store changes (skip admins)
+  useEffect(() => {
+    const refreshPermissions = async () => {
+      try {
+        if (!user?.id || !user?.profile?.store_id) return;
+        if (String(user?.role).toLowerCase() === 'admin') return;
+
+        const { data: rows, error } = await supabase
+          .from('user_permissions')
+          .select('permission_id')
+          .eq('user_id', user.id)
+          .eq('store_id', user.profile.store_id);
+        if (error) return; // silently ignore; existing perms remain
+
+        if (Array.isArray(rows)) {
+          const newPerms = rows.map((r) => String(r.permission_id));
+          // Only update if changed to avoid loops
+          const current = user.permissions || [];
+          const same = current.length === newPerms.length && current.every((p) => newPerms.includes(p));
+          if (!same) {
+            const updated = { ...user, permissions: newPerms };
+            setUser(updated);
+            localStorage.setItem('salon_user', JSON.stringify(updated));
+          }
+        }
+      } catch (_) {
+        // noop
+      }
+    };
+
+    refreshPermissions();
+  }, [user?.id, user?.profile?.store_id]);
+
+  // Subscribe to realtime permission changes for this user+store (skip admins)
+  useEffect(() => {
+    if (!user?.id || !user?.profile?.store_id) return;
+    if (String(user?.role).toLowerCase() === 'admin') return;
+
+    const storeId = user.profile.store_id;
+    const channel = supabase
+      .channel(`user_permissions_${user.id}_${storeId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_permissions',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          // Re-fetch on any change for this user; RLS ensures we only see same-store rows
+          (async () => {
+            try {
+              const { data: rows } = await supabase
+                .from('user_permissions')
+                .select('permission_id')
+                .eq('user_id', user.id)
+                .eq('store_id', storeId);
+              if (Array.isArray(rows)) {
+                const newPerms = rows.map((r) => String(r.permission_id));
+                const current = user.permissions || [];
+                const same = current.length === newPerms.length && current.every((p) => newPerms.includes(p));
+                if (!same) {
+                  const updated = { ...user, permissions: newPerms };
+                  setUser(updated);
+                  localStorage.setItem('salon_user', JSON.stringify(updated));
+                }
+              }
+            } catch (_) {}
+          })();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      try { supabase.removeChannel(channel); } catch (_) {}
+    };
+  }, [user?.id, user?.profile?.store_id]);
+
   // Helper to compute permissions by role
   const getPermissionsForRole = (role) => {
     const normalizedRole = (role || 'staff').toLowerCase();
     if (normalizedRole === 'admin') {
       return ['all'];
     }
-    // Staff: restrict to appointment-related areas by default
     return [
       'appointment', // Booking
       'runningappointment', // DailyEntry / running
       'appointmenthistory', // Appointment History
       'inventory', // Inventory access for staff
-      // Add more if staff should see them:
-      // 'customers',
-      // 'whatsapptemplate',
     ];
   };
 

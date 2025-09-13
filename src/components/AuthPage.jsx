@@ -362,6 +362,7 @@ const AuthPage = () => {
         setErrors({ submit: error.message })
         return
       }
+      
 
       if (data?.user) {
         // Store session in localStorage
@@ -423,6 +424,42 @@ const AuthPage = () => {
         // Get user's store_id from profile and set in Zustand
         if (ensuredProfile?.store_id) {
           setStoreId(ensuredProfile.store_id)
+        }
+
+        // Try to load permissions from Supabase (source of truth)
+        let permissionIds = []
+        try {
+          if (ensuredProfile?.store_id) {
+            const { data: rows, error: permsErr } = await supabase
+              .from('user_permissions')
+              .select('permission_id')
+              .eq('user_id', data.user.id)
+              .eq('store_id', ensuredProfile.store_id)
+            if (permsErr) {
+              console.warn('permissions fetch error:', permsErr.message)
+            } else if (rows && rows.length) {
+              permissionIds = rows.map((r) => String(r.permission_id))
+            }
+          }
+        } catch (e) {
+          console.warn('permissions fetch exception:', e)
+        }
+
+        // Fallback to profile/user_metadata if no rows found
+        if (!permissionIds.length) {
+          const profilePermsRaw = (ensuredProfile || profile)?.permissions ?? data.user?.user_metadata?.permissions
+          if (Array.isArray(profilePermsRaw)) {
+            permissionIds = profilePermsRaw.map((p) => String(p).toLowerCase())
+          } else if (typeof profilePermsRaw === 'string') {
+            permissionIds = profilePermsRaw
+              .split(',')
+              .map((s) => s.trim().toLowerCase())
+              .filter(Boolean)
+          }
+        }
+
+        if (permissionIds.length) {
+          userData.permissions = permissionIds
         }
 
         // Use context login to store user data

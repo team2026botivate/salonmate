@@ -30,9 +30,8 @@ const StaffUser = () => {
     { id: "services", label: "Services" },
     { id: "paymentcommission", label: "Payment + Commission" },
     { id: "customers", label: "Customers" },
-    { id: "promocards", label: "Promo Cards" },
+    { id: "promocards", label: "Offers & Memberships" },
     { id: "license", label: "License" },
-    { id: "whatsapptemplate", label: "WhatsApp Template" },
     { id: "all", label: "All Permissions" }
   ])
   

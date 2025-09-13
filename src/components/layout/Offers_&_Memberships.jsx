@@ -17,7 +17,9 @@ const OffersAndMemberships = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="mb-2 text-3xl font-bold text-gray-900">Offers & Memberships</h1>
-          <p className="text-gray-600">Manage promotional campaigns, membership programs, and user assignments</p>
+          <p className="text-gray-600">
+            Manage promotional campaigns, membership programs, and user assignments
+          </p>
         </div>
 
         {/* Navigation Tabs */}
@@ -74,7 +76,7 @@ const OffersAndMemberships = () => {
               <PromoCard />
             </div>
           )}
-          
+
           {activeSection === 'memberships' && (
             <div className="animate-fade-in">
               <Membership />
@@ -92,7 +94,10 @@ const OffersAndMemberships = () => {
               <div className="max-w-sm mx-auto">
                 <Tag className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                 <h3 className="mb-2 text-lg font-medium text-gray-900">Select a Section</h3>
-                <p className="text-gray-600">Choose between Promotional Cards, Membership Plans, or Assign Membership to get started.</p>
+                <p className="text-gray-600">
+                  Choose between Promotional Cards, Membership Plans, or Assign Membership to get
+                  started.
+                </p>
               </div>
             </div>
           )}

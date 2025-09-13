@@ -1,31 +1,26 @@
-import { User as UserIcon } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import supabase from '../../dataBase/connectdb'
-import { validateImageFile } from '../../utils/imageutils'
-import { useAuth } from '../../Context/AuthContext'
-import {
-  uploadProfileImage,
-  deleteProfileImage,
-} from '../../dataBase/dbOperations'
-import ProfileHeader from './profileHeader'
-import ProfileCard from './profileCard'
-import SkillsSection from './skillSection'
-import EditableField from './editableFiled'
+import { User as UserIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import supabase from '../../dataBase/connectdb';
+import { validateImageFile } from '../../utils/imageutils';
+import { useAuth } from '../../Context/AuthContext';
+import { uploadProfileImage, deleteProfileImage } from '../../dataBase/dbOperations';
+import ProfileHeader from './profileHeader';
+import ProfileCard from './profileCard';
+import SkillsSection from './skillSection';
+import EditableField from './editableFiled';
+import StaffPermissions from './givePermition.profile';
 
 const ProfilePage = () => {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const { user: authUser } = useAuth()
-  const [isEditing, setIsEditing] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [previewImage, setPreviewImage] = useState(null)
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user: authUser } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [previewImage, setPreviewImage] = useState(null);
 
-
-  
-
-  const [profileData, setProfileData] = useState({  
+  const [profileData, setProfileData] = useState({
     name: '',
     email: authUser?.email || '',
     phone: '',
@@ -36,39 +31,37 @@ const ProfilePage = () => {
     joinDate: '',
     bio: '',
     skills: [],
-  })
+  });
+
+  const [staffGivePermission, setStaffGivePermission] = useState(false);
 
   // If authUser name arrives later, sync it to local state when name is empty
   useEffect(() => {
     if (authUser?.user_metadata?.name) {
-      setProfileData((prev) => (
-        prev.name ? prev : { ...prev, name: authUser.user_metadata.name }
-      ))
+      setProfileData((prev) => (prev.name ? prev : { ...prev, name: authUser.user_metadata.name }));
     }
-  }, [authUser?.user_metadata?.name])
+  }, [authUser?.user_metadata?.name]);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        setIsLoading(true)
-        setError('')
+        setIsLoading(true);
+        setError('');
 
         // Use the authenticated user's ID or the route param ID
-        const profileId = id || authUser?.id
+        const profileId = id || authUser?.id;
         if (!profileId) {
-          setError('No user ID found')
-          return
+          setError('No user ID found');
+          return;
         }
 
         const { data, error: dbError } = await supabase
           .from('profiles')
-          .select(
-            'id, full_name, email, phone_number, address, bio, skills, profile_image, role'
-          )
+          .select('id, full_name, email, phone_number, address, bio, skills, profile_image, role')
           .eq('id', profileId)
-          .single()
+          .single();
 
-        if (dbError) throw dbError
+        if (dbError) throw dbError;
 
         setProfileData((prev) => ({
           ...prev,
@@ -85,119 +78,108 @@ const ProfilePage = () => {
           profileImage: data?.profile_image || prev.profileImage,
           role: data?.role || '',
           joinDate: data?.join_date || '',
-        }))
+        }));
       } catch (e) {
-        console.error('Error fetching profile from DB:', e)
-        setError('Failed to load profile data')
+        console.error('Error fetching profile from DB:', e);
+        setError('Failed to load profile data');
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
-    fetchProfile()
-  }, [id, authUser?.id])
+    };
+    fetchProfile();
+  }, [id, authUser?.id]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setProfileData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setProfileData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleImageChange = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const validation = validateImageFile(file)
+    const validation = validateImageFile(file);
     if (!validation.valid) {
-      alert(validation.error)
-      return
+      alert(validation.error);
+      return;
     }
 
-    const imageUrl = URL.createObjectURL(file)
-    setPreviewImage(imageUrl)
+    const imageUrl = URL.createObjectURL(file);
+    setPreviewImage(imageUrl);
 
     // Store the file for upload during save
     setProfileData((prev) => ({
       ...prev,
       imageFile: file,
       profileImage: imageUrl, // Show preview
-    }))
-  }
+    }));
+  };
 
   const handleAddSkill = (skill) => {
     setProfileData((prev) => ({
       ...prev,
       skills: [...prev.skills, skill],
-    }))
-  }
+    }));
+  };
 
   const handleRemoveSkill = (skillToRemove) => {
     setProfileData((prev) => ({
       ...prev,
       skills: prev.skills.filter((skill) => skill !== skillToRemove),
-    }))
-  }
-
-
+    }));
+  };
 
   const handleSave = async () => {
-    const profileId = id || authUser?.id
-    if (!profileId) return
+    const profileId = id || authUser?.id;
+    if (!profileId) return;
 
-    setIsLoading(true)
-    setError('')
+    setIsLoading(true);
+    setError('');
     try {
       // Build payload with only non-empty fields (optional fields)
-      const payload = { id: profileId, updated_at: new Date().toISOString() }
+      const payload = { id: profileId, updated_at: new Date().toISOString() };
       const addIfPresent = (key, value) => {
-        if (
-          value !== undefined &&
-          value !== null &&
-          String(value).trim() !== ''
-        ) {
-          payload[key] = value
+        if (value !== undefined && value !== null && String(value).trim() !== '') {
+          payload[key] = value;
         }
-      }
+      };
 
       // Handle image upload if new image is selected
-      let imageUrl = profileData.profileImage
+      let imageUrl = profileData.profileImage;
       if (profileData.imageFile) {
-        const uploadResult = await uploadProfileImage(
-          profileData.imageFile,
-          profileId
-        )
+        const uploadResult = await uploadProfileImage(profileData.imageFile, profileId);
         if (uploadResult.success) {
-          imageUrl = uploadResult.url
+          imageUrl = uploadResult.url;
         } else {
-          throw new Error(`Image upload failed: ${uploadResult.error}`)
+          throw new Error(`Image upload failed: ${uploadResult.error}`);
         }
       }
 
-      addIfPresent('full_name', profileData.name)
-      addIfPresent('email', profileData.email)
-      addIfPresent('phone_number', profileData.phone)
-      addIfPresent('address', profileData.address)
-      addIfPresent('bio', profileData.bio)
+      addIfPresent('full_name', profileData.name);
+      addIfPresent('email', profileData.email);
+      addIfPresent('phone_number', profileData.phone);
+      addIfPresent('address', profileData.address);
+      addIfPresent('bio', profileData.bio);
       if (Array.isArray(profileData.skills) && profileData.skills.length) {
-        payload.skills = profileData.skills.join(',')
+        payload.skills = profileData.skills.join(',');
       }
       if (imageUrl && !imageUrl.startsWith('data:image')) {
-        payload.profile_image = imageUrl
+        payload.profile_image = imageUrl;
       }
-      addIfPresent('role', profileData.role)
+      addIfPresent('role', profileData.role);
 
       const { error: upsertError } = await supabase
         .from('profiles')
-        .upsert(payload, { onConflict: 'id' })
+        .upsert(payload, { onConflict: 'id' });
 
-      if (upsertError) throw upsertError
+      if (upsertError) throw upsertError;
 
       // Re-fetch to sync UI with DB state
       const { data: fresh } = await supabase
         .from('profiles')
-        .select(
-          'id, full_name, email, phone_number, address, bio, skills, profile_image, role'
-        )
+        .select('id, full_name, email, phone_number, address, bio, skills, profile_image, role')
         .eq('id', profileId)
-        .single()
+        .single();
 
       if (fresh) {
         setProfileData((prev) => ({
@@ -215,33 +197,31 @@ const ProfilePage = () => {
           profileImage: fresh?.profile_image || prev.profileImage,
           role: fresh?.role || '',
           imageFile: null, // Clear file after successful save
-        }))
+        }));
       }
 
-      alert('Profile updated successfully!')
-      setIsEditing(false)
-      setPreviewImage(null)
+      alert('Profile updated successfully!');
+      setIsEditing(false);
+      setPreviewImage(null);
     } catch (e) {
-      console.error('Error updating profile:', e)
-      setError('Failed to update profile. Please try again.')
+      console.error('Error updating profile:', e);
+      setError('Failed to update profile. Please try again.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleCancel = () => {
-    const profileId = id || authUser?.id
+    const profileId = id || authUser?.id;
     if (profileId) {
-      ;(async () => {
+      (async () => {
         try {
-          setIsLoading(true)
+          setIsLoading(true);
           const { data } = await supabase
             .from('profiles')
-            .select(
-              'id, full_name, email, phone_number, address, bio, skills, profile_image, role'
-            )
+            .select('id, full_name, email, phone_number, address, bio, skills, profile_image, role')
             .eq('id', profileId)
-            .single()
+            .single();
           setProfileData((prev) => ({
             ...prev,
             name: data?.full_name || authUser?.user_metadata?.name || prev.name,
@@ -257,20 +237,20 @@ const ProfilePage = () => {
             profileImage: data?.profile_image || prev.profileImage,
             role: data?.role || '',
             joinDate: data?.join_date || '',
-          }))
+          }));
         } catch {
         } finally {
-          setIsLoading(false)
+          setIsLoading(false);
         }
-      })()
+      })();
     }
-    setPreviewImage(null)
-    setIsEditing(false)
-    setError('')
-  }
+    setPreviewImage(null);
+    setIsEditing(false);
+    setError('');
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="relative min-h-screen bg-gray-50">
       <ProfileHeader
         onGoBack={() => navigate('/admin-dashboard')}
         isEditing={isEditing}
@@ -279,12 +259,15 @@ const ProfilePage = () => {
         onCancel={handleCancel}
         isLoading={isLoading}
         showStaffManagement={profileData.role === 'admin'}
+        staffGivePermission={staffGivePermission}
+        setStaffGivePermission={setStaffGivePermission}
       />
+      {staffGivePermission && <StaffPermissions />}
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
         {/* Error Display */}
         {error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="px-4 py-3 mb-6 text-sm text-red-700 border border-red-200 rounded-lg bg-red-50">
             {error}
           </div>
         )}
@@ -304,9 +287,9 @@ const ProfilePage = () => {
           {/* Main Content Area */}
           <div className="space-y-6 lg:col-span-3">
             {/* About Section */}
-            <div className="rounded-xl border border-gray-200 bg-white">
+            <div className="bg-white border border-gray-200 rounded-xl">
               <div className="p-6">
-                <h3 className="mb-4 flex items-center text-lg font-semibold text-gray-900">
+                <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
                   <UserIcon size={20} className="mr-2 text-indigo-600" />
                   About
                 </h3>
@@ -330,11 +313,9 @@ const ProfilePage = () => {
             />
 
             {/* Personal Information */}
-            <div className="rounded-xl border border-gray-200 bg-white">
+            <div className="bg-white border border-gray-200 rounded-xl">
               <div className="p-6">
-                <h3 className="mb-6 text-lg font-semibold text-gray-900">
-                  Personal Information
-                </h3>
+                <h3 className="mb-6 text-lg font-semibold text-gray-900">Personal Information</h3>
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <EditableField
@@ -390,7 +371,7 @@ const ProfilePage = () => {
         </div>
 
         {/* Footer */}
-        <div className="mt-16 border-t border-gray-200 pt-8">
+        <div className="pt-8 mt-16 border-t border-gray-200">
           <div className="text-center">
             <a
               href="https://www.botivate.in/"
@@ -407,7 +388,7 @@ const ProfilePage = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ProfilePage
+export default ProfilePage;

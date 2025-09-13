@@ -39,7 +39,6 @@ const COMPONENT_PERMISSION_MAP = {
   customerDb: 'customers',
   promoCard: 'promocards',
   license: 'license',
-  whatsappTemplate: 'whatsapptemplate',
 }
 
 export default function Sidebar({
@@ -49,17 +48,16 @@ export default function Sidebar({
   setActiveStaffTab,
   isMobileMenuOpen,
   setIsMobileMenuOpen,
-  allowedTabs = [], // Tabs that the user is allowed to access based on permissions in column H
+  allowedTabs = [], 
 }) {
   const [isStaffMenuOpen, setIsStaffMenuOpen] = useState(false)
   const { user, hasPermission } = useAuth()
 
-  // Detect older browsers (e.g., Windows 7 with IE/old Chrome) and provide a basic fallback UI
+  
   const [isLegacy, setIsLegacy] = useState(false)
   useEffect(() => {
     try {
       const ua = navigator.userAgent || ''
-      // Windows 7 (NT 6.1), IE (MSIE/Trident), very old Chrome (<49 often on Win7)
       const legacyMatch = /MSIE|Trident|Windows NT 6\.1/.test(ua)
       setIsLegacy(legacyMatch)
     } catch (_) {
@@ -67,32 +65,23 @@ export default function Sidebar({
     }
   }, [])
 
-  // Helper function to check if a specific component is allowed
   const isComponentAllowed = (componentId) => {
-    // Check if it's in the allowedTabs list (which is already filtered based on permissions)
     return allowedTabs.includes(componentId)
   }
 
-  // Helper function to check if a staff submenu item is allowed
   const isStaffSubmenuItemAllowed = (subItemId) => {
-    // If the staff menu itself isn't allowed, no submenu items are allowed
     if (!isComponentAllowed('staff')) return false
-
-    // Check specific submenu permission
     const permissionName = COMPONENT_PERMISSION_MAP[subItemId]
     if (!permissionName) return false
 
-    // Allow if user has the specific permission or the general staff permission or all permission
     return (
       user?.permissions?.includes(permissionName) ||
-      user?.permissions?.includes('staff') || // Having 'staff' permission grants access to all staff components
-      user?.permissions?.includes('all') // Having 'all' permission grants access to everything
+      user?.permissions?.includes('staff') || 
+      user?.permissions?.includes('all') 
     )
   }
 
-  // Toggle staff submenu
   const toggleStaffMenu = () => {
-    // Only toggle if user has permission
     if (isComponentAllowed('staff')) {
       setIsStaffMenuOpen(!isStaffMenuOpen)
       if (!isStaffMenuOpen) {
@@ -101,9 +90,7 @@ export default function Sidebar({
     }
   }
 
-  // Handle clicking a staff submenu item
   const handleStaffItemClick = (tabName) => {
-    // Only allow if the user has permission for this specific staff component
     if (isStaffSubmenuItemAllowed(tabName)) {
       setActiveStaffTab(tabName)
       setActiveTab('staff')
@@ -111,16 +98,13 @@ export default function Sidebar({
     }
   }
 
-  // Handle clicking a main menu item
   const handleTabClick = (tabName) => {
-    // Only change tab if it's allowed for this user based on permissions
     if (isComponentAllowed(tabName)) {
       setActiveTab(tabName)
       setIsMobileMenuOpen(false)
     }
   }
 
-  // Define menu items
   const menuItems = [
     { id: 'dashboardHome', label: 'Dashboard', icon: <Home size={20} /> },
     { id: 'booking', label: 'Appointment', icon: <Calendar size={20} /> },
@@ -134,7 +118,6 @@ export default function Sidebar({
       label: 'Appointment History',
       icon: <BarChart2 size={20} />,
     },
-    // Staff section with submenu
     {
       id: 'staff',
       label: 'Staff',
@@ -165,16 +148,9 @@ export default function Sidebar({
     { id: 'promoCard', label: 'Offers & Membership', icon: <Tag size={20} /> },
     { id: 'license', label: 'License', icon: <KeyRound size={20} /> },
 
-    //todo i have to add this in future
-    // Temporarily hidden - uncomment when needed in future
-    // {
-    //   id: "whatsappTemplate",
-    //   label: "WhatsApp Template",
-    //   icon: <MessageSquare size={20} />,
-    // },
+  
   ]
 
-  // Basic fallback for legacy browsers: simple, static buttons without animations/transforms
   if (isLegacy) {
     return (
       <div className="flex flex-col w-full h-screen p-4 bg-white border-r border-gray-200 md:w-64">
@@ -187,8 +163,12 @@ export default function Sidebar({
         <nav className="flex-1 overflow-y-auto hideScrollBar">
           <ul>
             {menuItems.map((item) => {
-              const staffHidden = new Set(['staff','services','paymentCommission','customerDb','promoCard','license','whatsappTemplate','dashboardHome','appointmentHistory'])
-              if (user?.role === 'staff' && staffHidden.has(item.id)) return null
+              const staffHidden = new Set(['staff','services','paymentCommission','customerDb','promoCard','license','dashboardHome'])
+              if (user?.role === 'staff' && staffHidden.has(item.id)) {
+                const perm = COMPONENT_PERMISSION_MAP[item.id]
+                const canSee = user?.permissions?.includes('all') || (perm && user?.permissions?.includes(perm))
+                if (!canSee) return null
+              }
               if (!isComponentAllowed(item.id)) return null
               return (
                 <li key={item.id} className="mb-2">
@@ -252,13 +232,15 @@ export default function Sidebar({
               'customerDb',
               'promoCard',
               'license',
-              'whatsappTemplate',
-              "dashboardHome",
-              "appointmentHistory"
+              "dashboardHome"
             ])
 
             if (user?.role === 'staff' && staffHidden.has(item.id)) {
-              return null
+              const perm = COMPONENT_PERMISSION_MAP[item.id]
+              const canSee = user?.permissions?.includes('all') || (perm && user?.permissions?.includes(perm))
+              if (!canSee) {
+                return null
+              }
             }
 
             // Skip items that are not in allowed tabs based on user permissions in column H
