@@ -15,7 +15,6 @@ const ProfileHeader = ({
   setStaffGivePermission,
 }) => {
   const { user } = useAuth();
-  console.log(user, 'profile header');
   return (
     <div className="bg-white border-b border-gray-200">
       <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">

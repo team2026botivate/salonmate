@@ -18,7 +18,7 @@ import NotificationSystem from '../offers_&_Membership/notificationSystem';
 import { useAuth } from '@/Context/AuthContext';
 import supabase from '@/dataBase/connectdb';
 
-// Permissions master: ids MUST match what Sidebar/Dashboard expect and what DB stores
+
 const PERMISSIONS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'appointment', label: 'Appointment' },
@@ -33,18 +33,30 @@ const PERMISSIONS = [
   { id: 'license', label: 'License' },
 ];
 
-// Fetch staff for the current store with their permissions
+
 async function fetchStaffWithPermissions(storeId) {
+  
   const { data: staff, error: staffErr } = await supabase
     .from('profiles')
     .select('id, full_name, email, role')
     .eq('store_id', storeId)
     .neq('role', 'admin');
 
-    console.log(staff,"all staff form givePermition.profile.jsx")
   if (staffErr) throw staffErr;
 
   if (!staff?.length) return [];
+
+  const emails = staff.map((s) => s.email).filter(Boolean);
+  let staffInfoByEmail = new Map();
+  if (emails.length > 0) {
+    const { data: staffInfo, error: siErr } = await supabase
+      .from('staff_info')
+      .select('email_id, staff_name')
+      .eq('store_id', storeId)
+      .in('email_id', emails);
+    if (siErr) throw siErr;
+    staffInfoByEmail = new Map((staffInfo || []).map((r) => [String(r.email_id).toLowerCase(), r]));
+  }
 
   const userIds = staff.map((s) => s.id);
   const { data: perms, error: permsErr } = await supabase
@@ -61,24 +73,35 @@ async function fetchStaffWithPermissions(storeId) {
 
   return staff.map((s) => ({
     id: s.id,
-    name: s.full_name || s.email || s.id,
-    email: s.email,
-    role: s.role,
+    name:
+      staffInfoByEmail.get(String(s.email || '').toLowerCase())?.staff_name ||
+      s.full_name ||
+      s.email ||
+      s.id,
+    email: s.email || '',
+    role: s.role || '',
     permissions: grouped.get(s.id) || [],
     isActive: true,
   }));
 }
 
-// Replace permissions for a user in a given store
 async function updateStaffPermissions(storeId, userId, permissionIds) {
+  if (!storeId) throw new Error('Missing storeId when updating permissions');
+  if (!userId) throw new Error('Missing userId when updating permissions');
+
   const { error: delErr } = await supabase
     .from('user_permissions')
     .delete()
     .eq('store_id', storeId)
     .eq('user_id', userId);
-  if (delErr) throw delErr;
+  if (delErr) {
+    console.error('Failed to clear existing permissions', delErr);
+    throw delErr;
+  }
 
-  if (!permissionIds?.length) return;
+  if (!permissionIds?.length) {
+    return [];
+  }
 
   const rows = permissionIds.map((pid) => ({
     user_id: userId,
@@ -86,13 +109,20 @@ async function updateStaffPermissions(storeId, userId, permissionIds) {
     permission_id: pid,
   }));
 
-  const { error: insErr } = await supabase.from('user_permissions').insert(rows);
+  const { data: inserted, error: insErr } = await supabase
+    .from('user_permissions')
+    .insert(rows)
+    .select('user_id, store_id, permission_id');
 
-  console.log(insErr)
-  if (insErr) throw insErr;
+  if (insErr) {
+    console.error('Insert permissions error', insErr);
+    throw insErr;
+  }
+
+  return inserted;
 }
 
-const StaffPermissions = () => {
+const StaffPermissions = ({setStaffGivePermission}) => {
   const { user } = useAuth();
   const storeId = user?.profile?.store_id;
   const [staffList, setStaffList] = useState([]);
@@ -103,7 +133,6 @@ const StaffPermissions = () => {
   const [pendingPermissions, setPendingPermissions] = useState({});
   const [notifications, setNotifications] = useState([]);
 
-  // Initial load by store
   useEffect(() => {
     if (!storeId) return;
     (async () => {
@@ -199,24 +228,30 @@ const StaffPermissions = () => {
     setIsLoading(true);
     try {
       // Build set from toggles
-      const updatedPermissions = Object.keys(pendingPermissions).filter((key) => pendingPermissions[key]);
+      const updatedPermissions = Object.keys(pendingPermissions).filter(
+        (key) => pendingPermissions[key]
+      );
 
       // Persist to Supabase
       await updateStaffPermissions(storeId, selectedStaff.id, updatedPermissions);
 
-      // Update local state
-      const updatedStaffList = staffList.map((staff) =>
-        staff.id === selectedStaff.id ? { ...staff, permissions: updatedPermissions } : staff
-      );
-      setStaffList(updatedStaffList);
-      setSelectedStaff({ ...selectedStaff, permissions: updatedPermissions });
+      // Refetch to ensure DB state is reflected
+      const fresh = await fetchStaffWithPermissions(storeId);
+      setStaffList(fresh);
+      const refreshed = fresh.find((s) => s.id === selectedStaff.id) || null;
+      if (refreshed) setSelectedStaff(refreshed);
 
       showNotification(`Permissions updated successfully for ${selectedStaff.name}!`);
     } catch (error) {
-      showNotification('Failed to update permissions. Please try again.', 'error');
+      console.error('Permissions update failed', error);
+      showNotification(
+        `Failed to update permissions: ${error?.message || 'Unknown error'}`,
+        'error'
+      );
     } finally {
       setIsLoading(false);
       setShowConfirmDialog(false);
+      setStaffGivePermission(false);
     }
   };
 

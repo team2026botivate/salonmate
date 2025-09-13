@@ -12,10 +12,10 @@ const OffersAndMemberships = () => {
   };
 
   return (
-    <div className="min-h-screen p-6 bg-gray-50">
+    <div className="min-h-screen md:p-6 bg-gray-50">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
+        <div className="p-4 mb-8">
           <h1 className="mb-2 text-3xl font-bold text-gray-900">Offers & Memberships</h1>
           <p className="text-gray-600">
             Manage promotional campaigns, membership programs, and user assignments
@@ -25,7 +25,7 @@ const OffersAndMemberships = () => {
         {/* Navigation Tabs */}
         <div className="mb-6 bg-white border border-gray-200 shadow-sm rounded-xl">
           <div className="border-b border-gray-200">
-            <nav className="flex px-6 space-x-8" aria-label="Tabs">
+            <nav className="flex space-x-4 sm:space-x-8 sm:px-6" aria-label="Tabs">
               <button
                 onClick={() => toggleSection('promos')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
@@ -70,7 +70,7 @@ const OffersAndMemberships = () => {
         </div>
 
         {/* Content Sections */}
-        <div className="transition-all duration-300 ease-in-out">
+        <div className="p-4 transition-all duration-300 ease-in-out">
           {activeSection === 'promos' && (
             <div className="animate-fade-in">
               <PromoCard />
