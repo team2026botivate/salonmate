@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import {
   ArrowRight,
   Calendar,
@@ -6,18 +6,20 @@ import {
   CreditCard,
   Phone,
   User,
-} from 'lucide-react'
-import React, { useEffect, useMemo, useState } from 'react'
+  X,
+  ChevronDown,
+  Check,
+} from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   useCreatenewAppointment,
   useGetServicesList,
   useGetStaffData,
   usegetUserByPhoneNumber,
   useDoStaffStatusActive,
-} from '../../hook/dbOperation'
-import { generateBookingId } from '../../utils/generateBookingId'
-import { useAuth } from '../../Context/AuthContext'
-
+} from '../../hook/dbOperation';
+import { generateBookingId } from '../../utils/generateBookingId';
+import { useAuth } from '../../Context/AuthContext';
 
 const AddNewAppointment = ({
   tableHeaders,
@@ -25,14 +27,14 @@ const AddNewAppointment = ({
   onChange,
   onSubmit,
   onCancel,
-  // submitting: isLoading,
   isEdit = false,
   renderFormField,
 }) => {
+  const { user } = useAuth();
+  const { doStaffStatusActive } = useDoStaffStatusActive();
+  const [errors, setErrors] = useState({});
+  const [isStaffDropdownOpen, setIsStaffDropdownOpen] = useState(false);
 
-  const { user } = useAuth()
-  const { doStaffStatusActive } = useDoStaffStatusActive()
-  const [errors, setErrors] = useState({})
   const [formData, setFormData] = useState({
     bookingId: '',
     mobileNumber: '',
@@ -40,186 +42,181 @@ const AddNewAppointment = ({
     slotDate: '',
     slotNumber: 1,
     slotTime: '',
-    staffName: '',
-    staffNumber: '',
+    staff: [], // Changed from single staff to array
     service: '',
     servicePrice: 0,
     bookingStatus: String('pending').toLowerCase(),
     timeStamp: '',
     created_at: '',
     recordId: '',
-    id: '',
     serviceTime: '',
-  })
+  });
 
-  const { createNewAppointment, loading: isLoading } = useCreatenewAppointment()
-  const { data: serviceslist, loading: servicesLoading } = useGetServicesList()
-  const { data, loading } = useGetStaffData()
-  const [isNewUser, setisNewUser] = useState(false)
+  const { createNewAppointment, loading: isLoading } = useCreatenewAppointment();
+  const { data: serviceslist, loading: servicesLoading } = useGetServicesList();
+  const { data, loading } = useGetStaffData();
+  const [isNewUser, setisNewUser] = useState(false);
 
-  const { getUserByPhoneNumber } = usegetUserByPhoneNumber()
+  const { getUserByPhoneNumber } = usegetUserByPhoneNumber();
 
-  const getBookingId = useMemo(() => generateBookingId(), [])
+  const getBookingId = useMemo(() => generateBookingId(), []);
 
   // Set booking ID on mount
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
       bookingId: getBookingId,
-    }))
-  }, [getBookingId])
+    }));
+  }, [getBookingId]);
 
   useEffect(() => {
-    if (!formData.service || !serviceslist || !serviceslist.length) return
-    const service = serviceslist.find(
-      (service) => service.service_name === formData.service
-    )
+    if (!formData.service || !serviceslist || !serviceslist.length) return;
+    const service = serviceslist.find((service) => service.service_name === formData.service);
     setFormData((prev) => ({
       ...prev,
       servicePrice: service?.base_price,
       serviceTime: service?.time_duration,
-    }))
-  }, [formData.service, serviceslist])
+    }));
+  }, [formData.service, serviceslist]);
 
   useEffect(() => {
-    if (!formData.mobileNumber || formData.mobileNumber.length < 10) return
+    if (!formData.mobileNumber || formData.mobileNumber.length < 10) return;
     const getUserData = async () => {
-      const resp = await getUserByPhoneNumber(formData.mobileNumber)
-      //todo start work form here
+      const resp = await getUserByPhoneNumber(formData.mobileNumber);
+      setisNewUser(Array.isArray(resp) && resp.length === 0);
 
-      setisNewUser(Array.isArray(resp) && resp.length === 0)
-
-      if (resp?.data?.length === 0) return
+      if (resp?.data?.length === 0) return;
 
       const number =
-        resp.find((item) => item.mobile_number === formData.mobileNumber) ||
-        formData.customerName
+        resp.find((item) => item.mobile_number === formData.mobileNumber) || formData.customerName;
       setFormData((prev) => ({
         ...prev,
         customerName: number?.customer_name || formData.customerName,
-      }))
-    }
-    getUserData()
-  }, [formData.mobileNumber || formData.mobileNumber.length < 10])
+      }));
+    };
+    getUserData();
+  }, [formData.mobileNumber || formData.mobileNumber.length < 10]);
 
   useEffect(() => {
-    if (!data || !Array.isArray(data)) return
+    if (!data || !Array.isArray(data)) return;
 
-    // If staff user is logged in, resolve their staff_info row
+    // If staff user is logged in, auto-select them
     if (user?.role === 'staff') {
-      // 1) Try to match by email first
-      let me = null
+      let me = null;
       if (user?.email) {
-        me = data.find((s) => String(s.email_id || '').toLowerCase() === String(user.email || '').toLowerCase())
+        me = data.find(
+          (s) => String(s.email_id || '').toLowerCase() === String(user.email || '').toLowerCase()
+        );
       }
-      // 2) Fallback to matching by id (if your auth id equals staff_info.id)
       if (!me) {
-        me = data.find((s) => String(s.id) === String(user.id))
+        me = data.find((s) => String(s.id) === String(user.id));
       }
 
       if (me) {
-        setFormData((prev) => ({
-          ...prev,
+        const staffMember = {
+          id: me.id,
           staffName: me.staff_name,
           staffNumber: me.mobile_number,
-          id: me.id,               // use staff_info.id as staff_id
           staffStatus: me.status,
-        }))
-        return
-      } else {
-        // Fall back: ensure staff_id is at least set to auth user id
+        };
         setFormData((prev) => ({
           ...prev,
-          id: String(user.id || ''),
-        }))
+          staff: [staffMember], // Auto-select the logged-in staff member
+        }));
+        return;
       }
     }
+  }, [data, user]);
 
-    // Non-staff or if staff didn't match, keep existing behavior
-    if (!formData.staffName && data.length > 0) {
-      setFormData((prev) => ({
-        ...prev,
-        staffName: data[0].staff_name,
-        staffNumber: data[0].mobile_number,
-        id: data[0].id,
-        staffStatus: data[0].status,
-      }))
-      return
-    }
-
-    const selected = data.find((staff) => staff.staff_name === formData.staffName)
-    if (selected) {
-      setFormData((prev) => ({
-        ...prev,
-        staffNumber: selected.mobile_number || '',
-        id: selected.id || '',
-        staffStatus: selected.status || '',
-      }))
-    }
-  }, [formData.staffName, data, user])
-
-  
   // Helper: format a Date to local yyyy-MM-dd string
   const toLocalYMD = (d) => {
-    const year = d.getFullYear()
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   const isStaffSelectionAllowed = () => {
-    if (!formData.slotDate) return false
+    if (!formData.slotDate) return false;
 
-    // input[type=date] gives yyyy-MM-dd. Compare as local yyyy-MM-dd strings to avoid timezone drift
-    const selectedStr = String(formData.slotDate)
-    const today = new Date()
-    const tomorrow = new Date(today)
-    tomorrow.setDate(today.getDate() + 1)
+    const selectedStr = String(formData.slotDate);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
 
-    const todayStr = toLocalYMD(today)
-    const tomorrowStr = toLocalYMD(tomorrow)
+    const todayStr = toLocalYMD(today);
+    const tomorrowStr = toLocalYMD(tomorrow);
 
-    return selectedStr === todayStr || selectedStr === tomorrowStr
-  }
+    return selectedStr === todayStr || selectedStr === tomorrowStr;
+  };
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
-    
+    }));
+
     // Clear staff selection if date is changed to future date
     if (name === 'slotDate') {
-      // Compare as local yyyy-MM-dd strings to avoid timezone issues
-      const selectedStr = String(value)
-      const today = new Date()
-      const tomorrow = new Date(today)
-      tomorrow.setDate(today.getDate() + 1)
+      const selectedStr = String(value);
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
 
-      const todayStr = toLocalYMD(today)
-      const tomorrowStr = toLocalYMD(tomorrow)
+      const todayStr = toLocalYMD(today);
+      const tomorrowStr = toLocalYMD(tomorrow);
 
-      const isAllowed = selectedStr === todayStr || selectedStr === tomorrowStr
+      const isAllowed = selectedStr === todayStr || selectedStr === tomorrowStr;
 
       if (!isAllowed) {
         setFormData((prev) => ({
           ...prev,
           [name]: value,
-          staffName: '',
-          staffNumber: '',
-          id: '',
-          staffStatus: '',
-        }))
-        return
+          staff: [], // Clear staff selection
+        }));
+        return;
       }
     }
-  }
+  };
+
+  const handleStaffSelection = (selectedStaff) => {
+    const isSelected = formData.staff.some((staff) => staff.id === selectedStaff.id);
+
+    if (isSelected) {
+      // Remove staff if already selected
+      setFormData((prev) => ({
+        ...prev,
+        staff: prev.staff.filter((staff) => staff.id !== selectedStaff.id),
+      }));
+    } else {
+      // Add staff if not selected and not busy
+      if (selectedStaff.status?.toLowerCase() !== 'busy') {
+        const staffMember = {
+          id: selectedStaff.id,
+          staffName: selectedStaff.staff_name,
+          staffNumber: selectedStaff.mobile_number,
+          staffStatus: selectedStaff.status,
+        };
+        setFormData((prev) => ({
+          ...prev,
+          staff: [...prev.staff, staffMember],
+        }));
+      }
+    }
+  };
+
+  const removeStaffMember = (staffId) => {
+    setFormData((prev) => ({
+      ...prev,
+      staff: prev.staff.filter((staff) => staff.id !== staffId),
+    }));
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    // Validate required fields before submission (staff is now optional)
+    // Validate required fields before submission
     if (
       !formData.customerName ||
       !formData.mobileNumber ||
@@ -227,21 +224,38 @@ const AddNewAppointment = ({
       !formData.slotTime ||
       !formData.service
     ) {
-      alert('Please fill in all required fields.')
-      return
+      alert('Please fill in all required fields.');
+      return;
     }
 
-    await createNewAppointment(formData, 'busy', onCancel, isNewUser)
-    await doStaffStatusActive(
-      formData.id,
-      formData.serviceTime,
-      formData.staffStatus
-    )
-  }
+    // Create appointment payload with selected staff
+
+    console.log(formData, 'data');
+
+    await createNewAppointment(formData, 'busy', onCancel, isNewUser);
+
+    // Update status for all selected staff members
+    // for (const staff of formData.staff) {
+    //   await doStaffStatusActive(
+    //     staff.id,
+    //     formData.serviceTime,
+    //     staff.staffStatus
+    //   )
+    // }
+  };
+
+  const availableStaff =
+    data?.filter(
+      (staff) => isStaffSelectionAllowed() && !loading && staff.status?.toLowerCase() !== 'busy'
+    ) || [];
+
+  const busyStaff =
+    data?.filter(
+      (staff) => isStaffSelectionAllowed() && !loading && staff.status?.toLowerCase() === 'busy'
+    ) || [];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 ">
-      
+    <form onSubmit={handleSubmit} className="space-y-8">
       {/* Customer Information */}
       <div>
         <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
@@ -250,9 +264,7 @@ const AddNewAppointment = ({
         </h3>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-1">
           <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-              Mobile Number
-            </label>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Mobile Number</label>
             <div className="relative">
               <Phone className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 top-1/2 left-3" />
               <input
@@ -275,9 +287,7 @@ const AddNewAppointment = ({
           </div>
 
           <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-              Customer Name
-            </label>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Customer Name</label>
             <input
               name="customerName"
               type="text"
@@ -303,9 +313,7 @@ const AddNewAppointment = ({
         </h3>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-              Slot Date
-            </label>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Slot Date</label>
             <input
               name="slotDate"
               type="date"
@@ -315,15 +323,11 @@ const AddNewAppointment = ({
                 errors.slotDate ? 'border-red-300' : 'border-gray-300'
               }`}
             />
-            {errors.slotDate && (
-              <p className="mt-1 text-sm text-red-500">{errors.slotDate}</p>
-            )}
+            {errors.slotDate && <p className="mt-1 text-sm text-red-500">{errors.slotDate}</p>}
           </div>
 
           <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-              Slot Time
-            </label>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Slot Time</label>
             <div className="relative">
               <Clock className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 top-1/2 left-3" />
               <input
@@ -336,66 +340,147 @@ const AddNewAppointment = ({
                 }`}
               />
             </div>
-            {errors.slotTime && (
-              <p className="mt-1 text-sm text-red-500">{errors.slotTime}</p>
-            )}
+            {errors.slotTime && <p className="mt-1 text-sm text-red-500">{errors.slotTime}</p>}
           </div>
         </div>
       </div>
 
-      {/* Staff Information */}
+      {/* Staff Information - Multi-Select */}
       <div>
         <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
           <User className="w-5 h-5 mr-2" />
           Staff Information
         </h3>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-1">
-          <div>
+
+        {/* Selected Staff Display */}
+        {formData.staff.length > 0 && (
+          <div className="mb-4">
             <label className="block mb-2 text-sm font-medium text-gray-700">
-              Staff Name
+              Selected Staff ({formData.staff.length})
             </label>
-            <select
-              name="staffName"
-              disabled={user?.role === 'staff' || !isStaffSelectionAllowed() || loading}
-              type="text"
-              value={formData.staffName}
-              onChange={handleChange}
-              className={`w-full rounded-lg border px-4 py-3 transition-all ${
-                !isStaffSelectionAllowed() 
-                  ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : errors.staffName 
-                    ? 'border-red-300' 
-                    : 'border-gray-300'
-              }`}
-            >
-              <option value="">
-                {!isStaffSelectionAllowed() 
-                  ? "Staff selection only available for today and tomorrow" 
-                  : "Select Staff (Optional)"
-                }
-              </option>
-              {isStaffSelectionAllowed() && loading && <option disabled>Loading staff...</option>}
-              {isStaffSelectionAllowed() && !loading && data.length === 0 && (
-                <option disabled>No staff found</option>
-              )}
-              {isStaffSelectionAllowed() && !loading &&
-                data.map((staff) => (
-                  <option
-                    className="flex items-center justify-between bg-white rounded-md"
-                    key={staff.staff_name}
-                    value={staff.staff_name}
-                    disabled={staff.status?.toLowerCase() === 'busy'}
-                  >
-                    {staff.staff_name}
-                    <span className="inline-block ml-5 font-bold">{`(${staff.status})`}</span>
-                  </option>
-                ))}
-            </select>
-            {errors.staffName && (
-              <p className="mt-1 text-sm text-red-500">{errors.staffName}</p>
-            )}
+            <div className="flex flex-wrap gap-2">
+              {formData.staff.map((staff) => (
+                <div
+                  key={staff.id}
+                  className="flex items-center px-3 py-2 text-sm bg-blue-100 border border-blue-200 rounded-lg"
+                >
+                  <span className="text-blue-800">
+                    {staff.staffName} ({staff.staffStatus})
+                  </span>
+                  {user?.role !== 'staff' && (
+                    <button
+                      type="button"
+                      onClick={() => removeStaffMember(staff.id)}
+                      className="ml-2 text-blue-600 transition-colors hover:text-blue-800"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
+        )}
+
+        {/* Staff Selection Dropdown */}
+        <div className="relative">
+          <label className="block mb-2 text-sm font-medium text-gray-700">Add Staff Members</label>
+          <button
+            type="button"
+            disabled={user?.role === 'staff' || !isStaffSelectionAllowed() || loading}
+            onClick={() => setIsStaffDropdownOpen(!isStaffDropdownOpen)}
+            className={`w-full flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-all ${
+              !isStaffSelectionAllowed()
+                ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'border-gray-300 hover:border-gray-400 focus:border-transparent focus:ring-2 focus:ring-blue-500'
+            }`}
+          >
+            <span>
+              {!isStaffSelectionAllowed()
+                ? 'Staff selection only available for today and tomorrow'
+                : loading
+                  ? 'Loading staff...'
+                  : 'Select staff members (Optional)'}
+            </span>
+            {isStaffSelectionAllowed() && !loading && (
+              <ChevronDown
+                className={`w-5 h-5 transition-transform ${
+                  isStaffDropdownOpen ? 'rotate-180' : ''
+                }`}
+              />
+            )}
+          </button>
+
+          {/* Dropdown Options */}
+          {isStaffDropdownOpen && isStaffSelectionAllowed() && !loading && (
+            <div className="absolute z-10 w-full mt-1 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg max-h-64">
+              {/* Available Staff */}
+              {availableStaff.length > 0 && (
+                <div className="p-2">
+                  <div className="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+                    Available Staff
+                  </div>
+                  {availableStaff.map((staff) => {
+                    const isSelected = formData.staff.some((s) => s.id === staff.id);
+                    return (
+                      <button
+                        key={staff.id}
+                        type="button"
+                        onClick={() => handleStaffSelection(staff)}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-left rounded-md transition-colors ${
+                          isSelected
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                            : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className="flex items-center">
+                          <span className="font-medium">{staff.staff_name}</span>
+                          <span className="ml-2 text-sm font-medium text-green-600">
+                            ({staff.status})
+                          </span>
+                        </span>
+                        {isSelected && <Check className="w-4 h-4 text-blue-600" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Busy Staff */}
+              {busyStaff.length > 0 && (
+                <div className="p-2 border-t border-gray-100">
+                  <div className="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+                    Unavailable Staff
+                  </div>
+                  {busyStaff.map((staff) => (
+                    <div
+                      key={staff.id}
+                      className="flex items-center justify-between px-3 py-2 text-gray-400 cursor-not-allowed"
+                    >
+                      <span className="flex items-center">
+                        <span className="font-medium">{staff.staff_name}</span>
+                        <span className="ml-2 text-sm font-medium text-red-500">
+                          ({staff.status})
+                        </span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {availableStaff.length === 0 && busyStaff.length === 0 && (
+                <div className="p-4 text-center text-gray-500">No staff members found</div>
+              )}
+            </div>
+          )}
         </div>
+
+        {/* Click outside to close dropdown */}
+        {isStaffDropdownOpen && (
+          <div className="fixed inset-0 z-5" onClick={() => setIsStaffDropdownOpen(false)} />
+        )}
+
+        {errors.staff && <p className="mt-1 text-sm text-red-500">{errors.staff}</p>}
       </div>
 
       {/* Service Information */}
@@ -406,9 +491,7 @@ const AddNewAppointment = ({
         </h3>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-1">
           <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-              Service
-            </label>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Service</label>
             <select
               name="service"
               value={formData.service}
@@ -430,9 +513,7 @@ const AddNewAppointment = ({
               ))}
             </select>
 
-            {errors.service && (
-              <p className="mt-1 text-sm text-red-500">{errors.service}</p>
-            )}
+            {errors.service && <p className="mt-1 text-sm text-red-500">{errors.service}</p>}
           </div>
         </div>
       </div>
@@ -456,7 +537,7 @@ const AddNewAppointment = ({
         </button>
       </div>
     </form>
-  )
-}
+  );
+};
 
-export default AddNewAppointment
+export default AddNewAppointment;

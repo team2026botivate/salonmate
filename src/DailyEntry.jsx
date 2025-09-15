@@ -14,14 +14,12 @@ const DailyEntry = () => {
   const { user } = useAuth();
   const { data: staffData, loading: staffLoading } = useGetStaffData();
 
-  console.log(data, 'data');
-
   const [searchTerm, setSearchTerm] = useState('');
   const [dailyFromInputPropsData, setDailyFromInputPropsData] = useState({
     bookingId: '',
     bookingStatus: '',
     service: '',
-    staffId: '',
+    staff_information: [],
   });
 
   const refreshExtraServicesHookRefresh = useAppData(
@@ -50,7 +48,6 @@ const DailyEntry = () => {
 
   //todo: i have to check it
 
-  console.log(data, 'data');
   const staffFilteredData = useMemo(() => {
     if (!Array.isArray(data)) return [];
     if (!user || (user.role && String(user.role).toLowerCase() !== 'staff')) {
@@ -77,16 +74,38 @@ const DailyEntry = () => {
       .map((s) => String(s).trim().toLowerCase());
     const mobiles = [me?.mobile_number].filter(Boolean).map((s) => String(s).trim());
 
-    const isMatchById = (apt) => ids.length > 0 && ids.includes(String(apt?.staff_id ?? ''));
+    const isMatchById = (apt) => {
+      if (ids.length === 0) return false;
+      if (Array.isArray(apt?.staff_information) && apt.staff_information.length > 0) {
+        return apt.staff_information.some((s) => ids.includes(String(s?.id ?? '')));
+      }
+      return ids.includes(String(apt?.staff_id ?? ''));
+    };
     const isMatchByName = (apt) => {
+      if (names.length === 0) return false;
+      if (Array.isArray(apt?.staff_information) && apt.staff_information.length > 0) {
+        return apt.staff_information.some((s) =>
+          names.includes(
+            String(s?.staffName ?? '')
+              .trim()
+              .toLowerCase()
+          )
+        );
+      }
       const aptStaffName = String(apt?.['Staff Name'] ?? apt?.staff_name ?? '')
         .trim()
         .toLowerCase();
-      return names.length > 0 && names.includes(aptStaffName);
+      return names.includes(aptStaffName);
     };
     const isMatchByMobile = (apt) => {
+      if (mobiles.length === 0) return false;
+      if (Array.isArray(apt?.staff_information) && apt.staff_information.length > 0) {
+        return apt.staff_information.some((s) =>
+          mobiles.includes(String(s?.staffNumber ?? '').trim())
+        );
+      }
       const staffNumber = String(apt?.['Staff Number'] ?? '').trim();
-      return mobiles.length > 0 && mobiles.includes(staffNumber);
+      return mobiles.includes(staffNumber);
     };
 
     const filtered = data.filter(
@@ -116,7 +135,6 @@ const DailyEntry = () => {
     return matchesSearch;
   });
 
-  console.log(filteredAppointments, 'filteredAppointments');
   const formatCurrency = (amount) => {
     const formattedAmount = new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -185,7 +203,7 @@ const DailyEntry = () => {
                   appointmentId={dailyFromInputPropsData.bookingId}
                   bookingStatus={dailyFromInputPropsData.bookingStatus}
                   service={dailyFromInputPropsData.service}
-                  staffId={dailyFromInputPropsData.staffId}
+                  staffId={dailyFromInputPropsData.staff_information}
                 />
               </motion.div>
             </motion.div>
@@ -320,8 +338,20 @@ const DailyEntry = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">
-                      {appointment['Staff Name']}
+                    <div className="flex flex-wrap gap-2 text-sm font-medium text-gray-900">
+                      {Array.isArray(appointment.staff_information) &&
+                      appointment.staff_information.length > 0 ? (
+                        appointment.staff_information.map((s) => (
+                          <span
+                            key={s.id}
+                            className="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full"
+                          >
+                            {s.staffName}
+                          </span>
+                        ))
+                      ) : (
+                        <span>{appointment['Staff Name'] || 'Not Assigned'}</span>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -353,7 +383,9 @@ const DailyEntry = () => {
                           bookingId: appointment.id,
                           bookingStatus: appointment['Booking Status'],
                           service: appointment['Services'],
-                          staffId: appointment.staff_id,
+                          staff_information: Array.isArray(appointment.staff_information)
+                            ? appointment.staff_information
+                            : [],
                         }));
                         SetIsEditBoxOpen(true);
                       }}

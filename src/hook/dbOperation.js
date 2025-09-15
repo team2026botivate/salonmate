@@ -67,20 +67,35 @@ export const useUpdateAppointmentById = () => {
   const getAppointments = async (id, updates, onCancel) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+
+      // 1) Update the appointment row
+      const { data: updated, error: updateErr } = await supabase
         .from('appointment')
         .update({
           'Booking Status': updates.bookingStatus,
-          'Staff Name': updates.staffName,
-          'Staff Number': updates.staffNumber,
           'Slot Date': updates.slotDate,
           'Slot Time': updates.slotTime,
           'Slot Number': updates.slotNumber,
+          staff_information: updates.staff_information,
         })
         .eq('id', id)
         .select();
 
-      if (error) throw error;
+      if (updateErr) throw updateErr;
+
+      // 2) Mark assigned staff as 'busy' (if any)
+      if (Array.isArray(updates?.staff_information) && updates.staff_information.length > 0) {
+        for (const s of updates.staff_information) {
+          const staffId = s?.id;
+          if (!staffId) continue;
+          const { error: staffErr } = await supabase
+            .from('staff_info')
+            .update({ status: 'busy' })
+            .eq('id', staffId);
+          if (staffErr) throw staffErr;
+        }
+      }
+
       setRefreshAppointments();
       onCancel();
     } catch (error) {
@@ -249,12 +264,11 @@ export const useCreatenewAppointment = () => {
 
     try {
       // Check if staff is provided and validate only if provided
-      const hasStaff = appointmentData.id && appointmentData.id.trim() !== '';
+      const hasStaff = appointmentData.staff[0] && appointmentData.staff[0].id.trim() !== '';
 
       // Check if selected staff is busy (only if staff is provided)
       const isStaffBusy = hasStaff && appointmentData.staffStatus?.toLowerCase() === 'busy';
 
-      // Prepare appointment data with conditional staff_id
       const appointmentInsertData = {
         'Booking ID': appointmentData.bookingId,
         'Mobile Number': appointmentData.mobileNumber,
@@ -262,8 +276,7 @@ export const useCreatenewAppointment = () => {
         'Slot Date': appointmentData.slotDate,
         'Slot Number': appointmentData.slotNumber,
         'Slot Time': appointmentData.slotTime,
-        'Staff Name': hasStaff ? (isStaffBusy ? '' : appointmentData.staffName) : '',
-        'Staff Number': hasStaff ? (isStaffBusy ? '' : appointmentData.staffNumber) : '',
+        staff_information: appointmentData.staff,
         Services: appointmentData.service,
         'Service Price': appointmentData.servicePrice,
         'Booking Status': appointmentData.bookingStatus,
@@ -272,9 +285,8 @@ export const useCreatenewAppointment = () => {
         store_id: store_id,
       };
 
-      // Only add staff_id if staff is provided and valid
       if (hasStaff) {
-        appointmentInsertData.staff_id = appointmentData.id;
+        appointmentInsertData.staff_id = appointmentData.staff[0].id;
       }
       if (isNewUser) {
         const { error } = await supabase.from('customer_info').insert({
@@ -287,18 +299,20 @@ export const useCreatenewAppointment = () => {
       }
       const { error } = await supabase.from('appointment').insert(appointmentInsertData);
 
+      console.log(error, 'error form the appointment');
       if (!error) {
         setRefreshAppointments();
       }
       if (error) throw error;
 
-      // Only update staff status if we have a valid staff ID
       if (hasStaff) {
-        const { data: staffData, error: staffError } = await supabase
-          .from('staff_info')
-          .update({ status: newStatus })
-          .eq('id', appointmentData.id);
-        if (staffError) throw staffError;
+        appointmentData.staff.forEach(async (staff) => {
+          const { error: staffError } = await supabase
+            .from('staff_info')
+            .update({ status: newStatus })
+            .eq('id', staff.id);
+          if (staffError) throw staffError;
+        });
       }
     } catch (err) {
       console.error('Error creating new appointment:', err);
@@ -466,8 +480,8 @@ export const useGetRunningAppointment = () => {
         .select('*')
         .eq('store_id', store_id)
         .eq('"Booking Status"', 'completed')
-        .not('"Staff Name"', 'is', null)
-        .neq('"Staff Name"', '')
+        .not('staff_information', 'is', null)
+        .neq('staff_information', '[]')
         .or('status.is.null,status.neq.done') // ✅ null bhi allow aur 'done' ke alawa sab
         .gte('"Slot Date"', startOfYesterday.toISOString().split('T')[0])
         .lte('"Slot Date"', startOfDayAfterTomorrow.toISOString().split('T')[0])
@@ -1397,7 +1411,6 @@ export const useMembershipOperations = () => {
         benefits: Array.isArray(payload.benefits) ? payload.benefits : [],
         featured: payload.featured === undefined ? undefined : Boolean(payload.featured),
         is_active: payload.is_active === undefined ? undefined : Boolean(payload.is_active),
-        
       };
 
       // Remove undefined keys to avoid overwriting with null
@@ -1410,8 +1423,6 @@ export const useMembershipOperations = () => {
         .eq('store_id', store_id)
         .select()
         .single();
-
-      
 
       if (error) throw error;
       setMemberships((prev) => prev.map((m) => (m.id === id ? data : m)));
@@ -2128,7 +2139,6 @@ export const useUpdateStaffPaymentStatus = () => {
         })
         .select()
         .single();
-        
 
       if (paymentError) throw paymentError;
 
@@ -2223,7 +2233,6 @@ export const useToggleServiceDelete = () => {
 
   return { toggleDelete, loading, error };
 };
-
 
 export const useDeleteService = () => {
   const [loading, setLoading] = useState(false);
@@ -2394,9 +2403,7 @@ export const useCreateStaff = () => {
   return { createStaff, loading, error };
 };
 
-
-//* membership section 
-
+//* membership section
 
 // Membership assignment operations (membership_users table)
 export const useMembershipUserOperations = () => {
@@ -2410,7 +2417,8 @@ export const useMembershipUserOperations = () => {
     try {
       if (!store_id) throw new Error('Missing store_id');
       if (!payload?.customer_id) throw new Error('customer_id is required');
-      if (!payload?.membership_id && !payload?.membership) throw new Error('membership id is required');
+      if (!payload?.membership_id && !payload?.membership)
+        throw new Error('membership id is required');
 
       setLoading(true);
       setError(null);

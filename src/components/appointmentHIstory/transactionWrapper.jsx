@@ -1,29 +1,27 @@
-import React from 'react'
-import TransactionFunctionality from './transactionFunctionnality'
+import React from 'react';
+import TransactionFunctionality from './transactionFunctionnality';
 // import { toast } from 'react-toastify'
-import toast from 'react-hot-toast'
-import { useCreateTransaction } from '../../hook/dbOperation'
+import toast from 'react-hot-toast';
+import { useCreateTransaction } from '../../hook/dbOperation';
 // Demo wrapper component
 const TransactionsPanel = ({ setIsEditModalOpen, transactionFromData }) => {
-  const { createTransaction, loading, error } = useCreateTransaction()
+  const { createTransaction, loading, error } = useCreateTransaction();
 
   const mockBaseService = {
     name: transactionFromData?.service_name,
     price: transactionFromData?.service_price,
-  }
+  };
 
   // Mock submit handler
   const handleSubmit = async (payload) => {
-
-    
-    await createTransaction(payload)
+    await createTransaction(payload);
     if (!error) {
-      toast.success('Transaction created successfully')
-      setIsEditModalOpen(false)
+      toast.success('Transaction created successfully');
+      setIsEditModalOpen(false);
     } else {
-      toast.error('Transaction failed')
+      toast.error('Transaction failed');
     }
-  }
+  };
 
   // useEffect(() => {
   //   setMockBaseService({
@@ -41,7 +39,7 @@ const TransactionsPanel = ({ setIsEditModalOpen, transactionFromData }) => {
       extraServices={transactionFromData?.extra_services}
       setIsEditModalOpen={setIsEditModalOpen}
     />
-  )
-}
+  );
+};
 
-export default TransactionsPanel
+export default TransactionsPanel;

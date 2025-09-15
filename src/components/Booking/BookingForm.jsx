@@ -1,13 +1,6 @@
-'use client'
-import {
-  Calendar,
-  Clock,
-  CreditCard,
-  Phone,
-  Save,
-  User,
-} from 'lucide-react'
 import React, { useEffect, useState } from 'react'
+import { Calendar, Clock, Phone, Save, User, X, Check, ChevronDown } from 'lucide-react'
+
 import { useGetStaffData, useUpdateAppointmentById } from '../../hook/dbOperation'
 import { useAuth } from '@/Context/AuthContext'
 import { cn } from '@/utils/cn'
@@ -47,6 +40,7 @@ const BookingForm = ({
     slotDate: appointment?.['Slot Date'] || '',
     slotNumber: appointment?.['Slot Number'] ?? 1,
     slotTime: appointment?.['Slot Time'] || '',
+    // Legacy single-staff fields retained for backward compatibility but not used for submit
     staffName: appointment?.['Staff Name'] || '',
     staffNumber: appointment?.['Staff Number'] || '',
     service: appointment?.['Services'] || '',
@@ -60,21 +54,43 @@ const BookingForm = ({
     created_at: appointment?.['created_at'] || '',
     recordId: appointment?.['id'] || '',
     id: appointment?.['id'] || '',
+    // Initialize from new JSON column
+    staff_information: Array.isArray(appointment?.staff_information)
+      ? appointment.staff_information
+      : [],
   })
 
   const { getAppointments, loading: isLoading } = useUpdateAppointmentById()
-  const { data, loading } = useGetStaffData()
-  useEffect(() => {
-    if (!data || !Array.isArray(data) || data.length === 0) return
-    const selected = data.find(
-      (staff) => staff.staff_name === formData.staffName
-    )
+  const { data: staffList = [], loading } = useGetStaffData()
+  const [isStaffDropdownOpen, setIsStaffDropdownOpen] = useState(false)
+
+  // Multi-select handlers for staff_information
+  const toggleStaffSelection = (staff) => {
+    if (user?.role === 'staff') return; // Staff cannot reassign
+    setFormData((prev) => {
+      const exists = prev.staff_information?.some((s) => String(s.id) === String(staff.id))
+      const next = exists
+        ? prev.staff_information.filter((s) => String(s.id) !== String(staff.id))
+        : [
+            ...prev.staff_information,
+            {
+              id: staff.id,
+              staffName: staff.staff_name,
+              staffNumber: staff.mobile_number,
+              staffStatus: staff.status,
+            },
+          ]
+      return { ...prev, staff_information: next }
+    })
+  }
+
+  const removeStaffChip = (staffId) => {
+    if (user?.role === 'staff') return
     setFormData((prev) => ({
       ...prev,
-      staffNumber: selected?.mobile_number || '',
-      id: selected?.id || '',
+      staff_information: prev.staff_information.filter((s) => String(s.id) !== String(staffId)),
     }))
-  }, [formData.staffName, data])
+  }
 
   // API call moved to onSubmit to avoid firing on each change
 
@@ -121,20 +137,15 @@ const BookingForm = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    // try {
-    //   // Update selected staff status to busy on submit
-    //   if (formData.staffName && Array.isArray(data)) {
-    //     const selected = data.find((s) => s.staff_name === formData.staffName)
-    //     if (selected?.id) {
-    //       await updateStaffStatusByName(selected.id, 'Active')
-    //     }
-    //   }
-    // } catch (err) {
-    //   console.error('Failed to update staff status on submit:', err)
-    // } finally {
-    //   // Proceed to update the appointment
-    // }
-    getAppointments(formData.recordId, formData, onCancel)
+    // Only update editable fields including new multi-staff assignment
+    const updates = {
+      bookingStatus: formData.bookingStatus,
+      slotDate: formData.slotDate,
+      slotTime: formData.slotTime,
+      slotNumber: formData.slotNumber,
+      staff_information: formData.staff_information,
+    }
+    getAppointments(formData.recordId, updates, onCancel)
   }
 
   return (
@@ -269,92 +280,130 @@ const BookingForm = ({
         </div>
       </div>
 
-      {/* Staff Information */}
+      {/* Staff Information - Multi Select for Admin (Dropdown like AddNewAppointment) */}
       <div>
         <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
           <User className="w-5 h-5 mr-2" />
           Staff Information
         </h3>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-              Staff Name
-            </label>
-            <select
-              name="staffName"
-              disabled={user?.role === 'staff'}
-              aria-busy={loading ? 'true' : 'false'}
-              type="text"
-              value={formData.staffName}
-              onChange={handleChange}
-              className={cn(
-                'w-full px-4 py-3 rounded-lg border transition-all',
-                errors.staffName ? 'border-red-300' : 'border-gray-300',
-                user?.role === 'staff' && 'cursor-not-allowed hover:cursor-not-allowed'
-              )}
-            >
-              <option value="">Select a staff member</option>
-              {loading && <option disabled>Loading staff...</option>}
-              {!loading && data.length === 0 && (
-                <option disabled>No staff found</option>
-              )}
-              {!loading &&
-                data.map((staff) => (
-                  <option
-                    className="flex items-center justify-between bg-white rounded-md "
-                    key={staff.staff_name}
-                    value={staff.staff_name}
-                    disabled={staff.status?.toLowerCase() === 'busy'}
+        {/* Selected staff chips */}
+        {Array.isArray(formData.staff_information) && formData.staff_information.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {formData.staff_information.map((s) => (
+              <span
+                key={s.id}
+                className="flex items-center gap-2 px-3 py-1 text-sm font-medium text-green-700 bg-green-100 rounded-full"
+              >
+                {s.staffName}
+                {user?.role !== 'staff' && (
+                  <button
+                    type="button"
+                    onClick={() => removeStaffChip(s.id)}
+                    className="text-green-700/80 hover:text-green-900"
                   >
-                    {staff.staff_name}
-                    <span className="inline-block ml-5 font-bold">{`(${staff.status})`}</span>
-                  </option>
-                ))}
-            </select>
-            {errors.staffName && (
-              <p className="mt-1 text-sm text-red-500">{errors.staffName}</p>
-            )}
+                    <X size={14} />
+                  </button>
+                )}
+              </span>
+            ))}
           </div>
+        )}
 
-          
-        </div>
-      </div>
-
-      {/* Service Information */}
-      <div>
-        <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
-          <CreditCard className="w-5 h-5 mr-2" />
-          Service Information
-        </h3>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-              Service
-            </label>
-            <input
-              disabled
-              name="service"
-              value={formData.service}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:cursor-not-allowed transition-all ${
-                errors.service ? 'border-red-300' : 'border-gray-300'
-              }`}
-            />
-            {errors.service && (
-              <p className="mt-1 text-sm text-red-500">{errors.service}</p>
+        {/* Staff Selection Dropdown */}
+        <div className="relative">
+          <label className="block mb-2 text-sm font-medium text-gray-700">Add Staff Members</label>
+          <button
+            type="button"
+            disabled={user?.role === 'staff' || loading}
+            onClick={() => setIsStaffDropdownOpen((v) => !v)}
+            className={cn(
+              'w-full flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-all',
+              user?.role === 'staff'
+                ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'border-gray-300 hover:border-gray-400 focus:border-transparent focus:ring-2 focus:ring-blue-500'
             )}
-          </div>
+          >
+            <span>
+              {loading ? 'Loading staff...' : 'Select staff members (Optional)'}
+            </span>
+            {!loading && (
+              <ChevronDown className={cn('w-5 h-5 transition-transform', isStaffDropdownOpen && 'rotate-180')} />
+            )}
+          </button>
 
-          
+          {/* Dropdown */}
+          {isStaffDropdownOpen && !loading && (
+            <div className="absolute z-10 w-full mt-1 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg max-h-64">
+              {/* Available Staff */}
+              {staffList.filter((s) => String(s.status).toLowerCase() !== 'busy').length > 0 && (
+                <div className="p-2">
+                  <div className="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+                    Available Staff
+                  </div>
+                  {staffList
+                    .filter((s) => String(s.status).toLowerCase() !== 'busy')
+                    .map((staff) => {
+                      const isSelected = formData.staff_information?.some((x) => String(x.id) === String(staff.id))
+                      return (
+                        <button
+                          key={staff.id}
+                          type="button"
+                          onClick={() => toggleStaffSelection(staff)}
+                          className={cn(
+                            'w-full flex items-center justify-between px-3 py-2 text-left rounded-md transition-colors',
+                            isSelected ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'hover:bg-gray-50'
+                          )}
+                        >
+                          <span className="flex items-center">
+                            <span className="font-medium">{staff.staff_name}</span>
+                            <span className="ml-2 text-sm font-medium text-green-600">({staff.status})</span>
+                          </span>
+                          {isSelected && <Check className="w-4 h-4 text-blue-600" />}
+                        </button>
+                      )
+                    })}
+                </div>
+              )}
+
+              {/* Busy Staff */}
+              {staffList.filter((s) => String(s.status).toLowerCase() === 'busy').length > 0 && (
+                <div className="p-2 border-t border-gray-100">
+                  <div className="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+                    Unavailable Staff
+                  </div>
+                  {staffList
+                    .filter((s) => String(s.status).toLowerCase() === 'busy')
+                    .map((staff) => (
+                      <div
+                        key={staff.id}
+                        className="flex items-center justify-between px-3 py-2 text-gray-400 cursor-not-allowed"
+                      >
+                        <span className="flex items-center">
+                          <span className="font-medium">{staff.staff_name}</span>
+                          <span className="ml-2 text-sm font-medium text-red-500">({staff.status})</span>
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              )}
+
+              {staffList.length === 0 && (
+                <div className="p-4 text-center text-gray-500">No staff members found</div>
+              )}
+            </div>
+          )}
         </div>
-      </div>
 
+        {/* Click outside to close dropdown */}
+        {isStaffDropdownOpen && (
+          <div className="fixed inset-0 z-5" onClick={() => setIsStaffDropdownOpen(false)} />
+        )}
+      </div>
       {/* Action Buttons */}
       <div className="flex items-center justify-end pt-6 space-x-4 border-t border-gray-200">
         <button
           type="button"
-          onClick={onCancel}
-          className="px-6 py-3 font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200"
+          onClick={onCancel}          className="px-6 py-3 font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200"
         >
           Cancel
         </button>

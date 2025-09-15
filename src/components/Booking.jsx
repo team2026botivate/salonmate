@@ -1,55 +1,47 @@
-'use client'
+'use client';
 
-import { format, isValid, parse } from 'date-fns'
-import { AnimatePresence, motion } from 'framer-motion'
-import { History, Plus, Search, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion';
+import { Calendar, History, Plus, Search, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   useGetallAppointmentData,
-  useUpdateAppointmentById,
   useGetAllAppointmentsHistory,
   useGetStaffData,
-} from '../hook/dbOperation.js'
-import BookingForm from './Booking/BookingForm'
-import BookingHistoryModal from './Booking/BookingHistoryModal'
-import BookingList from './Booking/BookingList'
-import BookingStats from './Booking/BookingStats'
-import Notification from './Booking/Notification'
-import { useAppData } from '../zustand/appData'
-import AddNewAppointment from './Booking/addNewAppointment.component.jsx'
-import { useAuth } from '@/Context/AuthContext.jsx'
+} from '../hook/dbOperation.js';
+import BookingForm from './Booking/BookingForm';
+import BookingHistoryModal from './Booking/BookingHistoryModal';
+import BookingList from './Booking/BookingList';
+import Notification from './Booking/Notification';
+import { useAppData } from '../zustand/appData';
+import AddNewAppointment from './Booking/addNewAppointment.component.jsx';
+import { useAuth } from '@/Context/AuthContext.jsx';
 
 // Constants
 const NOTIFICATION_DURATION = {
   SUCCESS: 3000,
   ERROR: 5000,
-}
+};
 
 const STATUS_TYPES = {
   SUCCESS: 'success',
   ERROR: 'error',
-}
+};
 
 const Booking = ({ hideHistoryButton = false }) => {
-  const { user } = useAuth()
-  const isStaff = user?.role === 'staff'
-  const { data: staffData, loading: staffLoading } = useGetStaffData()
+  const { user } = useAuth();
+  const isStaff = user?.role === 'staff';
+  const { data: staffData, loading: staffLoading } = useGetStaffData();
 
   // Global state
-  const { appointments, setAppointments } = useAppData()
+  const { appointments, setAppointments } = useAppData();
 
-
-  console.log(appointments,"appointmentdat")
-  
+  // console.log(appointments, 'appointmentdat');
 
   // Local state - grouped by purpose
   const [dataState, setDataState] = useState({
-    allAppointments: [],
     tableHeaders: [],
-    staffData: [],
-    serviceData: [],
     error: null,
-  })
+  });
 
   const [uiState, setUiState] = useState({
     showNewAppointmentForm: false,
@@ -58,170 +50,102 @@ const Booking = ({ hideHistoryButton = false }) => {
     submitting: false,
     searchTerm: '',
     historySearchTerm: '',
-  })
+  });
 
   const [formState, setFormState] = useState({
     newAppointment: {},
     editingAppointment: {},
-  })
+  });
 
   const [notification, setNotification] = useState({
     show: false,
     message: '',
     type: '',
-  })
+  });
 
-  const { loading } = useGetallAppointmentData()
+  // Notification helpers must be defined before hooks that depend on them
+  const showNotification = useCallback((message, type) => {
+    setNotification({ show: true, message, type });
+    const duration =
+      type === STATUS_TYPES.ERROR ? NOTIFICATION_DURATION.ERROR : NOTIFICATION_DURATION.SUCCESS;
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: '' });
+    }, duration);
+  }, []);
 
-  // Memoized values
-  const sheetConfig = useMemo(
-    () => ({
-      sheetId: user?.sheetId || '1ghSQ9d2dfSotfnh8yrkiqIT00kg_ej7n0pnygzP0B9w',
-      scriptUrl:
-        user?.appScriptUrl ||
-        'https://script.google.com/macros/s/AKfycbx-5-79dRjYuTIBFjHTh3_Q8WQa0wWrRKm7ukq5854ET9OCHiAwno-gL1YmZ9juotMH/exec',
-      sheetName: 'Booking DB',
-      staffSheetName: 'Staff DB',
-      serviceSheetName: 'Service DB',
-    }),
-    [user]
-  )
-
-  // Memoized stats calculation
-  const stats = useMemo(() => {
-    if (!appointments.length) {
-      return { today: 0, upcoming: 0, totalClients: 0 }
-    }
-
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
-    const filteredRows = appointments.filter((row) => {
-      const dateStr =
-        row.date ||
-        row['Slot Date'] ||
-        row['Date'] ||
-        row['Appointment Date'] ||
-        row.slotDate ||
-        ''
-      if (!dateStr) return false
-
-      const parsedDate = parse(dateStr, 'yyyy-MM-dd', new Date())
-      if (!isValid(parsedDate)) return false
-
-      parsedDate.setHours(0, 0, 0, 0)
-      const isCurrentOrFuture = parsedDate >= today
-
-      if (isStaff) {
-        const staffName = (
-          row.staffName ||
-          row['Staff Name'] ||
-          row.staff ||
-          row['Assigned Staff'] ||
-          ''
-        )
-          .toString()
-          .trim()
-          .toLowerCase()
-        const userStaffName = (user.staffName || '')
-          .toString()
-          .trim()
-          .toLowerCase()
-        return (
-          isCurrentOrFuture &&
-          (staffName === userStaffName ||
-            staffName.includes(userStaffName) ||
-            userStaffName.includes(staffName))
-        )
-      }
-      return isCurrentOrFuture
-    })
-
-    const todaysAppts = filteredRows.filter((row) => {
-      const dateStr =
-        row.date ||
-        row['Slot Date'] ||
-        row['Date'] ||
-        row['Appointment Date'] ||
-        row.slotDate ||
-        ''
-      const parsedDate = parse(dateStr, 'yyyy-MM-dd', new Date())
-      return (
-        isValid(parsedDate) &&
-        parsedDate.toDateString() === today.toDateString()
-      )
-    }).length
-
-    const upcomingAppts = filteredRows.filter((row) => {
-      const dateStr =
-        row.date ||
-        row['Slot Date'] ||
-        row['Date'] ||
-        row['Appointment Date'] ||
-        row.slotDate ||
-        ''
-      const parsedDate = parse(dateStr, 'yyyy-MM-dd', new Date())
-      return isValid(parsedDate) && parsedDate > today
-    }).length
-
-    return {
-      today: todaysAppts,
-      upcoming: upcomingAppts,
-      totalClients: todaysAppts + upcomingAppts,
-    }
-  }, [appointments, isStaff, user])
+  const { loading } = useGetallAppointmentData();
 
   // Staff-only filtering base list
   const staffFilteredAppointments = useMemo(() => {
-    if (!Array.isArray(appointments)) return []
-    if (!isStaff) return appointments
-    if (staffLoading) return appointments
+    if (!Array.isArray(appointments)) return [];
+    if (!isStaff) return appointments;
+    if (staffLoading) return appointments;
 
     // Resolve staff identity from staff_info using email first, then id
-    let me = null
+    let me = null;
     if (user?.email && Array.isArray(staffData)) {
       me = staffData.find(
-        (s) => String(s.email_id || '').toLowerCase() === String(user.email || '').toLowerCase(),
-      )
+        (s) => String(s.email_id || '').toLowerCase() === String(user.email || '').toLowerCase()
+      );
     }
     if (!me && Array.isArray(staffData)) {
-      me = staffData.find((s) => String(s.id) === String(user?.id))
+      me = staffData.find((s) => String(s.id) === String(user?.id));
     }
 
     const ids = [user?.staffId, user?.id, me?.id]
       .filter((v) => v !== undefined && v !== null)
-      .map((v) => String(v))
+      .map((v) => String(v));
 
     const names = [user?.staffName, user?.name, user?.email, me?.staff_name]
       .filter(Boolean)
-      .map((s) => String(s).trim().toLowerCase())
+      .map((s) => String(s).trim().toLowerCase());
 
     const mobiles = [me?.mobile_number]
       .filter(Boolean)
-      .map((s) => String(s).trim())
+      .map((s) => String(s).trim());
 
-    const matchById = (apt) => ids.length > 0 && ids.includes(String(apt?.staff_id ?? ''))
+    const matchById = (apt) => {
+      if (ids.length === 0) return false;
+      // Prefer staff_information array
+      if (Array.isArray(apt?.staff_information) && apt.staff_information.length > 0) {
+        return apt.staff_information.some((s) => ids.includes(String(s?.id ?? '')));
+      }
+      // Fallback to legacy single staff_id
+      return ids.includes(String(apt?.staff_id ?? ''));
+    };
 
     const matchByName = (apt) => {
-      const staffName = (
-        apt?.staffName ||
-        apt?.['Staff Name'] ||
-        apt?.staff ||
-        apt?.['Assigned Staff'] ||
-        ''
+      if (names.length === 0) return false;
+      // Prefer staff_information array
+      if (Array.isArray(apt?.staff_information) && apt.staff_information.length > 0) {
+        return apt.staff_information.some((s) =>
+          names.includes(String(s?.staffName ?? '').trim().toLowerCase())
+        );
+      }
+      const legacyStaffName = (
+        apt?.staffName || apt?.['Staff Name'] || apt?.staff || apt?.['Assigned Staff'] || ''
       )
         .toString()
         .trim()
-        .toLowerCase()
-      return names.length > 0 && names.includes(staffName)
-    }
+        .toLowerCase();
+      return names.includes(legacyStaffName);
+    };
 
     const matchByMobile = (apt) => {
-      const staffNumber = String(apt?.['Staff Number'] ?? '').trim()
-      return mobiles.length > 0 && mobiles.includes(staffNumber)
-    }
+      if (mobiles.length === 0) return false;
+      // Prefer staff_information array
+      if (Array.isArray(apt?.staff_information) && apt.staff_information.length > 0) {
+        return apt.staff_information.some((s) =>
+          mobiles.includes(String(s?.staffNumber ?? '').trim())
+        );
+      }
+      const legacyNumber = String(apt?.['Staff Number'] ?? '').trim();
+      return mobiles.includes(legacyNumber);
+    };
 
-    const filtered = appointments.filter((apt) => matchById(apt) || matchByName(apt) || matchByMobile(apt))
+    const filtered = appointments.filter(
+      (apt) => matchById(apt) || matchByName(apt) || matchByMobile(apt)
+    );
 
     // Debug logging to assist diagnosis if still empty
     if (filtered.length === 0) {
@@ -233,427 +157,185 @@ const Booking = ({ hideHistoryButton = false }) => {
         names,
         mobiles,
         sampleAppointment: appointments[0],
-      })
+      });
     }
 
-    return filtered
-  }, [appointments, isStaff, user, staffData, staffLoading])
+    return filtered;
+  }, [appointments, isStaff, user, staffData, staffLoading]);
 
   // Memoized filtered appointments (search on top of staff filter)
   const filteredAppointments = useMemo(() => {
-    const base = staffFilteredAppointments
-    if (!uiState.searchTerm) return base
+    const base = staffFilteredAppointments;
+    if (!uiState.searchTerm) return base;
 
     return base.filter((appointment) =>
       Object.values(appointment).some((value) =>
-        value
-          ?.toString()
-          .toLowerCase()
-          .includes(uiState.searchTerm.toLowerCase())
+        value?.toString().toLowerCase().includes(uiState.searchTerm.toLowerCase())
       )
-    )
-  }, [staffFilteredAppointments, uiState.searchTerm])
+    );
+  }, [staffFilteredAppointments, uiState.searchTerm]);
 
-  const { data: allHistoryAppointments, loading: historyLoading, error: historyError } = useGetAllAppointmentsHistory()
+  const {
+    data: allHistoryAppointments,
+    loading: historyLoading,
+    error: historyError,
+  } = useGetAllAppointmentsHistory();
 
   const filteredHistoryAppointments = useMemo(() => {
-    let baseAppointments = allHistoryAppointments || []
+    let baseAppointments = allHistoryAppointments || [];
 
     // Show ALL appointments for history modal (no staff filtering for history)
     // Filter by search term only
-    if (!uiState.historySearchTerm) return baseAppointments
+    if (!uiState.historySearchTerm) return baseAppointments;
 
     return baseAppointments.filter((appointment) =>
       Object.values(appointment).some((value) =>
-        value
-          ?.toString()
-          .toLowerCase()
-          .includes(uiState.historySearchTerm.toLowerCase())
+        value?.toString().toLowerCase().includes(uiState.historySearchTerm.toLowerCase())
       )
-    )
-  }, [allHistoryAppointments, uiState.historySearchTerm])
+    );
+  }, [allHistoryAppointments, uiState.historySearchTerm]);
 
   // Create table headers from appointment data for history modal
   const historyTableHeaders = useMemo(() => {
-    if (!allHistoryAppointments || allHistoryAppointments.length === 0) return []
-    
-    const sampleAppointment = allHistoryAppointments[0]
+    if (!allHistoryAppointments || allHistoryAppointments.length === 0) return [];
+
+    const sampleAppointment = allHistoryAppointments[0];
     return Object.keys(sampleAppointment)
-      .filter(key => !key.startsWith('_') && key !== 'id' && key !== 'store_id')
-      .map(key => ({
+      .filter((key) => !key.startsWith('_') && key !== 'id' && key !== 'store_id')
+      .map((key) => ({
         id: key,
-        label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-      }))
-  }, [allHistoryAppointments])
+        label: key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase()),
+      }));
+  }, [allHistoryAppointments]);
 
   // Utility functions
-  const getStaffNumberByName = useCallback(
-    (staffName) => {
-      const staff = dataState.staffData.find(
-        (s) => s.name.toLowerCase() === staffName.toLowerCase()
-      )
-      return staff?.number || ''
-    },
-    [dataState.staffData]
-  )
-
-  const getServicePriceByName = useCallback(
-    (serviceName) => {
-      const service = dataState.serviceData.find(
-        (s) => s.name.toLowerCase() === serviceName.toLowerCase()
-      )
-      return service?.price || ''
-    },
-    [dataState.serviceData]
-  )
-
-  const showNotification = useCallback((message, type) => {
-    setNotification({ show: true, message, type })
-    const duration =
-      type === STATUS_TYPES.SUCCESS
-        ? NOTIFICATION_DURATION.SUCCESS
-        : NOTIFICATION_DURATION.ERROR
-    setTimeout(
-      () => setNotification({ show: false, message: '', type: '' }),
-      duration
-    )
-  }, [])
-
-  const formatForSheet = useCallback((value, header) => {
-    if (!value) return ''
-
-    if (header.type === 'date' || header.label.toLowerCase().includes('date')) {
-      const parsed = parse(value, 'yyyy-MM-dd', new Date())
-      return isValid(parsed) ? format(parsed, 'dd/MM/yyyy') : value
-    }
-
-    if (
-      header.label.toLowerCase().includes('time') &&
-      !header.label.toLowerCase().includes('timestamp')
-    ) {
-      const parsed = parse(value, 'HH:mm', new Date())
-      return isValid(parsed) ? format(parsed, 'h:mm a') : value
-    }
-
-    return value
-  }, [])
-
   const createEmptyAppointment = useCallback(() => {
-    const emptyAppointment = {}
-    dataState.tableHeaders.forEach((header) => {
-      emptyAppointment[header.id] = header.label
-        .toLowerCase()
-        .includes('status')
-        ? 'Confirmed'
-        : ''
-
-      if (
-        header.label.toLowerCase().includes('date') &&
-        !header.label.toLowerCase().includes('timestamp')
-      ) {
-        emptyAppointment[header.id] = format(new Date(), 'yyyy-MM-dd')
-      }
-
-      if (
-        isStaff &&
-        header.label.toLowerCase().includes('staff') &&
-        header.label.toLowerCase().includes('name')
-      ) {
-        emptyAppointment[header.id] = user.staffName || ''
-        const staffNumberHeader = dataState.tableHeaders.find(
-          (h) =>
-            h.label.toLowerCase().includes('staff') &&
-            h.label.toLowerCase().includes('number')
-        )
-        if (staffNumberHeader) {
-          const staff = dataState.staffData.find(
-            (s) => s.name.toLowerCase() === user.staffName?.toLowerCase()
-          )
-          emptyAppointment[staffNumberHeader.id] = staff?.number || ''
-        }
-      }
-    })
-    return emptyAppointment
-  }, [dataState.tableHeaders, dataState.staffData, isStaff, user])
+    // With Google Sheets removed, we keep a simple empty object as the form model
+    return {};
+  }, []);
 
   // Event handlers
   const handleNewAppointmentClick = useCallback(() => {
-    const emptyAppointment = createEmptyAppointment()
-    setFormState((prev) => ({ ...prev, newAppointment: emptyAppointment }))
-    setUiState((prev) => ({ ...prev, showNewAppointmentForm: true }))
-  }, [createEmptyAppointment])
+    const emptyAppointment = createEmptyAppointment();
+    setFormState((prev) => ({ ...prev, newAppointment: emptyAppointment }));
+    setUiState((prev) => ({ ...prev, showNewAppointmentForm: true }));
+  }, [createEmptyAppointment]);
 
-  const handleInputChange = useCallback(
-    (e, isEdit = false) => {
-      const { name, value } = e.target
-      const stateKey = isEdit ? 'editingAppointment' : 'newAppointment'
+  const handleInputChange = useCallback((e, isEdit = false) => {
+    const { name, value } = e.target;
+    const stateKey = isEdit ? 'editingAppointment' : 'newAppointment';
 
-      setFormState((prev) => {
-        const updated = { ...prev[stateKey], [name]: value }
+    setFormState((prev) => {
+      const updated = { ...prev[stateKey], [name]: value };
+      return { ...prev, [stateKey]: updated };
+    });
+  }, []);
 
-        // Auto-populate staff number if staff name is selected
-        const isStaffNameField = dataState.tableHeaders.some(
-          (h) =>
-            h.id === name &&
-            h.label.toLowerCase().includes('staff') &&
-            h.label.toLowerCase().includes('name')
-        )
-        if (isStaffNameField) {
-          const staffNumberHeader = dataState.tableHeaders.find(
-            (h) =>
-              h.label.toLowerCase().includes('staff') &&
-              h.label.toLowerCase().includes('number')
-          )
-          if (staffNumberHeader) {
-            updated[staffNumberHeader.id] = getStaffNumberByName(value)
-          }
-        }
-
-        // Auto-populate service price if service is selected
-        const isServiceField = dataState.tableHeaders.some(
-          (h) =>
-            h.id === name &&
-            h.label.toLowerCase().includes('services') &&
-            !h.label.toLowerCase().includes('price')
-        )
-        if (isServiceField) {
-          const servicePriceHeader = dataState.tableHeaders.find(
-            (h) =>
-              h.label.toLowerCase().includes('service') &&
-              h.label.toLowerCase().includes('price')
-          )
-          if (servicePriceHeader) {
-            updated[servicePriceHeader.id] = getServicePriceByName(value)
-          }
-        }
-
-        return { ...prev, [stateKey]: updated }
-      })
-    },
-    [dataState.tableHeaders, getStaffNumberByName, getServicePriceByName]
-  )
-
-  const handleEditClick = useCallback(
-    (appointment) => {
-      const prepared = { ...appointment }
-      dataState.tableHeaders.forEach((header) => {
-        if (
-          header.type === 'date' ||
-          header.label.toLowerCase().includes('date')
-        ) {
-          if (prepared[header.id]) {
-            const parsed = parse(prepared[header.id], 'dd/MM/yyyy', new Date())
-            prepared[header.id] = isValid(parsed)
-              ? format(parsed, 'yyyy-MM-dd')
-              : prepared[header.id]
-          }
-        }
-        if (
-          header.label.toLowerCase().includes('time') &&
-          !header.label.toLowerCase().includes('timestamp')
-        ) {
-          if (prepared[header.id]) {
-            const parsed = parse(prepared[header.id], 'h:mm a', new Date())
-            prepared[header.id] = isValid(parsed)
-              ? format(parsed, 'HH:mm')
-              : prepared[header.id]
-          }
-        }
-      })
-      setFormState((prev) => ({ ...prev, editingAppointment: prepared }))
-      setUiState((prev) => ({ ...prev, showEditAppointmentForm: true }))
-    },
-    [dataState.tableHeaders]
-  )
+  const handleEditClick = useCallback((appointment) => {
+    // Simplified: directly load the appointment into edit state
+    const prepared = { ...appointment };
+    setFormState((prev) => ({ ...prev, editingAppointment: prepared }));
+    setUiState((prev) => ({ ...prev, showEditAppointmentForm: true }));
+  }, []);
 
   const handleSubmit = useCallback(
     async (e) => {
-      e.preventDefault()
-      setUiState((prev) => ({ ...prev, submitting: true }))
+      e.preventDefault();
+      setUiState((prev) => ({ ...prev, submitting: true }));
 
       try {
-        const formattedAppointment = { ...formState.newAppointment }
-        dataState.tableHeaders.forEach((header) => {
-          formattedAppointment[header.id] = formatForSheet(
-            formattedAppointment[header.id],
-            header
-          )
-        })
-
-        const rowData = dataState.tableHeaders.map(
-          (header) => formattedAppointment[header.id] || ''
-        )
-        rowData[0] = format(new Date(), 'dd/MM/yyyy') // Timestamp
-
-        const formData = new FormData()
-        formData.append('rowData', JSON.stringify(rowData))
-
-        
-
-
         const newAppointmentWithId = {
-          ...formattedAppointment,
+          ...formState.newAppointment,
           _id: Math.random().toString(36).substring(2, 15),
-        }
-        setAppointments((prev) => [newAppointmentWithId, ...prev])
+        };
+        setAppointments((prev) => [newAppointmentWithId, ...prev]);
 
         // Reset form and close modal
         setUiState((prev) => ({
           ...prev,
           showNewAppointmentForm: false,
           submitting: false,
-        }))
+        }));
         setFormState((prev) => ({
           ...prev,
           newAppointment: createEmptyAppointment(),
-        }))
-        showNotification(
-          'Appointment added successfully!',
-          STATUS_TYPES.SUCCESS
-        )
+        }));
+        showNotification('Appointment added successfully!', STATUS_TYPES.SUCCESS);
       } catch (error) {
-        setUiState((prev) => ({ ...prev, submitting: false }))
-        showNotification(
-          `Failed to add appointment: ${error.message}`,
-          STATUS_TYPES.ERROR
-        )
+        setUiState((prev) => ({ ...prev, submitting: false }));
+        showNotification(`Failed to add appointment: ${error.message}`, STATUS_TYPES.ERROR);
       }
     },
-    [
-      formState.newAppointment,
-      dataState.tableHeaders,
-      formatForSheet,
-      sheetConfig.scriptUrl,
-      setAppointments,
-      createEmptyAppointment,
-      showNotification,
-    ]
-  )
+    [formState.newAppointment, setAppointments, createEmptyAppointment, showNotification]
+  );
 
   const handleEditSubmit = useCallback(
     async (e) => {
-      e.preventDefault()
-      setUiState((prev) => ({ ...prev, submitting: true }))
+      e.preventDefault();
+      setUiState((prev) => ({ ...prev, submitting: true }));
 
       try {
-        const { editingAppointment } = formState
+        const { editingAppointment } = formState;
         const idHeader = dataState.tableHeaders.find(
           (h) => h.label.toLowerCase() === 'id' || h.id === 'id'
-        )
+        );
         const statusHeader = dataState.tableHeaders.find((h) =>
           h.label.toLowerCase().includes('status')
-        )
+        );
         const staffNameHeader = dataState.tableHeaders.find(
-          (h) =>
-            h.label.toLowerCase().includes('staff') &&
-            h.label.toLowerCase().includes('name')
-        )
+          (h) => h.label.toLowerCase().includes('staff') && h.label.toLowerCase().includes('name')
+        );
         const staffNumberHeader = dataState.tableHeaders.find(
-          (h) =>
-            h.label.toLowerCase().includes('staff') &&
-            h.label.toLowerCase().includes('number')
-        )
+          (h) => h.label.toLowerCase().includes('staff') && h.label.toLowerCase().includes('number')
+        );
 
         const id =
           editingAppointment?.[idHeader?.id] ||
           editingAppointment?.id ||
-          editingAppointment?.recordId
-        if (!id) throw new Error('Missing ID')
+          editingAppointment?.recordId;
+        if (!id) throw new Error('Missing ID');
 
         const statusRaw = statusHeader
           ? editingAppointment?.[statusHeader.id]
-          : editingAppointment?.bookingStatus || ''
-        const status = statusRaw ? String(statusRaw).toLowerCase() : undefined
+          : editingAppointment?.bookingStatus || '';
+        const status = statusRaw ? String(statusRaw).toLowerCase() : undefined;
         const staffName = staffNameHeader
           ? editingAppointment?.[staffNameHeader.id]
-          : editingAppointment?.staffName
+          : editingAppointment?.staffName;
         const staffNumber = staffNumberHeader
           ? editingAppointment?.[staffNumberHeader.id]
-          : editingAppointment?.staffNumber
+          : editingAppointment?.staffNumber;
 
         // Update appointments in state
         setAppointments((prev) =>
           prev.map((appt) => {
-            if (appt._id !== editingAppointment._id) return appt
-            const next = { ...appt }
+            if (appt._id !== editingAppointment._id) return appt;
+            const next = { ...appt };
             if (statusHeader && typeof statusRaw !== 'undefined') {
               next[statusHeader.id] =
-                editingAppointment[statusHeader.id] ??
-                editingAppointment.bookingStatus
+                editingAppointment[statusHeader.id] ?? editingAppointment.bookingStatus;
             }
             if (staffNameHeader && staffName)
-              next[staffNameHeader.id] = staffName.toString().trim()
+              next[staffNameHeader.id] = staffName.toString().trim();
             if (staffNumberHeader && staffNumber)
-              next[staffNumberHeader.id] = staffNumber.toString().trim()
-            return next
+              next[staffNumberHeader.id] = staffNumber.toString().trim();
+            return next;
           })
-        )
+        );
 
         setUiState((prev) => ({
           ...prev,
           showEditAppointmentForm: false,
           submitting: false,
-        }))
-        showNotification(
-          'Appointment updated successfully!',
-          STATUS_TYPES.SUCCESS
-        )
+        }));
+        showNotification('Appointment updated successfully!', STATUS_TYPES.SUCCESS);
       } catch (error) {
-        setUiState((prev) => ({ ...prev, submitting: false }))
-        showNotification(
-          `Failed to update appointment: ${error.message}`,
-          STATUS_TYPES.ERROR
-        )
+        setUiState((prev) => ({ ...prev, submitting: false }));
+        showNotification(`Failed to update appointment: ${error.message}`, STATUS_TYPES.ERROR);
       }
     },
-    [
-      formState.editingAppointment,
-      dataState.tableHeaders,
-      setAppointments,
-      showNotification,
-    ]
-  )
-
-  // Data fetching effect
-  useEffect(() => {
-    const fetchGoogleSheetData = async () => {
-      try {
-        if (appointments && appointments.length > 0) {
-          // Determine headers
-          const headers = Object.keys(appointments[0])
-            .map((key) => ({
-              id: key,
-              label: key,
-              type: key.toLowerCase().includes('date') ? 'date' : 'text',
-            }))
-            .filter((header) => header.label)
-
-          // Prepare row data
-          const rowsData = appointments.map((row, index) => ({
-            _id: row._id || Math.random().toString(36).substring(2, 15),
-            _rowIndex: index + 2,
-            ...row,
-          }))
-
-          // Update state in batch
-          setDataState((prev) => ({
-            ...prev,
-            tableHeaders: headers,
-            allAppointments: rowsData,
-            error: null,
-          }))
-        }
-      } catch (error) {
-        setDataState((prev) => ({
-          ...prev,
-          error: 'Failed to load appointment data',
-        }))
-        console.error('Error fetching data:', error)
-      }
-    }
-
-    fetchGoogleSheetData()
-  }, [appointments.length])
+    [formState.editingAppointment, dataState.tableHeaders, setAppointments, showNotification]
+  );
 
   // Update form when headers changep
   useEffect(() => {
@@ -661,18 +343,18 @@ const Booking = ({ hideHistoryButton = false }) => {
       setFormState((prev) => ({
         ...prev,
         newAppointment: createEmptyAppointment(),
-      }))
+      }));
     }
-  }, [dataState.tableHeaders, createEmptyAppointment])
+  }, [dataState.tableHeaders, createEmptyAppointment]);
 
   // UI update handlers
   const updateUiState = useCallback((updates) => {
-    setUiState((prev) => ({ ...prev, ...updates }))
-  }, [])
+    setUiState((prev) => ({ ...prev, ...updates }));
+  }, []);
 
   const closeNotification = useCallback(() => {
-    setNotification({ show: false, message: '', type: '' })
-  }, [])
+    setNotification({ show: false, message: '', type: '' });
+  }, []);
 
   return (
     <AnimatePresence>
@@ -684,48 +366,89 @@ const Booking = ({ hideHistoryButton = false }) => {
         className="space-y-6"
       >
         {/* Header Section */}
-        <div className="flex flex-col gap-5 md:items-center md:justify-between lg:flex-row lg:gap-0">
-          <h2 className="text-2xl font-bold text-center text-blue-800">
-            Appointments
-          </h2>
-          <div className="flex flex-col justify-between gap-3 mt-4 sm:flex-row md:mt-0">
-            <div className="relative">
-              <Search
-                className="absolute text-blue-400 transform -translate-y-1/2 top-1/2 left-3"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Search appointments..."
-                className="w-full py-2 pl-10 pr-4 bg-white rounded-md focus:outline-none"
-                value={uiState.searchTerm}
-                onChange={(e) => updateUiState({ searchTerm: e.target.value })}
-              />
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeInOut' }}
+          className="p-6 mb-6 bg-white border border-gray-200 shadow-lg rounded-2xl shadow-gray-200/50"
+        >
+          {/* Header Section with Gradient Background */}
+          <div className="relative p-4 mb-6 -m-2 border rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100/50">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-indigo-500/5 rounded-xl"></div>
+            <div className="relative flex items-center">
+              <div className="flex items-center justify-center w-10 h-10 mr-4 shadow-lg rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 shadow-blue-500/25">
+                <Calendar size={20} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text">
+                  Appointments
+                </h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  Manage and track your salon appointments
+                </p>
+              </div>
             </div>
-            <div className="flex space-x-2">
+          </div>
+
+          {/* Controls Section */}
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            {/* Search Section */}
+            <div className="flex-1 max-w-md">
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                  <Search
+                    size={18}
+                    className="text-gray-400 transition-colors duration-300 group-focus-within:text-blue-500"
+                  />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search appointments..."
+                  value={uiState.searchTerm}
+                  onChange={(e) => updateUiState({ searchTerm: e.target.value })}
+                  className="w-full py-3 pl-12 pr-4 text-gray-900 placeholder-gray-500 transition-all duration-300 ease-out border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white hover:bg-white hover:border-gray-300"
+                  aria-label="Search appointments"
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-3">
               {!isStaff && (
-                <button
-                  className="flex items-center justify-center gap-3 px-4 py-2 text-white bg-blue-600 rounded-md hover:cursor-pointer hover:bg-blue-700"
+                <motion.button
                   onClick={handleNewAppointmentClick}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center gap-3 px-6 py-3 font-medium text-white transition-all duration-300 ease-out shadow-lg group bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  aria-label="Create new appointment"
                 >
-                  <Plus className="hidden lg:inline" size={18} />
-                  <span className="text-nowrap">New Appointment</span>
-                </button>
+                  <Plus
+                    size={18}
+                    className="transition-transform duration-300 group-hover:rotate-90"
+                  />
+                  <span className="whitespace-nowrap">New Appointment</span>
+                </motion.button>
               )}
+
               {!hideHistoryButton && (
-                <button
-                  className="flex items-center justify-center gap-3 px-4 py-2 text-white bg-red-600 rounded-md hover:cursor-pointer hover:bg-red-700"
+                <motion.button
                   onClick={() => updateUiState({ showHistoryModal: true })}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center gap-3 px-6 py-3 font-medium text-gray-700 transition-all duration-300 ease-out bg-white border border-gray-200 shadow-md group rounded-xl shadow-gray-200/50 hover:bg-gray-50 hover:text-gray-900 hover:shadow-lg hover:shadow-gray-200/60 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  aria-label="View appointment history"
                 >
-                  <History size={18} className="hidden lg:inline" />
-                  <span>History</span>
-                </button>
+                  <History
+                    size={18}
+                    className="text-gray-500 transition-colors duration-300 group-hover:text-gray-700"
+                  />
+                  <span className="whitespace-nowrap">History</span>
+                </motion.button>
               )}
             </div>
           </div>
-        </div>
-
-        <BookingStats stats={stats} />
+        </motion.div>
+        {/* BookingStats removed as Google Sheets-related stats are no longer used */}
 
         {/* Main Content */}
         {loading ? (
@@ -736,10 +459,7 @@ const Booking = ({ hideHistoryButton = false }) => {
         ) : dataState.error ? (
           <div className="p-4 text-center text-red-800 rounded-md">
             {dataState.error}
-            <button
-              className="ml-2 underline"
-              onClick={() => window.location.reload()}
-            >
+            <button className="ml-2 underline" onClick={() => window.location.reload()}>
               Try again
             </button>
           </div>
@@ -761,14 +481,10 @@ const Booking = ({ hideHistoryButton = false }) => {
               <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg bg-white shadow-xl">
                 <div className="p-6 border-b">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-black">
-                      Add New Appointment
-                    </h3>
+                    <h3 className="text-xl font-bold text-black">Add New Appointment</h3>
                     <button
                       className="text-red-500 transition-colors duration-200 hover:cursor-pointer hover:text-red-700"
-                      onClick={() =>
-                        updateUiState({ showNewAppointmentForm: false })
-                      }
+                      onClick={() => updateUiState({ showNewAppointmentForm: false })}
                     >
                       <X />
                     </button>
@@ -780,9 +496,7 @@ const Booking = ({ hideHistoryButton = false }) => {
                     formData={formState.newAppointment}
                     onChange={(e) => handleInputChange(e, false)}
                     onSubmit={handleSubmit}
-                    onCancel={() =>
-                      updateUiState({ showNewAppointmentForm: false })
-                    }
+                    onCancel={() => updateUiState({ showNewAppointmentForm: false })}
                     submitting={uiState.submitting}
                     isEdit={false}
                   />
@@ -798,14 +512,10 @@ const Booking = ({ hideHistoryButton = false }) => {
               <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg bg-white shadow-xl">
                 <div className="p-6 border-b">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-black">
-                      Edit Appointment
-                    </h3>
+                    <h3 className="text-xl font-bold text-black">Edit Appointment</h3>
                     <button
                       className="text-red-500 transition-colors duration-200 hover:cursor-pointer hover:text-red-700"
-                      onClick={() =>
-                        updateUiState({ showEditAppointmentForm: false })
-                      }
+                      onClick={() => updateUiState({ showEditAppointmentForm: false })}
                     >
                       <X />
                     </button>
@@ -817,9 +527,7 @@ const Booking = ({ hideHistoryButton = false }) => {
                     formData={formState.editingAppointment}
                     onChange={(e) => handleInputChange(e, true)}
                     onSubmit={handleEditSubmit}
-                    onCancel={() =>
-                      updateUiState({ showEditAppointmentForm: false })
-                    }
+                    onCancel={() => updateUiState({ showEditAppointmentForm: false })}
                     submitting={uiState.submitting}
                     isEdit={true}
                   />
@@ -835,24 +543,19 @@ const Booking = ({ hideHistoryButton = false }) => {
           tableHeaders={historyTableHeaders}
           filteredHistoryAppointments={filteredHistoryAppointments}
           historySearchTerm={uiState.historySearchTerm}
-          setHistorySearchTerm={(term) =>
-            updateUiState({ historySearchTerm: term })
-          }
+          setHistorySearchTerm={(term) => updateUiState({ historySearchTerm: term })}
           loading={historyLoading}
           error={historyError}
         />
 
         <AnimatePresence>
           {notification.show && (
-            <Notification
-              notification={notification}
-              onClose={closeNotification}
-            />
+            <Notification notification={notification} onClose={closeNotification} />
           )}
         </AnimatePresence>
       </motion.div>
     </AnimatePresence>
-  )
-}
+  );
+};
 
-export default Booking
+export default Booking;
