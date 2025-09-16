@@ -26,6 +26,7 @@ const PERMISSIONS = [
   { id: 'appointmenthistory', label: 'Appointment History' },
   { id: 'staff', label: 'Staff' },
   { id: 'inventory', label: 'Inventory' },
+  { id: 'dailyExpences', label: 'Daily Expenses' },
   { id: 'services', label: 'Services' },
   { id: 'paymentcommission', label: 'Payment Commission' },
   { id: 'customers', label: 'Customers' },

@@ -22,6 +22,7 @@ import AppointmentHistory from '../AppointmentHistory.jsx';
 import { useNavigate } from 'react-router-dom';
 import Footer from './footer.jsx';
 import OffersAndMemberships from './layout/Offers_&_Memberships.jsx';
+import DailyExpenses from './dailyExpences/dailyExpences.jsx';
 
 // Map component names to identifiers used in permissions
 const COMPONENT_PERMISSION_MAP = {
@@ -35,6 +36,7 @@ const COMPONENT_PERMISSION_MAP = {
   staffHistory: 'staffhistory',
   inventory: 'inventory',
   services: 'services',
+  dailyExpences: 'dailyexpences',
   paymentCommission: 'paymentcommission',
   customerDb: 'customers',
   promoCard: 'promocards',
@@ -116,6 +118,7 @@ export default function Dashboard() {
       'appointmentHistory',
       'staff',
       'inventory',
+      'dailyExpences',
       'services',
       'paymentCommission',
       'customerDb',
@@ -210,6 +213,7 @@ export default function Dashboard() {
       ),
       appointmentHistory: () => <AppointmentHistory />,
       inventory: () => <Inventory hideHistoryButton={user?.role === 'staff'} />,
+      dailyExpences: () => <DailyExpenses />,
       services: () => <Services isAdmin={user?.role === 'admin'} />,
       paymentCommission: () => <PaymentCommission isAdmin={user?.role === 'admin'} />,
       customerDb: () => <CustomerDb />,

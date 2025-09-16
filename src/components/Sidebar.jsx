@@ -35,6 +35,7 @@ const COMPONENT_PERMISSION_MAP = {
   staffHistory: 'staffhistory',
   inventory: 'inventory',
   services: 'services',
+  dailyExpences: 'dailyexpences',
   paymentCommission: 'paymentcommission',
   customerDb: 'customers',
   promoCard: 'promocards',
@@ -138,6 +139,7 @@ export default function Sidebar({
       ],
     },
     { id: 'inventory', label: 'Inventory', icon: <Package size={20} /> },
+    { id: 'dailyExpences', label: 'Daily Expenses', icon: <DollarSign size={20} /> },
     { id: 'services', label: 'Services', icon: <Scissors size={20} /> },
     {
       id: 'paymentCommission',

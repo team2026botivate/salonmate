@@ -19,6 +19,27 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     navigate(`/profile/${user?.id}`);
   };
 
+  // Safely derive user initials for avatar fallback
+  const getUserInitials = () => {
+    try {
+      const display =
+        user?.profile?.name ||
+        user?.name ||
+        user?.profile?.email ||
+        user?.email ||
+        '';
+      const cleaned = String(display).trim();
+      if (!cleaned) return 'U';
+      const parts = cleaned.split(/\s+/).filter(Boolean);
+      const first = parts[0]?.[0] || '';
+      const second = parts[1]?.[0] || '';
+      const initials = (first + second).toUpperCase();
+      return initials || 'U';
+    } catch (_) {
+      return 'U';
+    }
+  };
+
   useEffect(() => {
     // Add Google Translate script to the document
     const addScript = () => {

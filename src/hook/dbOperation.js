@@ -60,6 +60,134 @@ export const useGetallAppointmentData = () => {
   return { loading, error, refetch: fetchAppointments };
 };
 
+// Daily Expenses hooks
+export const useGetDailyExpenses = () => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
+
+  const fetchDailyExpenses = async () => {
+    if (!store_id) {
+      setLoading(false);
+      return [];
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const { data, error } = await supabase
+        .from('daily_expenses')
+        .select('*')
+        .eq('store_id', store_id)
+        .order('expense_date', { ascending: false })
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setData(data || []);
+      return data || [];
+    } catch (e) {
+      console.error('fetchDailyExpenses error:', e);
+      setError(e.message || 'Failed to load daily expenses');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDailyExpenses();
+  }, [store_id]);
+
+  return { data, loading, error, refetch: fetchDailyExpenses };
+};
+
+export const useDailyExpenseMutations = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
+
+  const addExpense = async (payload) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const insertPayload = {
+        expense_date: payload.date, // YYYY-MM-DD
+        amount: Number(payload.amount),
+        product_name: payload.title || payload.product_name || null,
+        qty: Number(payload.qty || 1),
+        title: payload.title || null,
+        note: payload.notes || null,
+        store_id,
+      };
+      const { data, error } = await supabase
+        .from('daily_expenses')
+        .insert(insertPayload)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (e) {
+      console.error('addExpense error:', e);
+      setError(e.message || 'Failed to add expense');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateExpense = async (id, payload) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const updatePayload = {
+        expense_date: payload.date,
+        amount: Number(payload.amount),
+        product_name: payload.title || payload.product_name || null,
+        qty: Number(payload.qty || 1),
+        title: payload.title || null,
+        note: payload.notes || null,
+        updated_at: new Date().toISOString(),
+      };
+      const { data, error } = await supabase
+        .from('daily_expenses')
+        .update(updatePayload)
+        .eq('id', id)
+        .eq('store_id', store_id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (e) {
+      console.error('updateExpense error:', e);
+      setError(e.message || 'Failed to update expense');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteExpense = async (id) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { error } = await supabase
+        .from('daily_expenses')
+        .delete()
+        .eq('id', id)
+        .eq('store_id', store_id);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.error('deleteExpense error:', e);
+      setError(e.message || 'Failed to delete expense');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { addExpense, updateExpense, deleteExpense, loading, error };
+};
+
 export const useUpdateAppointmentById = () => {
   const [loading, setLoading] = useState(false);
   const setRefreshAppointments = useAppData((state) => state.setRefreshAppointments);
@@ -1566,6 +1694,95 @@ export const useInventoryMutations = () => {
   };
 
   return { addProduct, updateProduct, loading, error };
+};
+
+// Record product usage and decrement inventory stock
+export const useRecordInventoryUsage = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { store_id } = useAppData();
+
+  const recordUsage = async ({ productId, productName, quantity, staffId, staffName, note }) => {
+    if (!store_id) {
+      throw new Error('store_id not available');
+    }
+    if (!productId || !quantity || quantity <= 0) {
+      throw new Error('Invalid product or quantity');
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 1) Insert usage row
+      const usagePayload = {
+        product_id: productId,
+        quantity_used: quantity,
+        staff_id: staffId || null,
+        note: note || null,
+        // used_at has a default now(), but we can still pass it
+        used_at: new Date().toISOString(),
+        store_id,
+      };
+      const { error: insertErr } = await supabase.from('inventory_usage').insert(usagePayload);
+      if (insertErr) throw insertErr;
+
+      // 2) Decrement stock in inventory table without RPC (optimistic concurrency with retry)
+      let attempts = 0;
+      const maxAttempts = 3;
+      let updated = false;
+
+      while (!updated && attempts < maxAttempts) {
+        attempts += 1;
+
+        // Read current stock
+        const { data: rows, error: readErr } = await supabase
+          .from('inventory')
+          .select('stock_quantity')
+          .eq('product_id', productId)
+          .eq('store_id', store_id)
+          .single();
+        if (readErr) throw readErr;
+
+        const currentQty = Number(rows?.stock_quantity) || 0;
+        const newQty = Math.max(currentQty - Number(quantity), 0);
+
+        // Conditional update ensures no race condition (stock not changed between read & write)
+        const { error: updErr } = await supabase
+          .from('inventory')
+          .update({ stock_quantity: newQty })
+          .eq('product_id', productId)
+          .eq('store_id', store_id)
+          .eq('stock_quantity', currentQty);
+
+        if (updErr) throw updErr;
+
+        // Check if update actually took place by re-reading
+        const { data: verifyRow, error: verifyErr } = await supabase
+          .from('inventory')
+          .select('stock_quantity')
+          .eq('product_id', productId)
+          .eq('store_id', store_id)
+          .single();
+        if (verifyErr) throw verifyErr;
+        updated = Number(verifyRow?.stock_quantity) === newQty;
+      }
+
+      if (!updated) {
+        throw new Error('Failed to decrement stock after multiple attempts');
+      }
+
+      return true;
+    } catch (e) {
+      console.error('recordUsage error:', e);
+      setError(e.message || 'Failed to record usage');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { recordUsage, loading, error };
 };
 
 //* Service section started from here

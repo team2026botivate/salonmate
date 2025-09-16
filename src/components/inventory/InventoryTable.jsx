@@ -15,6 +15,8 @@ const InventoryTable = ({ products, onEditProduct }) => {
   const [sortField, setSortField] = useState('name')
   const [sortDirection, setSortDirection] = useState('asc')
 
+  console.log(products,"products")
+
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
@@ -39,32 +41,32 @@ const InventoryTable = ({ products, onEditProduct }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-xl shadow-sm border border-gray-200"
+      className="bg-white border border-gray-200 shadow-sm rounded-xl"
     >
       <div className="p-6 border-b border-gray-200">
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
           <h2 className="text-xl font-bold text-gray-900">
             Inventory Management
           </h2>
 
-          <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+          <div className="flex flex-col w-full gap-4 sm:flex-row md:w-auto">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
               <input
                 type="text"
                 placeholder="Search products..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-64"
+                className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:w-64"
               />
             </div>
 
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Filter className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+                className="py-2 pl-10 pr-8 bg-white border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All Status</option>
                 <option value="In Stock">In Stock</option>
@@ -75,7 +77,7 @@ const InventoryTable = ({ products, onEditProduct }) => {
 
             <button
               onClick={handleExport}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              className="flex items-center gap-2 px-4 py-2 text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700"
             >
               <Download className="w-4 h-4" />
               Export CSV
@@ -91,7 +93,7 @@ const InventoryTable = ({ products, onEditProduct }) => {
               <th className="px-6 py-3 text-left">
                 <button
                   onClick={() => handleSort('name')}
-                  className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700"
+                  className="flex items-center gap-1 text-xs font-medium tracking-wider text-gray-500 uppercase hover:text-gray-700"
                 >
                   Product Name
                   <ArrowUpDown className="w-3 h-3" />
@@ -100,7 +102,7 @@ const InventoryTable = ({ products, onEditProduct }) => {
               <th className="px-6 py-3 text-left">
                 <button
                   onClick={() => handleSort('stockQuantity')}
-                  className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700"
+                  className="flex items-center gap-1 text-xs font-medium tracking-wider text-gray-500 uppercase hover:text-gray-700"
                 >
                   Stock Quantity
                   <ArrowUpDown className="w-3 h-3" />
@@ -109,7 +111,7 @@ const InventoryTable = ({ products, onEditProduct }) => {
               <th className="px-6 py-3 text-left">
                 <button
                   onClick={() => handleSort('purchaseDate')}
-                  className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700"
+                  className="flex items-center gap-1 text-xs font-medium tracking-wider text-gray-500 uppercase hover:text-gray-700"
                 >
                   Purchase Date
                   <ArrowUpDown className="w-3 h-3" />
@@ -118,16 +120,16 @@ const InventoryTable = ({ products, onEditProduct }) => {
               <th className="px-6 py-3 text-left">
                 <button
                   onClick={() => handleSort('costPrice')}
-                  className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700"
+                  className="flex items-center gap-1 text-xs font-medium tracking-wider text-gray-500 uppercase hover:text-gray-700"
                 >
                   Cost Price
                   <ArrowUpDown className="w-3 h-3" />
                 </button>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                 Actions
               </th>
             </tr>
@@ -139,7 +141,7 @@ const InventoryTable = ({ products, onEditProduct }) => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="hover:bg-gray-50 transition-colors"
+                className="transition-colors hover:bg-gray-50"
               >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="font-medium text-gray-900">
@@ -171,7 +173,7 @@ const InventoryTable = ({ products, onEditProduct }) => {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <button
                     onClick={() => onEditProduct(product)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    className="p-2 text-blue-600 transition-colors rounded-lg hover:bg-blue-50"
                     title="Edit Product"
                   >
                     <Edit3 className="w-4 h-4" />
@@ -183,9 +185,9 @@ const InventoryTable = ({ products, onEditProduct }) => {
         </table>
 
         {sortedProducts.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-500 text-lg">No products found</div>
-            <div className="text-gray-400 text-sm mt-1">
+          <div className="py-12 text-center">
+            <div className="text-lg text-gray-500">No products found</div>
+            <div className="mt-1 text-sm text-gray-400">
               {searchTerm || statusFilter !== 'all'
                 ? 'Try adjusting your search or filters'
                 : 'Start by adding your first product'}

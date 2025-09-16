@@ -44,13 +44,13 @@ const AddProductForm = ({ onAddProduct }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-8"
+      className="p-6 mb-8 bg-white border border-gray-200 shadow-sm rounded-xl"
     >
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Add New Product</h2>
+      <h2 className="mb-6 text-xl font-bold text-gray-900">Add New Product</h2>
       
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="name" className="block mb-1 text-sm font-medium text-gray-700">
             Product Name
           </label>
           <input
@@ -59,14 +59,14 @@ const AddProductForm = ({ onAddProduct }) => {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className="w-full px-3 py-2 transition-colors border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
             placeholder="Enter product name"
           />
         </div>
 
         <div>
-          <label htmlFor="stockQuantity" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="stockQuantity" className="block mb-1 text-sm font-medium text-gray-700">
             Stock Quantity
           </label>
           <input
@@ -76,14 +76,14 @@ const AddProductForm = ({ onAddProduct }) => {
             value={formData.stockQuantity}
             onChange={handleChange}
             min="0"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className="w-full px-3 py-2 transition-colors border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
             placeholder="0"
           />
         </div>
 
         <div>
-          <label htmlFor="purchaseDate" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="purchaseDate" className="block mb-1 text-sm font-medium text-gray-700">
             Purchase Date
           </label>
           <input
@@ -92,14 +92,14 @@ const AddProductForm = ({ onAddProduct }) => {
             name="purchaseDate"
             value={formData.purchaseDate}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className="w-full px-3 py-2 transition-colors border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="costPrice" className="block text-sm font-medium text-gray-700 mb-1">
-            Cost Price ($)
+          <label htmlFor="costPrice" className="block mb-1 text-sm font-medium text-gray-700">
+            Cost Price (₹)
           </label>
           <input
             type="number"
@@ -109,7 +109,7 @@ const AddProductForm = ({ onAddProduct }) => {
             onChange={handleChange}
             min="0"
             step="0.01"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className="w-full px-3 py-2 transition-colors border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
             placeholder="0.00"
           />
@@ -118,7 +118,7 @@ const AddProductForm = ({ onAddProduct }) => {
         <div className="md:col-span-2 lg:col-span-4">
           <button
             type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            className="flex items-center gap-2 px-6 py-2 text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
           >
             <Plus className="w-4 h-4" />
             Add Product
