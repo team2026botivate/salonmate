@@ -1608,27 +1608,35 @@ export const useGetInventoryData = () => {
   const [error, setError] = useState(null);
   const { store_id } = useAppData();
 
-  const fetchInventoryData = async () => {
+  const fetchInventoryData = useCallback(async () => {
     if (!store_id) {
       console.warn('No store_id available, skipping inventory data fetch');
       setLoading(false);
-      return;
+      return [];
     }
     try {
       setLoading(true);
-      const { data } = await supabase.from('inventory').select('*').eq('store_id', store_id);
-      setData(data);
-    } catch (error) {
-      setError('Failed to load inventory data');
-      console.error('Error fetching inventory data:', error);
+      const { data: inventoryData, error: fetchError } = await supabase
+        .from('inventory')
+        .select('*')
+        .eq('store_id', store_id);
+
+      if (fetchError) throw fetchError;
+
+      setData(inventoryData || []);
+      return inventoryData || [];
+    } catch (err) {
+      console.error('Error fetching inventory data:', err);
+      setError(err.message || 'Failed to load inventory data');
+      return [];
     } finally {
       setLoading(false);
     }
-  };
+  }, [store_id]);
 
   useEffect(() => {
     fetchInventoryData();
-  }, []);
+  }, [fetchInventoryData]);
 
   return { data, loading, error, refetch: fetchInventoryData };
 };

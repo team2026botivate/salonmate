@@ -10,27 +10,36 @@ import {
   TrendingDown,
   ArrowUpDown,
   IndianRupee,
+  Loader2,
 } from 'lucide-react';
 import { useGetDailyExpenses, useDailyExpenseMutations } from '../../hook/dbOperation';
-import { useGetInventoryData } from '../../hook/dbOperation';
+// import { useGetInventoryData } from '../../hook/dbOperation';
 
 // Note: data comes from Supabase daily_expenses table via hooks
 
 const DailyExpenses = () => {
   const { data, loading, error, refetch } = useGetDailyExpenses();
 
-  const { addExpense, updateExpense, deleteExpense, loading: mutLoading, error: mutError } =
-    useDailyExpenseMutations();
-  const { data: invRows, loading: invLoading } = useGetInventoryData();
+  console.log(data, 'data');
+
+  const {
+    addExpense,
+    updateExpense,
+    deleteExpense,
+    loading: mutLoading,
+    error: mutError,
+  } = useDailyExpenseMutations();
+  // const { data: invRows, loading: invLoading } = useGetInventoryData();
   const [expenses, setExpenses] = useState([]);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
-    product: '',
+    title: '',
     amount: '',
     notes: '',
-    title: '',
     qty: 1,
   });
+
+  console.log(formData, 'form data ');
 
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
   const [editingId, setEditingId] = useState(null);
@@ -41,7 +50,7 @@ const DailyExpenses = () => {
     const mapped = (data || []).map((row) => ({
       id: row.id,
       date: row.expense_date, // YYYY-MM-DD
-      productName: row.product_name || '',
+      // productName: row.product_name || '',
       amount: Number(row.amount) || 0,
       notes: row.note || '',
       title: row.title || '',
@@ -134,7 +143,7 @@ const DailyExpenses = () => {
       amount: expense.amount.toString(),
       notes: expense.notes,
       title: expense.title || expense.productName || '',
-      qty: expense.qty || 1,
+      qty: Number(expense.qty || 1),
     });
     setEditingId(expense.id);
   };
@@ -182,6 +191,14 @@ const DailyExpenses = () => {
     });
   };
 
+  const EmptyState = () => (
+    <div className="py-12 text-center">
+      <DollarSign className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+      <h3 className="mb-2 text-lg font-medium text-gray-900">No expenses yet</h3>
+      <p className="text-gray-600">Start by adding your first expense above</p>
+    </div>
+  );
+
   return (
     <div className="min-h-screen p-4 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 md:p-6">
       <div className="mx-auto max-w-7xl">
@@ -223,61 +240,38 @@ const DailyExpenses = () => {
 
                   {/* Product Field (from Inventory) */}
                   <div>
-                    <label className="block mb-2 text-sm font-medium text-gray-700">
-                      Product (from Inventory)
-                    </label>
-                    <select
-                      value={selectedProductId}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setSelectedProductId(val);
-                        const row = (invRows || []).find((r) => String(r.product_id) === String(val));
-                        if (row) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            title: row.product_name || '',
-                            amount: row.cost_price ? String(Number(row.cost_price) * Number(prev.qty || 1)) : prev.amount,
-                          }));
-                        }
-                      }}
-                      className="w-full px-4 py-3 transition-all border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    <label
+                      htmlFor="expenseName"
+                      className="block mb-2 text-sm font-medium text-gray-700"
                     >
-                      <option value="">Select Product</option>
-                      {(invRows || []).map((p) => (
-                        <option key={p.product_id} value={p.product_id}>
-                          {p.product_name} {p.cost_price ? `- ₹${p.cost_price}` : ''}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Selecting a product will auto-fill amount with its cost price. You can edit it.
-                    </p>
+                      Expense Name
+                    </label>
+                    <input
+                      name="title"
+                      type="text"
+                      id="expenseName"
+                      value={formData.title}
+                      onChange={handleInputChange}
+                      placeholder="Enter name"
+                      className="w-full px-4 py-3 text-gray-900 placeholder-gray-500 transition-all duration-200 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="grid gap-6 grid--2 grid-cols- md:grid-cols-2">
                   {/* Quantity Field */}
                   <div>
-                    <label className="block mb-2 text-sm font-medium text-gray-700">Qty</label>
+                    <label className="block mb-2 text-sm font-medium text-gray-700 opacity-50">
+                      Quantity
+                    </label>
                     <input
                       type="number"
-                      min="1"
                       name="qty"
                       value={formData.qty}
-                      onChange={(e) => {
-                        const q = Math.max(1, parseInt(e.target.value || '1', 10));
-                        setFormData((prev) => {
-                          let nextAmount = prev.amount;
-                          if (selectedProductId) {
-                            const row = (invRows || []).find((r) => String(r.product_id) === String(selectedProductId));
-                            if (row && row.cost_price != null) {
-                              nextAmount = String(Number(row.cost_price) * q);
-                            }
-                          }
-                          return { ...prev, qty: q, amount: nextAmount };
-                        });
-                      }}
-                      className="w-full px-4 py-3 transition-all border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={handleInputChange}
+                      placeholder="1"
+                      min="1"
+                      className="w-full px-4 py-3 text-gray-900 placeholder-gray-500 transition-all duration-200 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
 
@@ -300,10 +294,10 @@ const DailyExpenses = () => {
                     </div>
                   </div>
                   {/* Notes Field */}
-                  <div>
+                  <div className="col-span-1 md:col-span-2">
                     <label className="block mb-2 text-sm font-medium text-gray-700">Notes</label>
-                    <div className="relative">
-                      <FileText className="absolute w-5 h-5 text-gray-400 left-3 top-3" />
+                    <div className="relative w-full ">
+                      <FileText className="absolute h-5 text-gray-400 w- left-3 top-3" />
                       <textarea
                         name="notes"
                         value={formData.notes}
@@ -337,9 +331,10 @@ const DailyExpenses = () => {
                   )}
                   <button
                     type="submit"
-                    className="px-8 py-3 font-medium text-white transition-all bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    className="flex items-center gap-2 px-8 py-3 font-medium text-white transition-all bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
                     {editingId ? 'Update Expense' : 'Add Expense'}
+                    {mutLoading && <Loader2 className="w-5 h-5 ml-2 animate-spin" />}
                   </button>
                 </div>
               </form>
@@ -351,7 +346,7 @@ const DailyExpenses = () => {
                 <h2 className="text-xl font-semibold text-gray-900">Recent Expenses</h2>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="hidden overflow-x-auto md:block">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
@@ -433,6 +428,93 @@ const DailyExpenses = () => {
                     <p className="text-gray-600">Start by adding your first expense above</p>
                   </div>
                 )}
+              </div>
+              {/* Mobile View */}
+              <div className="md:hidden">
+                {/* Mobile Sorting Controls */}
+                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Sort by:</span>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => onSort('date')}
+                        className="flex items-center px-3 py-2 text-xs font-medium text-gray-700 transition-colors bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+                      >
+                        <span>Date</span>
+                        <ArrowUpDown className="w-3 h-3 ml-1" />
+                      </button>
+                      <button
+                        onClick={() => onSort('amount')}
+                        className="flex items-center px-3 py-2 text-xs font-medium text-gray-700 transition-colors bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+                      >
+                        <span>Amount</span>
+                        <ArrowUpDown className="w-3 h-3 ml-1" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="p-4 space-y-4">
+                  {sortedExpenses.map((expense) => (
+                    <div
+                      key={expense.id}
+                      className="p-4 transition-shadow bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md"
+                    >
+                      {/* Card Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {expense.title || expense.productName || '-'}
+                            </span>
+                            <span className="text-xs text-gray-500">Qty: {expense.qty}</span>
+                          </div>
+                          <p className="mt-1 text-sm text-gray-600">{formatDate(expense.date)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-gray-900">
+                            {formatCurrency(expense.amount)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Card Body */}
+                      {expense.notes && (
+                        <div className="mb-3">
+                          <p className="text-sm text-gray-600 line-clamp-2">
+                            <span className="font-medium">Notes: </span>
+                            {expense.notes}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Card Actions */}
+                      <div className="flex items-center justify-end pt-3 border-t border-gray-100">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleEdit(expense)}
+                            className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 transition-colors rounded-lg bg-blue-50 hover:bg-blue-100 active:bg-blue-200"
+                            title="Edit expense"
+                          >
+                            <Edit3 className="w-4 h-4 mr-1" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(expense.id)}
+                            className="flex items-center px-3 py-2 text-sm font-medium text-red-600 transition-colors rounded-lg bg-red-50 hover:bg-red-100 active:bg-red-200"
+                            title="Delete expense"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {sortedExpenses.length === 0 && <EmptyState />}
+                </div>
               </div>
             </div>
           </div>
