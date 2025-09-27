@@ -164,61 +164,109 @@ const DataTable = ({ title, data, columns, isLoading, delay, onViewAll }) => {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay }}
-      className="p-6 bg-white border border-gray-100 shadow-lg rounded-xl"
-    >
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-        <motion.button
-          onClick={onViewAll}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex items-center gap-1 text-sm font-medium text-purple-600 hover:text-purple-700"
-        >
-          View All
-          <ChevronRight size={16} />
-        </motion.button>
-      </div>
+    <>
+      {/* Desktop/Table view */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay }}
+        className="hidden p-6 bg-white border border-gray-100 shadow-lg rounded-xl md:block"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+          <motion.button
+            onClick={onViewAll}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-1 text-sm font-medium text-purple-600 hover:text-purple-700"
+          >
+            View All
+            <ChevronRight size={16} />
+          </motion.button>
+        </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-100">
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className="px-2 py-3 text-sm font-medium text-left text-gray-600"
-                >
-                  {column.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((item, index) => (
-              <motion.tr
-                key={item.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: delay + 0.1 * index }}
-                className="transition-colors border-b border-gray-50 hover:bg-gray-50"
-              >
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100">
                 {columns.map((column) => (
-                  <td key={column.key} className="px-2 py-3 text-sm">
+                  <th
+                    key={column.key}
+                    className="px-2 py-3 text-sm font-medium text-left text-gray-600"
+                  >
+                    {column.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {(data || []).map((item, index) => (
+                <motion.tr
+                  key={item.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: delay + 0.1 * index }}
+                  className="transition-colors border-b border-gray-50 hover:bg-gray-50"
+                >
+                  {columns.map((column) => (
+                    <td key={column.key} className="px-2 py-3 text-sm">
+                      {column.render
+                        ? column.render(item[column.key], item)
+                        : item[column.key]}
+                    </td>
+                  ))}
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </motion.div>
+
+      {/* Mobile/Card view */}
+      <div className="block space-y-4 md:hidden">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          <motion.button
+            onClick={onViewAll}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-1 text-sm font-medium text-purple-600 hover:text-purple-700"
+          >
+            View All
+            <ChevronRight size={16} />
+          </motion.button>
+        </div>
+
+        {(data || []).map((item, index) => (
+          <motion.div
+            key={item.id}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: delay + 0.1 * index }}
+            className="relative overflow-hidden transition-all duration-500 bg-white border group/card border-gray-200/60 rounded-2xl hover:shadow-xl hover:shadow-gray-900/10 hover:border-gray-300/80 hover:-translate-y-1"
+          >
+            {/* Professional card background */}
+            <div className="absolute inset-0 transition-opacity duration-500 opacity-0 bg-gradient-to-br from-slate-50/80 via-white to-blue-50/40 group-hover/card:opacity-100" />
+            <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
+
+            <div className="relative z-10 p-5 space-y-4">
+              {columns.map((column, colIndex) => (
+                <div key={column.key} className="flex items-center justify-between py-2 border-b border-gray-100/60 last:border-b-0">
+                  <div className="flex-shrink-0 w-20 text-xs font-bold tracking-widest text-gray-600 uppercase sm:w-24">
+                    {column.label}
+                  </div>
+                  <div className="flex-1 min-w-0 pl-4 text-sm font-bold text-right text-gray-900">
                     {column.render
                       ? column.render(item[column.key], item)
                       : item[column.key]}
-                  </td>
-                ))}
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        ))}
       </div>
-    </motion.div>
+    </>
   )
 }
 
@@ -328,10 +376,17 @@ const DashboardHome = ({ isAdmin, setActiveTab }) => {
       key: 'paymentMethod',
       label: 'Payment Method',
       render: (method) => (
-        <div className="flex items-center gap-2">
-          <CreditCard size={16} className="text-gray-500" />
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ring-1
+            ${String(method).toLowerCase() === 'upi' ? 'bg-green-50 text-green-700 ring-green-200' : ''}
+            ${String(method).toLowerCase() === 'card' ? 'bg-indigo-50 text-indigo-700 ring-indigo-200' : ''}
+            ${String(method).toLowerCase() === 'cash' ? 'bg-amber-50 text-amber-700 ring-amber-200' : ''}
+            ${!['online','card','cash'].includes(String(method).toLowerCase()) ? 'bg-slate-100 text-slate-700 ring-slate-200' : ''}
+          `}
+        >
+          <CreditCard size={14} className="opacity-70" />
           <span className="capitalize">{method}</span>
-        </div>
+        </span>
       ),
     },
     {

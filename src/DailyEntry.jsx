@@ -1,4 +1,4 @@
-import { Calendar, Edit, Search, X } from 'lucide-react';
+import { Calendar, Edit, Search, X, Eye, Phone, User } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import MultiServiceSelector from './components/dailyEntry/dailyFromInput';
@@ -262,8 +262,169 @@ const DailyEntry = () => {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* mobile view */}
+
+      {/* Mobile Card Layout */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="block md:hidden"
+      >
+        <div className="space-y-4">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="inline-block w-6 h-6 mb-4 border-t-2 border-b-2 border-pink-500 rounded-full animate-spin"></div>
+              <p className="text-sm text-gray-500">Loading appointments...</p>
+            </div>
+          ) : filteredAppointments && filteredAppointments.length > 0 ? (
+            filteredAppointments.map((appointment) => (
+              <motion.div
+                key={appointment['Booking ID']}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 space-y-4 bg-white border border-gray-200 rounded-lg shadow-md"
+              >
+                {/* Header with Booking ID and Status */}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      {appointment['Booking ID']}
+                    </h3>
+                    <p className="mt-1 text-sm font-medium text-gray-600">
+                      {appointment['Customer Name']}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">{appointment['Slot Time']}</p>
+                  </div>
+                  <span
+                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${getStatusColor(
+                      appointment['Booking Status']
+                    )}`}
+                  >
+                    {(appointment['Booking Status'] || '').toString()}
+                  </span>
+                </div>
+
+                {/* Service Information */}
+                <div>
+                  <p className="mb-2 text-xs font-medium tracking-wider text-gray-500 uppercase">
+                    Service Info
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          {appointment['Services']}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {formatCurrency(appointment['Service Price'])}
+                        </p>
+                      </div>
+                    </div>
+                    {Array.isArray(appointment.extra_Services) &&
+                      appointment.extra_Services.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="inline-block px-2 py-1 text-xs text-indigo-600 rounded-full bg-indigo-50 text-nowrap">
+                            + {appointment.extra_Services[0]?.service_name}
+                          </div>
+                          {appointment.extra_Services.length > 1 && (
+                            <span className="text-xs text-gray-500">...more</span>
+                          )}
+                        </div>
+                      )}
+                  </div>
+                </div>
+
+                {/* Staff and Pricing Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Staff Information */}
+                  <div>
+                    <p className="mb-2 text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      Staff
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {Array.isArray(appointment.staff_information) &&
+                      appointment.staff_information.length > 0 ? (
+                        appointment.staff_information.map((s) => (
+                          <span
+                            key={s.id}
+                            className="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full"
+                          >
+                            {s.staffName}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-gray-900">
+                          {appointment['Staff Name'] || 'Not Assigned'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Pricing */}
+                  <div>
+                    <p className="mb-2 text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      Pricing
+                    </p>
+                    <div className="text-sm font-bold text-gray-900">
+                      {formateDiscount(appointment['Service Price'], appointment.discount)}
+                    </div>
+                    {appointment.discount > 0 && (
+                      <div className="text-xs font-medium text-green-600">
+                        {appointment.discount}% discount
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="pt-3 border-t border-gray-100">
+                  <button
+                    onClick={() => {
+                      setDailyFromInputPropsData((prev) => ({
+                        ...prev,
+                        bookingId: appointment.id,
+                        bookingStatus: appointment['Booking Status'],
+                        service: appointment['Services'],
+                        staff_information: Array.isArray(appointment.staff_information)
+                          ? appointment.staff_information
+                          : [],
+                      }));
+                      SetIsEditBoxOpen(true);
+                    }}
+                    className="flex items-center justify-center w-full px-4 py-2 space-x-2 text-sm font-medium text-blue-600 transition-colors border border-blue-200 rounded-md bg-blue-50 hover:bg-blue-100 hover:text-blue-700"
+                  >
+                    <Edit className="w-4 h-4" />
+                    <span>Edit Appointment</span>
+                  </button>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="flex items-center justify-center py-12 text-center">
+              <p className="text-sm text-gray-500">Appointment not found</p>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Footer */}
+        <div className="p-4 mt-6 border border-gray-200 rounded-lg bg-gray-50">
+          <div className="space-y-2 text-center">
+            <div className="text-sm text-gray-600">
+              Showing {filteredAppointments.length} of {Array.isArray(data) ? data.length : 0} appointments
+            </div>
+            <div className="text-sm text-gray-600">
+              Total Revenue:{' '}
+              <span className="font-semibold text-green-600">
+                {formatCurrency(totalAfterDiscount)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Desktop view */}
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
@@ -402,7 +563,7 @@ const DailyEntry = () => {
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+      <div className="hidden px-6 py-4 border-t border-gray-200 bg-gray-50 md:block">
         <div className="flex items-center justify-between text-sm text-gray-600">
           <div>
             Showing {filteredAppointments.length} of {data.length} appointments

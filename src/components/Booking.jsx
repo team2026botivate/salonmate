@@ -419,14 +419,14 @@ const Booking = ({ hideHistoryButton = false }) => {
                   onClick={handleNewAppointmentClick}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center gap-3 px-6 py-3 font-medium text-white transition-all duration-300 ease-out shadow-lg group bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="flex items-center gap-2 px-4 py-3 font-medium text-white transition-all duration-300 ease-out shadow-lg md:px-6 group bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   aria-label="Create new appointment"
                 >
                   <Plus
-                    size={18}
-                    className="transition-transform duration-300 group-hover:rotate-90"
+                    
+                    className="transition-transform duration-300 group-hover:rotate-90 size-4 md:size-6"
                   />
-                  <span className="whitespace-nowrap">New Appointment</span>
+                  <span className="text-sm whitespace-nowrap">New Appointment</span>
                 </motion.button>
               )}
 
@@ -439,10 +439,10 @@ const Booking = ({ hideHistoryButton = false }) => {
                   aria-label="View appointment history"
                 >
                   <History
-                    size={18}
-                    className="text-gray-500 transition-colors duration-300 group-hover:text-gray-700"
+                    
+                    className="text-gray-500 transition-colors duration-300 group-hover:text-gray-700 size-4 md:size-6"
                   />
-                  <span className="whitespace-nowrap">History</span>
+                  <span className="text-sm whitespace-nowrap">History</span>
                 </motion.button>
               )}
             </div>

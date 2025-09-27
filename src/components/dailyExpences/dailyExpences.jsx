@@ -453,7 +453,6 @@ const DailyExpenses = () => {
                     </div>
                   </div>
                 </div>
-
                 {/* Mobile Cards */}
                 <div className="p-4 space-y-4">
                   {sortedExpenses.map((expense) => (
