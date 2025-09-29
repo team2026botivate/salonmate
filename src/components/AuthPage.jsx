@@ -1,14 +1,10 @@
-import { useAuth } from '@/Context/AuthContext'
-import supabase from '@/dataBase/connectdb'
-import { useCreateShopId } from '@/hook/dbOperation'
-import { useAppData } from '@/zustand/appData'
+import { useAuth } from '@/Context/AuthContext';
+import supabase from '@/dataBase/connectdb';
+import { useCreateShopId } from '@/hook/dbOperation';
+import { useAppData } from '@/zustand/appData';
 // eslint-disable-next-line no-unused-vars
-import {
-  checkLicense,
-  checkLicenseByStoreId,
-  createTrialLicense,
-} from '@/utils/chekcLicence'
-import { AnimatePresence, motion } from 'framer-motion'
+import { checkLicense, checkLicenseByStoreId, createTrialLicense } from '@/utils/chekcLicence';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Chrome,
   Eye,
@@ -23,22 +19,25 @@ import {
   Building,
   Phone,
   MapPin,
-} from 'lucide-react'
-import React, { useState } from 'react'
-import toast, { Toaster } from 'react-hot-toast'
-import { useNavigate } from 'react-router-dom'
+} from 'lucide-react';
+import React, { useState } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import Forget_password_popup from './ui/forget_password_popup';
 
 const AuthPage = () => {
-  const { login, user, loading: authLoading } = useAuth()
-  const navigate = useNavigate()
-  const { setStoreId } = useAppData()
+  const { login, user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const { setStoreId } = useAppData();
+  const [isForgetPasswrod, setIsForgetPasswrod] = useState(false);
+  console.log(isForgetPasswrod, 'done');
 
-  const { createShopId, loading: shopLoading } = useCreateShopId()
+  const { createShopId, loading: shopLoading } = useCreateShopId();
 
-  const [isSignIn, setIsSignIn] = useState(true)
-  const [currentSignupStep, setCurrentSignupStep] = useState(1)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isSignIn, setIsSignIn] = useState(true);
+  const [currentSignupStep, setCurrentSignupStep] = useState(1);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     // Sign in fields
     email: '',
@@ -57,16 +56,16 @@ const AuthPage = () => {
     adminPassword: '',
     confirmPassword: '',
     role: 'admin',
-  })
+  });
 
-  const [errors, setErrors] = useState({}) 
-  const [loading, setLoading] = useState(false)
-  const [shopCreationLoading, setShopCreationLoading] = useState(false)
-  const [shopId, setShopId] = useState(null)
-  const [isRegistrationComplete, setIsRegistrationComplete] = useState(false)
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [shopCreationLoading, setShopCreationLoading] = useState(false);
+  const [shopId, setShopId] = useState(null);
+  const [isRegistrationComplete, setIsRegistrationComplete] = useState(false);
 
-  const signupSteps = ['Shop Details', 'Admin Setup']
-  const totalSignupSteps = signupSteps.length
+  const signupSteps = ['Shop Details', 'Admin Setup'];
+  const totalSignupSteps = signupSteps.length;
 
   // Redirect if already authenticated
   React.useEffect(() => {
@@ -74,147 +73,147 @@ const AuthPage = () => {
       if (user && !authLoading) {
         try {
           // Prefer store-based license check if we can derive store_id from profile
-          const storeId = user?.profile?.store_id
+          const storeId = user?.profile?.store_id;
           const licenseStatus = storeId
             ? await checkLicenseByStoreId(storeId)
-            : await checkLicense(user.id)
+            : await checkLicense(user.id);
           if (licenseStatus?.active) {
-            navigate('/admin-dashboard')
+            navigate('/admin-dashboard');
           }
           // If not active, stay on /auth
         } catch (e) {
           // On error, stay on /auth
-          console.error('License check failed on auth redirect:', e)
+          console.error('License check failed on auth redirect:', e);
         }
       }
-    }
-    maybeRedirect()
-  }, [user, navigate, authLoading])
+    };
+    maybeRedirect();
+  }, [user, navigate, authLoading]);
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
-    }))
+    }));
 
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }))
+      setErrors((prev) => ({ ...prev, [name]: '' }));
     }
-  }
+  };
 
   // Validation functions
   const validateShopInformation = () => {
-    const newErrors = {}
+    const newErrors = {};
 
     if (!formData.shopName.trim()) {
-      newErrors.shopName = 'Shop name is required'
+      newErrors.shopName = 'Shop name is required';
     }
 
     if (formData.shopEmail && !/\S+@\S+\.\S+/.test(formData.shopEmail)) {
-      newErrors.shopEmail = 'Shop email is invalid'
+      newErrors.shopEmail = 'Shop email is invalid';
     }
 
     if (!formData.mobileNumber.trim()) {
-      newErrors.mobileNumber = 'Mobile number is required'
+      newErrors.mobileNumber = 'Mobile number is required';
     } else if (!/^\d{10}$/.test(formData.mobileNumber)) {
-      newErrors.mobileNumber = 'Mobile number must be 10 digits'
+      newErrors.mobileNumber = 'Mobile number must be 10 digits';
     }
 
     if (!formData.address.trim()) {
-      newErrors.address = 'Address is required'
+      newErrors.address = 'Address is required';
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const validateAdminSignup = () => {
-    const newErrors = {}
+    const newErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Full name is required'
+      newErrors.name = 'Full name is required';
     }
 
     if (!formData.adminEmail.trim()) {
-      newErrors.adminEmail = 'Email is required'
+      newErrors.adminEmail = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.adminEmail)) {
-      newErrors.adminEmail = 'Email is invalid'
+      newErrors.adminEmail = 'Email is invalid';
     }
 
     if (!formData.adminPassword) {
-      newErrors.adminPassword = 'Password is required'
+      newErrors.adminPassword = 'Password is required';
     } else if (formData.adminPassword.length < 6) {
-      newErrors.adminPassword = 'Password must be at least 6 characters'
+      newErrors.adminPassword = 'Password must be at least 6 characters';
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password'
+      newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.adminPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match'
+      newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const validateSignIn = () => {
-    const newErrors = {}
+    const newErrors = {};
 
     if (!formData.email) {
-      newErrors.email = 'Email is required'
+      newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid'
+      newErrors.email = 'Email is invalid';
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required'
+      newErrors.password = 'Password is required';
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters'
+      newErrors.password = 'Password must be at least 8 characters';
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSignupNext = async () => {
-    let isValid = false
+    let isValid = false;
 
     if (currentSignupStep === 1) {
-      isValid = validateShopInformation()
+      isValid = validateShopInformation();
       if (isValid) {
         // Create shop ID before moving to next step
-        setShopCreationLoading(true)
+        setShopCreationLoading(true);
         try {
           const shopData = await createShopId(
             formData.shopName,
             formData.address,
             formData.mobileNumber
-          )
+          );
 
-          setShopId(shopData)
-          setCurrentSignupStep(currentSignupStep + 1)
+          setShopId(shopData);
+          setCurrentSignupStep(currentSignupStep + 1);
         } catch (error) {
-          console.error('Shop creation error:', error)
-          setErrors({ submit: 'Failed to create shop. Please try again.' })
+          console.error('Shop creation error:', error);
+          setErrors({ submit: 'Failed to create shop. Please try again.' });
         } finally {
-          setShopCreationLoading(false)
+          setShopCreationLoading(false);
         }
       }
     } else if (currentSignupStep === 2) {
-      isValid = validateAdminSignup()
+      isValid = validateAdminSignup();
       if (isValid) {
-        handleSignupSubmit()
+        handleSignupSubmit();
       }
     }
-  }
+  };
 
   const handleSignupBack = () => {
     if (currentSignupStep > 1) {
-      setCurrentSignupStep(currentSignupStep - 1)
+      setCurrentSignupStep(currentSignupStep - 1);
     }
-  }
+  };
 
   const isCurrentStepValid = () => {
     if (!isSignIn) {
@@ -225,7 +224,7 @@ const AuthPage = () => {
           /^\d{10}$/.test(formData.mobileNumber) &&
           formData.address.trim() &&
           (!formData.shopEmail || /\S+@\S+\.\S+/.test(formData.shopEmail))
-        )
+        );
       } else if (currentSignupStep === 2) {
         return (
           formData.name.trim() &&
@@ -234,16 +233,16 @@ const AuthPage = () => {
           formData.adminPassword.length >= 6 &&
           formData.confirmPassword &&
           formData.adminPassword === formData.confirmPassword
-        )
+        );
       }
     }
-    return false
-  }
+    return false;
+  };
 
   const handleSignupSubmit = async () => {
-    if (!validateAdminSignup()) return
+    if (!validateAdminSignup()) return;
 
-    setLoading(true)
+    setLoading(true);
     try {
       // Shop is already created, use the stored shopId
 
@@ -262,14 +261,14 @@ const AuthPage = () => {
             address: formData.address,
           },
         },
-      })
+      });
 
       if (signUpError) {
-        setErrors({ submit: signUpError.message })
-        return
+        setErrors({ submit: signUpError.message });
+        return;
       }
 
-      const user = data?.user
+      const user = data?.user;
       if (user) {
         // Create or update profile in database with available fields
         const payload = {
@@ -281,14 +280,14 @@ const AuthPage = () => {
           address: formData.address,
           store_id: shopId.id,
           salon_name: shopId.name,
-        }
+        };
 
         const { error: profileError } = await supabase
           .from('profiles')
-          .upsert(payload, { onConflict: 'id' })
+          .upsert(payload, { onConflict: 'id' });
 
         if (profileError) {
-          console.error('Profile upsert error:', profileError.message)
+          console.error('Profile upsert error:', profileError.message);
         }
 
         // Create shop record
@@ -315,19 +314,19 @@ const AuthPage = () => {
 
         try {
           // Pass the freshly created shop/store id explicitly to avoid FK violations
-          const trialLicense = await createTrialLicense(user.id, shopId?.id)
+          const trialLicense = await createTrialLicense(user.id, shopId?.id);
           if (trialLicense) {
           } else {
-            console.warn('Failed to create trial license')
+            console.warn('Failed to create trial license');
           }
         } catch (licenseError) {
-          console.error('Trial license creation error:', licenseError)
+          console.error('Trial license creation error:', licenseError);
           // Don't block signup if license creation fails
         }
 
         // Clear errors
-        setErrors({})
-        setIsRegistrationComplete(true)
+        setErrors({});
+        setIsRegistrationComplete(true);
 
         // Show success toast
         toast.success(
@@ -336,44 +335,43 @@ const AuthPage = () => {
             duration: 8000,
             position: 'top-center',
           }
-        )
+        );
       }
     } catch (err) {
-      console.error('Signup error:', err)
-      setErrors({ submit: 'An unexpected error occurred' })
+      console.error('Signup error:', err);
+      setErrors({ submit: 'An unexpected error occurred' });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSignIn = async (e) => {
-    e.preventDefault()
-    if (!validateSignIn()) return
+    e.preventDefault();
+    if (!validateSignIn()) return;
 
-    setLoading(true)
+    setLoading(true);
     try {
       // Sign in with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
-      })
+      });
 
       if (error) {
-        setErrors({ submit: error.message })
-        return
+        setErrors({ submit: error.message });
+        return;
       }
-      
 
       if (data?.user) {
         // Store session in localStorage
-        localStorage.setItem('supabase_session', JSON.stringify(data.session))
+        localStorage.setItem('supabase_session', JSON.stringify(data.session));
 
         // Get user profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', data.user.id)
-          .single()
+          .single();
 
         // Ensure profile row exists and contains available fields
         if (!profile) {
@@ -381,20 +379,20 @@ const AuthPage = () => {
             id: data.user.id,
             email: data.user.email,
             role: 'staff',
-          }
+          };
           // Optional/available fields from user metadata
-          const meta = data.user.user_metadata || {}
-          if (meta.name) payload.full_name = meta.name
-          if (meta.phone_number) payload.phone_number = meta.phone_number
-          if (meta.address) payload.address = meta.address
-          if (meta.bio) payload.bio = meta.bio
+          const meta = data.user.user_metadata || {};
+          if (meta.name) payload.full_name = meta.name;
+          if (meta.phone_number) payload.phone_number = meta.phone_number;
+          if (meta.address) payload.address = meta.address;
+          if (meta.bio) payload.bio = meta.bio;
           if (meta.skills)
             payload.skills = Array.isArray(meta.skills)
               ? meta.skills.join(',')
-              : String(meta.skills)
-          if (meta.profile_image) payload.profile_image = meta.profile_image
+              : String(meta.skills);
+          if (meta.profile_image) payload.profile_image = meta.profile_image;
 
-          await supabase.from('profiles').upsert(payload, { onConflict: 'id' })
+          await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
         }
 
         // Re-fetch profile after potential upsert
@@ -402,16 +400,16 @@ const AuthPage = () => {
           .from('profiles')
           .select('*')
           .eq('id', data.user.id)
-          .single()
+          .single();
 
         // Check license status (prefer by store)
         const licenseStatus = ensuredProfile?.store_id
           ? await checkLicenseByStoreId(ensuredProfile.store_id)
-          : await checkLicense(data.user.id)
+          : await checkLicense(data.user.id);
 
         // If license is expired or inactive, inform user and keep on /auth
         if (!licenseStatus.active) {
-          toast.error('Your license has expired. Please renew to continue.')
+          toast.error('Your license has expired. Please renew to continue.');
         }
 
         // Create user data for context
@@ -419,70 +417,71 @@ const AuthPage = () => {
           ...data.user,
           role: (ensuredProfile || profile)?.role || 'staff',
           profile: ensuredProfile || profile,
-        }
+        };
 
         // Get user's store_id from profile and set in Zustand
         if (ensuredProfile?.store_id) {
-          setStoreId(ensuredProfile.store_id)
+          setStoreId(ensuredProfile.store_id);
         }
 
         // Try to load permissions from Supabase (source of truth)
-        let permissionIds = []
+        let permissionIds = [];
         try {
           if (ensuredProfile?.store_id) {
             const { data: rows, error: permsErr } = await supabase
               .from('user_permissions')
               .select('permission_id')
               .eq('user_id', data.user.id)
-              .eq('store_id', ensuredProfile.store_id)
+              .eq('store_id', ensuredProfile.store_id);
             if (permsErr) {
-              console.warn('permissions fetch error:', permsErr.message)
+              console.warn('permissions fetch error:', permsErr.message);
             } else if (rows && rows.length) {
-              permissionIds = rows.map((r) => String(r.permission_id))
+              permissionIds = rows.map((r) => String(r.permission_id));
             }
           }
         } catch (e) {
-          console.warn('permissions fetch exception:', e)
+          console.warn('permissions fetch exception:', e);
         }
 
         // Fallback to profile/user_metadata if no rows found
         if (!permissionIds.length) {
-          const profilePermsRaw = (ensuredProfile || profile)?.permissions ?? data.user?.user_metadata?.permissions
+          const profilePermsRaw =
+            (ensuredProfile || profile)?.permissions ?? data.user?.user_metadata?.permissions;
           if (Array.isArray(profilePermsRaw)) {
-            permissionIds = profilePermsRaw.map((p) => String(p).toLowerCase())
+            permissionIds = profilePermsRaw.map((p) => String(p).toLowerCase());
           } else if (typeof profilePermsRaw === 'string') {
             permissionIds = profilePermsRaw
               .split(',')
               .map((s) => s.trim().toLowerCase())
-              .filter(Boolean)
+              .filter(Boolean);
           }
         }
 
         if (permissionIds.length) {
-          userData.permissions = permissionIds
+          userData.permissions = permissionIds;
         }
 
         // Use context login to store user data
-        login(userData)
+        login(userData);
 
         // Clear errors
-        setErrors({})
+        setErrors({});
         // Navigate only if license active; otherwise remain on /auth
         if (licenseStatus.active) {
-          navigate('/admin-dashboard')
+          navigate('/admin-dashboard');
         }
       }
     } catch (err) {
-      console.error('Auth handler error:', err)
-      setErrors({ submit: 'An unexpected error occurred' })
+      console.error('Auth handler error:', err);
+      setErrors({ submit: 'An unexpected error occurred' });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const toggleForm = () => {
-    setIsSignIn(!isSignIn)
-    setCurrentSignupStep(1)
+    setIsSignIn(!isSignIn);
+    setCurrentSignupStep(1);
     setFormData({
       email: '',
       password: '',
@@ -496,14 +495,14 @@ const AuthPage = () => {
       adminPassword: '',
       confirmPassword: '',
       role: 'admin',
-    })
-    setErrors({})
-    setIsRegistrationComplete(false)
-  }
+    });
+    setErrors({});
+    setIsRegistrationComplete(false);
+  };
 
   const resetRegistration = () => {
-    setIsRegistrationComplete(false)
-    setCurrentSignupStep(1)
+    setIsRegistrationComplete(false);
+    setCurrentSignupStep(1);
     setFormData({
       email: '',
       password: '',
@@ -517,14 +516,14 @@ const AuthPage = () => {
       adminPassword: '',
       confirmPassword: '',
       role: 'admin',
-    })
-    setErrors({})
-  }
+    });
+    setErrors({});
+  };
 
   const inputVariants = {
     focus: { scale: 1.02, transition: { duration: 0.2 } },
     tap: { scale: 0.98 },
-  }
+  };
 
   const buttonVariants = {
     hover: {
@@ -532,12 +531,13 @@ const AuthPage = () => {
       transition: { duration: 0.2, ease: 'easeOut' },
     },
     tap: { scale: 0.98 },
-  }
+  };
 
   // Registration Complete Component
   if (isRegistrationComplete) {
     return (
-      <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="relative flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        
         <div className="flex items-center justify-center flex-1 p-8 lg:p-12">
           <motion.div
             className="w-full max-w-md"
@@ -549,18 +549,16 @@ const AuthPage = () => {
               <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-green-100 rounded-full">
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
-              <h2 className="mb-4 text-2xl font-bold text-gray-900">
-                Registration Complete!
-              </h2>
+              <h2 className="mb-4 text-2xl font-bold text-gray-900">Registration Complete!</h2>
               <p className="mb-6 text-gray-600">
-                Your shop has been successfully registered. You have a 7-day
-                trial. Please check your email to confirm your account.
+                Your shop has been successfully registered. You have a 7-day trial. Please check
+                your email to confirm your account.
               </p>
               <div className="space-y-3">
                 <button
                   onClick={() => {
-                    setIsSignIn(true)
-                    resetRegistration()
+                    setIsSignIn(true);
+                    resetRegistration();
                   }}
                   className="w-full px-6 py-3 font-medium text-white transition-colors duration-200 bg-indigo-600 rounded-lg hover:bg-indigo-700"
                 >
@@ -597,9 +595,7 @@ const AuthPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
             >
-              <h2 className="mb-6 text-4xl font-bold">
-                Welcome to SaloonMate!
-              </h2>
+              <h2 className="mb-6 text-4xl font-bold">Welcome to SaloonMate!</h2>
               <p className="max-w-md text-xl leading-relaxed text-slate-200">
                 Your shop is now ready. Sign in to start managing your business.
               </p>
@@ -607,12 +603,20 @@ const AuthPage = () => {
           </div>
         </motion.div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Left Panel - Form Section */}
+      {isForgetPasswrod && (
+          <div className="absolute inset-0 z-[9999] overflow-y-auto">
+            <Forget_password_popup
+              isForgetPasswrod={isForgetPasswrod}
+              setIsForgetPasswrod={setIsForgetPasswrod}
+            />
+          </div>
+        )}
       <div className="flex items-center justify-center flex-1 p-8 lg:p-12">
         <motion.div
           className="w-full max-w-md"
@@ -719,10 +723,7 @@ const AuthPage = () => {
             <form onSubmit={handleSignIn} className="space-y-6">
               {/* Email Field */}
               <div>
-                <label
-                  htmlFor="email"
-                  className="block mb-2 text-sm font-medium text-slate-700"
-                >
+                <label htmlFor="email" className="block mb-2 text-sm font-medium text-slate-700">
                   Email Address
                 </label>
                 <motion.div
@@ -744,17 +745,12 @@ const AuthPage = () => {
                     placeholder="Enter your email"
                   />
                 </motion.div>
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                )}
+                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
               </div>
 
               {/* Password Field */}
               <div>
-                <label
-                  htmlFor="password"
-                  className="block mb-2 text-sm font-medium text-slate-700"
-                >
+                <label htmlFor="password" className="block mb-2 text-sm font-medium text-slate-700">
                   Password
                 </label>
                 <motion.div
@@ -780,40 +776,23 @@ const AuthPage = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute transition-colors transform -translate-y-1/2 top-1/2 right-3 text-slate-400 hover:text-slate-600"
                   >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </motion.div>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-                )}
+                {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
               </div>
 
               {/* Remember Me & Forgot Password */}
               {/*todo: after some time i have to fix it */}
-              {/* <div className="flex items-center justify-between">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="rememberMe"
-                    checked={formData.rememberMe || false}
-                    onChange={handleInputChange}
-                    className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
-                  />
-                  <span className="ml-2 text-sm text-slate-700">
-                    Remember me
-                  </span>
-                </label>
+              <div className="flex items-center justify-between">
                 <button
+                  onClick={() => setIsForgetPasswrod(true)}
                   type="button"
-                  className="text-sm text-indigo-600 transition-colors hover:text-indigo-500"
+                  className="text-sm text-indigo-600 transition-colors hover:text-indigo-500 hover:cursor-pointer"
                 >
                   Forgot password?
                 </button>
-              </div> */}
+              </div>
 
               {/* Submit Error */}
               {errors.submit && (
@@ -890,9 +869,7 @@ const AuthPage = () => {
                           value={formData.shopName}
                           onChange={handleInputChange}
                           className={`w-full rounded-lg border py-3 pr-4 pl-11 transition-all focus:border-transparent focus:ring-2 focus:ring-indigo-500 ${
-                            errors.shopName
-                              ? 'border-red-300'
-                              : 'border-slate-300'
+                            errors.shopName ? 'border-red-300' : 'border-slate-300'
                           }`}
                           placeholder="Enter your shop name"
                         />
@@ -925,18 +902,16 @@ const AuthPage = () => {
                           name="mobileNumber"
                           value={formData.mobileNumber}
                           onChange={(e) => {
-                            const value = e.target.value.replace(/\D/g, '')
+                            const value = e.target.value.replace(/\D/g, '');
                             if (value.length <= 10) {
                               setFormData((prev) => ({
                                 ...prev,
                                 mobileNumber: value,
-                              }))
+                              }));
                             }
                           }}
                           className={`w-full rounded-lg border py-3 pr-4 pl-11 transition-all focus:border-transparent focus:ring-2 focus:ring-indigo-500 ${
-                            errors.mobileNumber
-                              ? 'border-red-300'
-                              : 'border-slate-300'
+                            errors.mobileNumber ? 'border-red-300' : 'border-slate-300'
                           }`}
                           placeholder="1234567890"
                           maxLength={10}
@@ -971,17 +946,13 @@ const AuthPage = () => {
                           onChange={handleInputChange}
                           rows={4}
                           className={`w-full resize-none rounded-lg border py-3 pr-4 pl-11 transition-all focus:border-transparent focus:ring-2 focus:ring-indigo-500 ${
-                            errors.address
-                              ? 'border-red-300'
-                              : 'border-slate-300'
+                            errors.address ? 'border-red-300' : 'border-slate-300'
                           }`}
                           placeholder="Enter your shop address..."
                         />
                       </motion.div>
                       {errors.address && (
-                        <p className="mt-1 text-sm text-red-600 animate-pulse">
-                          {errors.address}
-                        </p>
+                        <p className="mt-1 text-sm text-red-600 animate-pulse">{errors.address}</p>
                       )}
                     </div>
                   </motion.div>
@@ -1025,9 +996,7 @@ const AuthPage = () => {
                         />
                       </motion.div>
                       {errors.name && (
-                        <p className="mt-1 text-sm text-red-600 animate-pulse">
-                          {errors.name}
-                        </p>
+                        <p className="mt-1 text-sm text-red-600 animate-pulse">{errors.name}</p>
                       )}
                     </div>
 
@@ -1053,9 +1022,7 @@ const AuthPage = () => {
                           value={formData.adminEmail}
                           onChange={handleInputChange}
                           className={`w-full rounded-lg border py-3 pr-4 pl-11 transition-all focus:border-transparent focus:ring-2 focus:ring-indigo-500 ${
-                            errors.adminEmail
-                              ? 'border-red-300'
-                              : 'border-slate-300'
+                            errors.adminEmail ? 'border-red-300' : 'border-slate-300'
                           }`}
                           placeholder="admin@example.com"
                         />
@@ -1089,9 +1056,7 @@ const AuthPage = () => {
                           value={formData.adminPassword}
                           onChange={handleInputChange}
                           className={`w-full rounded-lg border py-3 pr-11 pl-11 transition-all focus:border-transparent focus:ring-2 focus:ring-indigo-500 ${
-                            errors.adminPassword
-                              ? 'border-red-300'
-                              : 'border-slate-300'
+                            errors.adminPassword ? 'border-red-300' : 'border-slate-300'
                           }`}
                           placeholder="Enter password (min 6 characters)"
                         />
@@ -1136,17 +1101,13 @@ const AuthPage = () => {
                           value={formData.confirmPassword}
                           onChange={handleInputChange}
                           className={`w-full rounded-lg border py-3 pr-11 pl-11 transition-all focus:border-transparent focus:ring-2 focus:ring-indigo-500 ${
-                            errors.confirmPassword
-                              ? 'border-red-300'
-                              : 'border-slate-300'
+                            errors.confirmPassword ? 'border-red-300' : 'border-slate-300'
                           }`}
                           placeholder="Confirm your password"
                         />
                         <button
                           type="button"
-                          onClick={() =>
-                            setShowConfirmPassword(!showConfirmPassword)
-                          }
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                           className="absolute transition-colors transform -translate-y-1/2 top-1/2 right-3 text-slate-400 hover:text-slate-600"
                         >
                           {showConfirmPassword ? (
@@ -1195,9 +1156,7 @@ const AuthPage = () => {
                 <motion.button
                   type="button"
                   onClick={handleSignupNext}
-                  disabled={
-                    !isCurrentStepValid() || loading || shopCreationLoading
-                  }
+                  disabled={!isCurrentStepValid() || loading || shopCreationLoading}
                   variants={buttonVariants}
                   whileHover="hover"
                   whileTap="tap"
@@ -1219,9 +1178,7 @@ const AuthPage = () => {
                           ? 'Complete Registration'
                           : 'Next'}
                   </span>
-                  {!loading && !shopCreationLoading && (
-                    <ChevronRight className="w-5 h-5 ml-2" />
-                  )}
+                  {!loading && !shopCreationLoading && <ChevronRight className="w-5 h-5 ml-2" />}
                 </motion.button>
               </div>
             </div>
@@ -1230,9 +1187,7 @@ const AuthPage = () => {
           {/* Toggle Link */}
           <div className="mt-6 text-center">
             <p className="text-slate-600">
-              {isSignIn
-                ? "Don't have an account? "
-                : 'Already have an account? '}
+              {isSignIn ? "Don't have an account? " : 'Already have an account? '}
               <button
                 type="button"
                 onClick={toggleForm}
@@ -1270,9 +1225,7 @@ const AuthPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
           >
-            <h2 className="mb-6 text-4xl font-bold">
-              Transform Your Salon Business
-            </h2>
+            <h2 className="mb-6 text-4xl font-bold">Transform Your Salon Business</h2>
             <p className="max-w-md text-xl leading-relaxed text-slate-200">
               {isSignIn
                 ? 'Streamline appointments, manage staff, and grow your business with our comprehensive admin dashboard.'
@@ -1322,7 +1275,7 @@ const AuthPage = () => {
         }}
       />
     </div>
-  )
-}
+  );
+};
 
-export default AuthPage
+export default AuthPage;
