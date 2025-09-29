@@ -76,17 +76,12 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
 
 
 
-  // Add a function to handle opening the discount form
-  const handleAddDiscountClick = () => {
+const handleAddDiscountClick = () => {
     setShowDiscountForm(true)
-    fetchPromoCards() // Fetch promo cards when opening the form
+    fetchPromoCards() 
   }
-
-  // Add a function to handle selecting a promo
   const handleSelectPromo = (promo) => {
     setSelectedPromo(promo)
-
-    // Find the total amount field in the current transaction
     const totalAmountHeader = tableHeaders.find(
       (h) =>
         h.label.toLowerCase().includes('total') &&
@@ -98,18 +93,14 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
         parseFloat(editingTransaction[totalAmountHeader.id]) || 0
       const discountPercentage = promo.discount || 0
 
-      // Calculate discount amount
       const discount = (totalAmount * discountPercentage) / 100
       setDiscountAmount(discount.toFixed(2))
 
-      // Calculate new total with discount
       const newTotal = (totalAmount - discount).toFixed(2)
 
-      // Update the total in the editing transaction
       const updatedTransaction = {
         ...editingTransaction,
         [totalAmountHeader.id]: newTotal,
-        // Also store the applied discount info for reference
         _appliedDiscount: {
           code: promo.code,
           percentage: discountPercentage,
@@ -121,13 +112,10 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
     }
   }
 
-  // Add function to close the discount form
   const handleCloseDiscountForm = () => {
     setShowDiscountForm(false)
     setSelectedPromo(null)
   }
-
-  // Add function to remove applied discount
   const handleRemoveDiscount = () => {
     const totalAmountHeader = tableHeaders.find(
       (h) =>
@@ -135,7 +123,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
         h.label.toLowerCase().includes('amount')
     )
 
-    // Find service price and extra service price to recalculate total
     const servicePriceHeader = tableHeaders.find(
       (h) =>
         h.label.toLowerCase().includes('service price') &&
@@ -147,20 +134,17 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
     )
 
     if (totalAmountHeader) {
-      // Recalculate total from service prices
       const servicePrice =
         parseFloat(editingTransaction[servicePriceHeader?.id] || 0) || 0
       const extraServicePrice =
         parseFloat(editingTransaction[extraServicePriceHeader?.id] || 0) || 0
       const newTotal = (servicePrice + extraServicePrice).toFixed(2)
 
-      // Update the total without discount
       const updatedTransaction = {
         ...editingTransaction,
         [totalAmountHeader.id]: newTotal,
       }
 
-      // Remove the discount info
       delete updatedTransaction._appliedDiscount
 
       setEditingTransaction(updatedTransaction)
@@ -169,16 +153,13 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
     }
   }
 
-  // Modify the renderFormField function to handle the multi-select dropdown
   const renderFormField = (header) => {
     const headerLabel = header.label.toLowerCase()
 
-    // For timestamp fields, render with DD/MM/YYYY format
     if (
       headerLabel.includes('timestamp') ||
       headerLabel.includes('time stamp')
     ) {
-      // Check if we have a pre-formatted display value
       const displayValue =
         editingTransaction[`${header.id}_display`] ||
         editingTransaction[header.id] ||
@@ -196,9 +177,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       )
     }
 
-    // Date fields (other than timestamp)
     if (header.type === 'date' || headerLabel.includes('date')) {
-      // For date inputs, use YYYY-MM-DD format
       let dateValue = editingTransaction[header.id] || ''
 
       return (
@@ -213,7 +192,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       )
     }
 
-    // Extra Service field - Render as multi-select dropdown with checkboxes
     if (
       headerLabel.includes('extra service') &&
       !headerLabel.includes('price')
@@ -287,7 +265,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
             </div>
           </div>
 
-          {/* Hidden input to store the actual value */}
           <input
             type="hidden"
             id={`edit-${header.id}`}
@@ -298,7 +275,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       )
     }
 
-    // Extra Service Price field - Make read-only since it's calculated
     if (
       headerLabel.includes('extra service') &&
       headerLabel.includes('price')
@@ -318,7 +294,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       )
     }
 
-    // Total Amount field - Make read-only since it's calculated
     if (headerLabel.includes('total') && headerLabel.includes('amount')) {
       return (
         <input
@@ -335,7 +310,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       )
     }
 
-    // Status field - Render as dropdown with Completed and Cancel options
     if (headerLabel === 'status' || headerLabel.includes('status')) {
       return (
         <select
@@ -352,7 +326,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       )
     }
 
-    // Amount/Price fields
     if (
       headerLabel.includes('amount') ||
       headerLabel.includes('price') ||
@@ -372,7 +345,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       )
     }
 
-    // Payment method field with common options
     if (headerLabel.includes('payment') || headerLabel.includes('method')) {
       return (
         <select
@@ -391,7 +363,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       )
     }
 
-    // Default text input for all other fields
     return (
       <input
         type="text"
@@ -404,28 +375,24 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
     )
   }
 
-  // Update the handleEditInputChange function to auto-calculate amounts when service price changes
   const handleEditInputChange = (e) => {
     const { name, value } = e.target
-    console.log(`Field changed: ${name} with value: ${value}`) // Debug log
+    console.log(`Field changed: ${name} with value: ${value}`)
 
-    // Create the updated transaction state
     const updatedTransaction = {
       ...editingTransaction,
       [name]: value,
     }
 
-    // Get the header information for the field that is being edited
     const currentHeader = tableHeaders.find((h) => h.id === name)
 
-    // Check if this is a service price field (not an extra service price)
     if (
       currentHeader &&
       currentHeader.label.toLowerCase().includes('service price') &&
       !currentHeader.label.toLowerCase().includes('extra')
     ) {
       console.log('Service price field detected, recalculating total')
-
+      
       // Find the total amount and extra service price fields
       const totalAmountHeader = tableHeaders.find(
         (h) =>
@@ -454,7 +421,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
     setEditingTransaction(updatedTransaction)
   }
 
-  // Update the handleEditSubmit function to handle the multi-select format
   const handleEditSubmit = async (e) => {
     e.preventDefault()
     setSubmitting(true)
@@ -468,25 +434,17 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
         )
       }
 
-      // Create a deep copy to avoid modifying the original
       const submissionData = JSON.parse(JSON.stringify(editingTransaction))
 
-      // Remove the temporary properties we added
       tableHeaders.forEach((header) => {
         delete submissionData[`${header.id}_original`]
         delete submissionData[`${header.id}_display`]
       })
 
-      // Remove the applied discount info before submission (as it's only for UI reference)
       delete submissionData._appliedDiscount
 
-      // Prepare row data for submission - preserve original date format
       const rowData = tableHeaders.map((header) => {
-        // Get the value from our editing transaction
         let value = submissionData[header.id] || ''
-
-        // For staff users, if the field wasn't shown in the form (and thus not updated),
-        // we need to keep the original value from the transaction before editing
         if (user?.role === 'staff') {
           const allowedFields = [
             'date',
@@ -505,9 +463,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
             headerLabel.includes(field)
           )
 
-          // If field is not allowed for staff, use the original value from before editing
           if (!isAllowed) {
-            // Find the original transaction in our transactions array
             const originalTransaction = transactions.find(
               (t) => t._id === editingTransaction._id
             )
@@ -520,13 +476,11 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
           }
         }
 
-        // Special handling for date fields - keep the DD/MM/YYYY format instead of converting to Date()
         if (
           (header.type === 'date' ||
             header.label.toLowerCase().includes('date')) &&
           value
         ) {
-          // If the value is in YYYY-MM-DD format (from date input fields)
           if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
             const [year, month, day] = value
               .split('-')
@@ -538,35 +492,28 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
           }
         }
 
-        // Special handling for timestamp column (column A)
-        if (
+        if (    
           header.label.toLowerCase().includes('timestamp') ||
           (header.id === 'col0' &&
             (header.label.toLowerCase().includes('date') ||
               header.type === 'date'))
         ) {
-          // Ensure timestamp is always in DD/MM/YYYY format
           if (value) {
-            // Handle various possible formats
-            // If it's already in DD/MM/YYYY format, leave it
             if (value.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
               // Already in the correct format
             }
-            // If it's in Date() format, convert it
             else if (value.startsWith('Date(') && value.endsWith(')')) {
               const match = /Date\((\d+),(\d+),(\d+)\)/.exec(value)
               if (match) {
                 const year = parseInt(match[1], 10)
-                const month = parseInt(match[2], 10) + 1 // Convert from 0-indexed to 1-indexed month
+                const month = parseInt(match[2], 10) + 1
                 const day = parseInt(match[3], 10)
 
-                // Format as DD/MM/YYYY for display
                 value = `${day.toString().padStart(2, '0')}/${month
                   .toString()
                   .padStart(2, '0')}/${year}`
               }
             }
-            // If it's in YYYY-MM-DD format from a date input
             else if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
               const [year, month, day] = value
                 .split('-')
@@ -597,10 +544,8 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
 
       console.log('Update submitted successfully')
 
-      // For UI display, ensure the dates look correct
       const uiTransaction = { ...editingTransaction }
 
-      // Make sure dates display correctly in the UI
       tableHeaders.forEach((header) => {
         if (
           header.type === 'date' ||
@@ -624,7 +569,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
         }
       })
 
-      // Update transactions in state
       setTransactions((prev) =>
         prev.map((transaction) =>
           transaction._id === editingTransaction._id
@@ -633,7 +577,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
         )
       )
 
-      // Update transaction in allTransactions
       setAllTransactions((prev) =>
         prev.map((transaction) =>
           transaction._id === editingTransaction._id
@@ -642,7 +585,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
         )
       )
 
-      // Recalculate stats if needed
       const amountField = tableHeaders.find(
         (h) =>
           h.label &&
@@ -673,7 +615,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
             const amount = parseFloat(row[amountField])
             totalAmount += amount
 
-            // Check for card payments
             if (paymentMethodField) {
               const paymentMethod =
                 row[paymentMethodField]?.toString().toLowerCase() || ''
@@ -700,7 +641,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       }
 
       setShowEditForm(false)
-      setSelectedExtraServices([]) // Reset selected services
+      setSelectedExtraServices([])
 
       setNotification({
         show: true,
@@ -726,13 +667,11 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
     }
   }
 
-  // Open history modal
   const handleHistoryClick = () => {
     setHistorySearchTerm('')
     setShowHistoryModal(true)
   }
 
-  // Function to filter history transactions
   const filteredHistoryTransactions = historySearchTerm
     ? allTransactions.filter((transaction) =>
         Object.values(transaction).some(
@@ -746,11 +685,9 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       )
     : allTransactions
 
-  // Helper function to format dates for display
   const formatDateForDisplay = (dateValue) => {
     if (!dateValue) return '—'
 
-    // If it's already in DD/MM/YYYY format, return as is
     if (
       typeof dateValue === 'string' &&
       dateValue.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)
@@ -763,15 +700,12 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       const match = /Date\((\d+),(\d+),(\d+)\)/.exec(dateValue)
       if (match) {
         const year = parseInt(match[1], 10)
-        const month = parseInt(match[2], 10) + 1 // Convert from 0-indexed to 1-indexed month
+        const month = parseInt(match[2], 10) + 1
         const day = parseInt(match[3], 10)
 
-        // Format as DD/MM/YYYY
         return `${day}/${month}/${year}`
       }
     }
-
-    // Try to parse as date object
     try {
       const date = new Date(dateValue)
       if (!isNaN(date.getTime())) {
@@ -785,7 +719,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
       console.log('Date parsing error:', e)
     }
 
-    // Return original if all else fails
     return dateValue
   }
 
@@ -793,7 +726,7 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
     <div className="space-y-6">
       {/* Header - Updated with search bar and style matching Inventory */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-        <h2 className="text-2xl font-bold text-gray-800">Daily Entry</h2>
+        <h2 className="text-2xl font-bold text-gray-800">Daily Transaction</h2>
         <div className="flex flex-col gap-3 mt-4 md:mt-0 sm:flex-row">
           <div className="relative">
             <Search
@@ -1115,8 +1048,6 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
     </div>
   )
 }
-
-// Revenue Chart Component
 
 
 export default DailyEntry

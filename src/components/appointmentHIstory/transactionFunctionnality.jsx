@@ -60,7 +60,6 @@ const TransactionFunctionality = ({
   const gstAmount = +(taxableAmount * (GST_PERCENT / 100)).toFixed(2);
   const totalDue = Math.max(0, taxableAmount + gstAmount);
 
-  // Validation
   const isFormValid = () => {
     if (!paymentMethod) return false;
     if (paymentMethod !== 'cash' && !transactionId.trim()) return false;
@@ -68,7 +67,6 @@ const TransactionFunctionality = ({
     return true;
   };
 
-  // Handlers
   const handleExtraServiceToggle = (extra) => {
     const isSelected = selectedExtras.some(
       (selected) => selected?.service_name === extra?.service_name

@@ -30,7 +30,6 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const { setStoreId } = useAppData();
   const [isForgetPasswrod, setIsForgetPasswrod] = useState(false);
-  console.log(isForgetPasswrod, 'done');
 
   const { createShopId, loading: shopLoading } = useCreateShopId();
 
