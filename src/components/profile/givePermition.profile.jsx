@@ -26,7 +26,7 @@ const PERMISSIONS = [
   { id: 'appointmenthistory', label: 'Appointment History' },
   { id: 'staff', label: 'Staff' },
   { id: 'inventory', label: 'Inventory' },
-  { id: 'dailyExpences', label: 'Daily Expenses' },
+  { id: 'dailyexpences', label: 'Daily Expenses' },
   { id: 'services', label: 'Services' },
   { id: 'paymentcommission', label: 'Payment Commission' },
   { id: 'customers', label: 'Customers' },
@@ -104,7 +104,22 @@ async function updateStaffPermissions(storeId, userId, permissionIds) {
     return [];
   }
 
-  const rows = permissionIds.map((pid) => ({
+  // Validate permission IDs against DB to avoid FK errors
+  const { data: permRows, error: permErr } = await supabase
+    .from('permissions')
+    .select('id');
+  if (permErr) {
+    console.error('Failed to fetch permissions list', permErr);
+    throw permErr;
+  }
+  const dbIds = new Set((permRows || []).map((r) => r.id));
+  const safeIds = (permissionIds || []).filter((id) => dbIds.has(id));
+
+  if (!safeIds.length) {
+    return [];
+  }
+
+  const rows = safeIds.map((pid) => ({
     user_id: userId,
     store_id: storeId,
     permission_id: pid,
@@ -228,13 +243,37 @@ const StaffPermissions = ({setStaffGivePermission}) => {
 
     setIsLoading(true);
     try {
-      // Build set from toggles
-      const updatedPermissions = Object.keys(pendingPermissions).filter(
-        (key) => pendingPermissions[key]
-      );
+      // Build set from toggles and normalize any legacy/alias keys
+      const validIds = new Set(PERMISSIONS.map((p) => p.id));
+      const aliasMap = {
+        dailyExpences: 'dailyexpences',
+      };
+      const updatedPermissions = Object.keys(pendingPermissions)
+        .filter((key) => pendingPermissions[key])
+        .map((key) => aliasMap[key] ?? key)
+        .filter((key) => validIds.has(key));
+
+      // Fetch actual permission IDs from DB to ensure FK validity
+      const { data: permRows, error: permErr } = await supabase
+        .from('permissions')
+        .select('id');
+      if (permErr) {
+        throw permErr;
+      }
+      const dbIds = new Set((permRows || []).map((r) => r.id));
+      const filteredForDb = updatedPermissions.filter((id) => dbIds.has(id));
+
+      // Notify if any selected permissions are not present in DB
+      const skipped = updatedPermissions.filter((id) => !dbIds.has(id));
+      if (skipped.length > 0) {
+        showNotification(
+          `Skipped unknown permissions (not in DB): ${skipped.join(', ')}`,
+          'error'
+        );
+      }
 
       // Persist to Supabase
-      await updateStaffPermissions(storeId, selectedStaff.id, updatedPermissions);
+      await updateStaffPermissions(storeId, selectedStaff.id, filteredForDb);
 
       // Refetch to ensure DB state is reflected
       const fresh = await fetchStaffWithPermissions(storeId);

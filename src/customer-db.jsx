@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import axios from 'axios';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
   Calendar,
@@ -14,22 +15,24 @@ import {
   Send,
   Users,
   X,
-  Mail,
-} from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { useGetCustomerDataFetch } from './hook/dbOperation'
-import { useSendEmail } from './hook/sendEmail'
+  Upload,
+  Image as ImageIcon,
+  Video as VideoIcon,
+  File as FileIcon,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useGetCustomerDataFetch } from './hook/dbOperation';
 
 // Toast Notification Component
 const Toast = ({ message, type, isVisible, onClose }) => {
   useEffect(() => {
     if (isVisible) {
       const timer = setTimeout(() => {
-        onClose()
-      }, 3000)
-      return () => clearTimeout(timer)
+        onClose();
+      }, 3000);
+      return () => clearTimeout(timer);
     }
-  }, [isVisible, onClose])
+  }, [isVisible, onClose]);
 
   return (
     <AnimatePresence>
@@ -38,149 +41,317 @@ const Toast = ({ message, type, isVisible, onClose }) => {
           initial={{ opacity: 0, y: -50, x: '-50%' }}
           animate={{ opacity: 1, y: 0, x: '-50%' }}
           exit={{ opacity: 0, y: -50, x: '-50%' }}
-          className="fixed top-4 left-1/2 z-50 transform"
+          className="fixed z-50 transform top-4 left-1/2"
         >
           <div
             className={`flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg ${
-              type === 'success'
-                ? 'bg-green-500 text-white'
-                : 'bg-red-500 text-white'
+              type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
             }`}
           >
-            {type === 'success' ? (
-              <CheckCircle size={20} />
-            ) : (
-              <AlertCircle size={20} />
-            )}
+            {type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
             <span className="font-medium">{message}</span>
           </div>
         </motion.div>
       )}
     </AnimatePresence>
-  )
-}
+  );
+};
 
-// Message Modal Component
+const MessageModal = ({ isOpen, onClose, customer, onSendWhatsApp }) => {
+  const [message, setMessage] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [selectedTemplateName, setSelectedTemplateName] = useState('');
+  const [selectedTemplateLanguage, setSelectedTemplateLanguage] = useState('');
+  const [selectedTemplateObj, setSelectedTemplateObj] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const maxLength = 300;
+  const [tpls, setTpls] = useState([]);
+  const [tplLoading, setTplLoading] = useState(false);
+  const [tplError, setTplError] = useState('');
+  const [tplQuery, setTplQuery] = useState('');
 
-const MessageModal = ({
-  isOpen,
-  onClose,
-  customer,
-  onSendEmail,
-  onSendWhatsApp,
-}) => {
-  const [activeTab, setActiveTab] = useState('email')
-  const [message, setMessage] = useState('')
-  const [selectedTemplate, setSelectedTemplate] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const maxLength = 300
+  // Media upload states
+  const [mediaFile, setMediaFile] = useState(null);
+  const [mediaPreview, setMediaPreview] = useState(null);
+  const [mediaType, setMediaType] = useState(null); // 'IMAGE', 'VIDEO', 'DOCUMENT'
+  const [uploadError, setUploadError] = useState('');
 
-  // Email Templates
-  const emailTemplates = [
-    {
-      id: 'appointment',
-      name: 'Appointment Reminder',
-      content:
-        'Hi {name}, this is a reminder for your appointment tomorrow at {time}. Please confirm your attendance.',
-    },
-    {
-      id: 'promo',
-      name: 'Promo Offer',
-      content:
-        'Hi {name}! 🎉 Special offer just for you - 20% off your next purchase. Use code SAVE20. Valid until {date}.',
-    },
-    {
-      id: 'payment',
-      name: 'Payment Reminder',
-      content:
-        'Hi {name}, your payment of ${amount} is due on {date}. Please make the payment to avoid late fees.',
-    },
-    {
-      id: 'welcome',
-      name: 'Welcome Message',
-      content:
-        "Welcome {name}! Thank you for choosing our services. We're excited to work with you.",
-    },
-  ]
+  // WhatsApp supported formats
+  const SUPPORTED_FORMATS = {
+    IMAGE: ['.jpg', '.jpeg', '.png'],
+    VIDEO: ['.mp4', '.3gp'],
+    DOCUMENT: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'],
+  };
 
-  // WhatsApp Templates
-  const whatsappTemplates = [
-    {
-      id: 'welcome',
-      name: 'Welcome Message',
-      content:
-        "Hi {name}! 👋 Welcome to our service. We're here to help you every step of the way. Feel free to reach out anytime!",
-    },
-    {
-      id: 'followup',
-      name: 'Follow-Up Reminder',
-      content:
-        "Hi {name}, just checking in! How was your experience with us? We'd love to hear your feedback. 😊",
-    },
-    {
-      id: 'order',
-      name: 'Order Update',
-      content:
-        'Hi {name}! 📦 Your order #{orderNumber} has been shipped and will arrive by {date}. Track your package here: {link}',
-    },
-    {
-      id: 'support',
-      name: 'Support Message',
-      content:
-        'Hi {name}, our support team is here to help! Please let us know how we can assist you today. 💬',
-    },
-  ]
+  const MAX_FILE_SIZES = {
+    IMAGE: 5 * 1024 * 1024, // 5MB
+    VIDEO: 16 * 1024 * 1024, // 16MB
+    DOCUMENT: 100 * 1024 * 1024, // 100MB
+  };
 
-  const getCurrentTemplates = () => {
-    return activeTab === 'email' ? emailTemplates : whatsappTemplates
-  }
-
-  const handleTemplateSelect = (templateContent) => {
-    setSelectedTemplate(templateContent)
-    // Replace placeholders with customer data
-    let processedMessage = templateContent
-    if (customer) {
-      processedMessage = processedMessage
-        .replace(/{name}/g, customer.name)
-        .replace(/{email}/g, customer.email)
-        .replace(/{time}/g, '2:00 PM')
-        .replace(/{date}/g, new Date().toLocaleDateString())
-        .replace(/{amount}/g, '100')
-        .replace(/{orderNumber}/g, '12345')
-        .replace(/{link}/g, 'https://track.example.com')
-    }
-    setMessage(processedMessage)
-  }
-  const handleSend = async () => {
-    if (!message.trim()) return
-    // Call appropriate handler based on active tab
-    if (activeTab === 'email') {
+  useEffect(() => {
+    if (!isOpen) return;
+    const controller = new AbortController();
+    (async () => {
+      setTplLoading(true);
+      setTplError('');
       try {
-        setIsLoading(true)
-        const res = await onSendEmail?.(message, customer?.email)
-        if (res?.success) {
-          handleClose()
+        const base = (import.meta?.env?.VITE_BACKEND_API || 'http://localhost:3003/api').replace(
+          /\/$/,
+          ''
+        );
+        const url = `${base}/messages/whatsapp/templates`;
+        const res = await axios.get(url, { signal: controller.signal });
+
+        const list = res?.data?.data || [];
+        const filteredData = list.data?.filter(
+          (item) => item?.name !== 'hello_world' && item?.name !== 'transaction_bill'
+        );
+
+        console.log('Templates loaded:', filteredData.length);
+        setTpls(filteredData);
+      } catch (e) {
+        if (e.name !== 'AbortError') {
+          console.error('Failed to load templates:', e);
+          const status = e?.response?.status;
+          const msg = e?.message || 'Unknown error';
+          setTplError(`Failed to load templates${status ? ` (${status})` : ''}: ${msg}`);
         }
       } finally {
-        setIsLoading(false)
+        setTplLoading(false);
       }
-    } else {
-      onSendWhatsApp?.(message, customer?.phone)
+    })();
+    return () => controller.abort();
+  }, [isOpen]);
+
+  const extractBodyText = (tpl) => {
+    const body = (tpl?.components || []).find((c) => c.type === 'BODY');
+    return body?.text || '';
+  };
+
+  const countPlaceholders = (text) => {
+    if (!text) return 0;
+    const matches = String(text).match(/\{\{\d+\}\}/g);
+    return matches ? matches.length : 0;
+  };
+
+  const getHeaderFormat = (tpl) => {
+    const header = (tpl?.components || []).find((c) => c.type === 'HEADER');
+    return header?.format?.toUpperCase() || null;
+  };
+
+  const defaultParamValues = (n) => {
+    const now = new Date();
+    const date = now.toLocaleDateString();
+    const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const candidates = [customer?.name || '', date, time, '100', '12345', 'https://example.com'];
+    const out = [];
+    for (let i = 0; i < n; i++) out.push(candidates[i] ?? '');
+    return out;
+  };
+
+  const buildComponentsForTemplate = (tpl) => {
+    if (!tpl) return undefined;
+    const comps = [];
+
+    // HEADER
+    const headerAny = (tpl.components || []).find((c) => c.type === 'HEADER');
+    if (headerAny) {
+      const fmt = (headerAny.format || '').toUpperCase();
+      if (fmt === 'TEXT' && typeof headerAny.text === 'string') {
+        const n = countPlaceholders(headerAny.text);
+        if (n > 0) {
+          const vals = defaultParamValues(n);
+          comps.push({ type: 'header', parameters: vals.map((v) => ({ type: 'text', text: v })) });
+        }
+      } else if (fmt === 'IMAGE' || fmt === 'VIDEO' || fmt === 'DOCUMENT') {
+        if (mediaFile) {
+          const mediaKey = fmt === 'IMAGE' ? 'image' : fmt === 'VIDEO' ? 'video' : 'document';
+          const mediaParam = { type: mediaKey };
+          mediaParam[mediaKey] = {
+            filename: mediaFile.name,
+            link: mediaPreview || '',
+          };
+          comps.push({ type: 'header', parameters: [mediaParam] });
+        } else {
+          const exampleHandles = headerAny.example?.header_handle;
+          const exampleUrls = headerAny.example?.header_url;
+          let exampleMedia = Array.isArray(exampleHandles)
+            ? exampleHandles[0]
+            : typeof exampleHandles === 'string'
+              ? exampleHandles
+              : undefined;
+          if (!exampleMedia) {
+            exampleMedia = Array.isArray(exampleUrls)
+              ? exampleUrls[0]
+              : typeof exampleUrls === 'string'
+                ? exampleUrls
+                : undefined;
+          }
+          const isBadCdn =
+            typeof exampleMedia === 'string' && /scontent\.whatsapp\.net/.test(exampleMedia);
+          const isHttp = typeof exampleMedia === 'string' && /^https?:\/\//.test(exampleMedia);
+          if (typeof exampleMedia === 'string' && !isBadCdn) {
+            const mediaKey = fmt === 'IMAGE' ? 'image' : fmt === 'VIDEO' ? 'video' : 'document';
+            const mediaParam = { type: mediaKey };
+            mediaParam[mediaKey] = {};
+            if (isHttp) {
+              mediaParam[mediaKey].exampleLink = exampleMedia;
+            } else {
+              mediaParam[mediaKey].exampleId = exampleMedia;
+            }
+            comps.push({ type: 'header', parameters: [mediaParam] });
+          }
+        }
+      }
     }
-  }
+
+    // BODY
+    const body = (tpl.components || []).find((c) => c.type === 'BODY');
+    if (body && typeof body.text === 'string') {
+      const n = countPlaceholders(body.text);
+      if (n > 0) {
+        const vals = defaultParamValues(n);
+        comps.push({ type: 'body', parameters: vals.map((v) => ({ type: 'text', text: v })) });
+      }
+    }
+
+    // BUTTON URL params
+    const buttons = (tpl.components || []).find((c) => c.type === 'BUTTONS');
+    if (buttons && Array.isArray(buttons.buttons)) {
+      buttons.buttons.forEach((btn, idx) => {
+        if (
+          (btn.type || '').toUpperCase() === 'URL' &&
+          typeof btn.url === 'string' &&
+          /\{\{\d+\}\}/.test(btn.url)
+        ) {
+          comps.push({
+            type: 'button',
+            sub_type: 'url',
+            index: String(idx),
+            parameters: [{ type: 'text', text: defaultParamValues(1)[0] }],
+          });
+        }
+      });
+    }
+
+    return comps.length ? comps : undefined;
+  };
+
+  const handleTemplateSelect = (tpl) => {
+    if (!tpl) return;
+    // reset media state when switching templates
+    clearMedia();
+
+    setSelectedTemplateObj(tpl);
+    setSelectedTemplateName(tpl.name || '');
+    setSelectedTemplateLanguage(tpl.language || '');
+
+    const headerFormat = getHeaderFormat(tpl);
+    if (headerFormat && ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(headerFormat)) {
+      setMediaType(headerFormat);
+    } else {
+      setMediaType(null);
+    }
+
+    const bodyText = extractBodyText(tpl);
+    setSelectedTemplate(bodyText);
+
+    // preview by filling placeholders
+    let preview = bodyText;
+    const n = countPlaceholders(bodyText);
+    const vals = defaultParamValues(n);
+    vals.forEach((v, i) => {
+      const re = new RegExp(`\\{\\{${i + 1}\\}\\}`, 'g');
+      preview = preview.replace(re, v);
+    });
+    setMessage(preview);
+  };
+
+  const handleSend = async () => {
+    if (!message.trim()) return;
+    // Validate media if required by template
+    if (mediaType && !mediaFile) {
+      setUploadError(`Please upload a ${mediaType.toLowerCase()} for this template`);
+      return;
+    }
+    const comps = buildComponentsForTemplate(selectedTemplateObj);
+    console.log('Sending with components:', JSON.stringify(comps, null, 2));
+    onSendWhatsApp?.(
+      message,
+      customer?.phone,
+      customer?.name,
+      selectedTemplateName,
+      selectedTemplateLanguage,
+      comps
+    );
+  };
 
   const handleClose = () => {
-    setMessage('')
-    setSelectedTemplate('')
-    setActiveTab('email')
-    onClose()
-  }
+    setMessage('');
+    setSelectedTemplate('');
+    setSelectedTemplateObj(null);
+    setSelectedTemplateName('');
+    setSelectedTemplateLanguage('');
+    // Clear media state
+    clearMedia();
+    setMediaType(null);
+    onClose();
+  };
 
-  const handleTabChange = (tab) => {
-    setActiveTab(tab)
-    setMessage('')
-    setSelectedTemplate('')
-  }
+  // File handlers
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadError('');
+
+    // Validate file type
+    const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+    const allowedFormats = SUPPORTED_FORMATS[mediaType] || [];
+    if (!allowedFormats.includes(fileExt)) {
+      setUploadError(`Unsupported format. Allowed: ${allowedFormats.join(', ')}`);
+      return;
+    }
+
+    // Validate file size
+    const maxSize = MAX_FILE_SIZES[mediaType];
+    if (file.size > maxSize) {
+      setUploadError(`File too large. Max size: ${Math.round(maxSize / 1024 / 1024)}MB`);
+      return;
+    }
+
+    setMediaFile(file);
+
+    // Create preview as Data URL for upload to backend
+    const reader = new FileReader();
+    reader.onload = (ev) => setMediaPreview(ev.target?.result);
+    reader.readAsDataURL(file);
+  };
+
+  const clearMedia = () => {
+    setMediaFile(null);
+    setMediaPreview(null);
+    setUploadError('');
+  };
+
+  const getMediaIcon = () => {
+    switch (mediaType) {
+      case 'IMAGE':
+        return <ImageIcon size={20} />;
+      case 'VIDEO':
+        return <VideoIcon size={20} />;
+      case 'DOCUMENT':
+        return <FileIcon size={20} />;
+      default:
+        return <Upload size={20} />;
+    }
+  };
+
+  const getAcceptFormats = () => {
+    if (!mediaType) return '';
+    return SUPPORTED_FORMATS[mediaType].join(',');
+  };
 
   return (
     <AnimatePresence>
@@ -189,21 +360,19 @@ const MessageModal = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
           onClick={handleClose}
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl"
+            className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Send Message
-              </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Send WhatsApp Message</h3>
               <button
                 onClick={handleClose}
                 className="text-gray-400 transition-colors hover:text-gray-600"
@@ -212,94 +381,205 @@ const MessageModal = ({
               </button>
             </div>
 
+            {/* Media Upload Section */}
+            {mediaType && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-4"
+              >
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Upload {mediaType} *
+                </label>
+
+                {!mediaFile ? (
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-purple-300 border-dashed rounded-lg cursor-pointer bg-purple-50 hover:bg-purple-100">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      {getMediaIcon()}
+                      <p className="mb-2 text-sm text-gray-600">
+                        <span className="font-semibold">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {SUPPORTED_FORMATS[mediaType].join(', ')} (Max{' '}
+                        {Math.round(MAX_FILE_SIZES[mediaType] / 1024 / 1024)}MB)
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept={getAcceptFormats()}
+                      onChange={handleFileSelect}
+                    />
+                  </label>
+                ) : (
+                  <div className="p-4 border-2 border-green-300 rounded-lg bg-green-50">
+                    {mediaType === 'IMAGE' && mediaPreview && (
+                      <img
+                        src={mediaPreview}
+                        alt="Preview"
+                        className="object-contain w-full h-32 mb-2 rounded"
+                      />
+                    )}
+                    {mediaType === 'VIDEO' && mediaPreview && (
+                      <video src={mediaPreview} controls className="w-full h-32 mb-2 rounded" />
+                    )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {getMediaIcon()}
+                        <span className="text-sm font-medium text-gray-700">{mediaFile.name}</span>
+                      </div>
+                      <button
+                        onClick={clearMedia}
+                        className="p-1 text-red-600 transition-colors rounded hover:bg-red-100"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {(mediaFile.size / 1024).toFixed(2)} KB
+                    </p>
+                  </div>
+                )}
+
+                {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
+              </motion.div>
+            )}
+
             {/* Customer Info */}
             {customer && (
-              <div className="mb-4 rounded-lg bg-gray-50 p-3">
+              <div className="p-3 mb-4 rounded-lg bg-gray-50">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
+                  <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-full">
                     <span className="font-semibold text-purple-600">
                       {customer.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">{customer.name}</p>
-                    <p className="text-sm text-gray-500">{customer.email}</p>
+                    <p className="text-sm text-gray-600">{customer.phone}</p>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Tab Navigation */}
+            {/* Template Table */}
             <div className="mb-4">
-              <div className="flex rounded-lg bg-gray-100 p-1">
-                <button
-                  onClick={() => handleTabChange('email')}
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all ${
-                    activeTab === 'email'
-                      ? 'bg-white text-purple-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <Mail size={16} />
-                  Email
-                </button>
-                <button
-                  onClick={() => handleTabChange('whatsapp')}
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all ${
-                    activeTab === 'whatsapp'
-                      ? 'bg-white text-green-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <MessageSquare size={16} />
-                  WhatsApp
-                </button>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">Select Template</label>
+                <input
+                  type="text"
+                  value={tplQuery}
+                  onChange={(e) => setTplQuery(e.target.value)}
+                  placeholder="Search templates..."
+                  className="w-56 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-transparent focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              {tplError && (
+                <div className="p-2 mb-2 text-sm text-red-700 rounded bg-red-50">{tplError}</div>
+              )}
+
+              <div className="overflow-hidden border border-gray-200 rounded-lg">
+                <div className="overflow-y-auto max-h-64">
+                  <table className="min-w-full text-sm">
+                    <thead className="sticky top-0 bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-gray-700">Name</th>
+                        <th className="px-3 py-2 text-left text-gray-700">Language</th>
+                        <th className="px-3 py-2 text-left text-gray-700">Status</th>
+                        <th className="px-3 py-2 text-left text-gray-700">Category</th>
+                        <th className="px-3 py-2 text-left text-gray-700">Body</th>
+                        <th className="px-3 py-2 text-left text-gray-700">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tplLoading ? (
+                        <tr>
+                          <td className="px-3 py-3 text-gray-500" colSpan={6}>
+                            Loading templates...
+                          </td>
+                        </tr>
+                      ) : (
+                        (tpls || [])
+                          .filter((t) => {
+                            const q = tplQuery.toLowerCase();
+                            return (
+                              t.name?.toLowerCase().includes(q) ||
+                              t.category?.toLowerCase().includes(q) ||
+                              t.status?.toLowerCase().includes(q) ||
+                              extractBodyText(t)?.toLowerCase().includes(q)
+                            );
+                          })
+                          .map((t) => (
+                            <tr key={t.id} className="border-t hover:bg-gray-50">
+                              <td className="px-3 py-2 font-medium text-gray-900">{t.name}</td>
+                              <td className="px-3 py-2 text-gray-700">{t.language}</td>
+                              <td className="px-3 py-2">
+                                <span
+                                  className={`rounded px-2 py-0.5 text-xs ${
+                                    (t.status || '').toUpperCase() === 'APPROVED'
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-gray-100 text-gray-700'
+                                  }`}
+                                >
+                                  {t.status}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 text-gray-700">{t.category}</td>
+                              <td
+                                className="max-w-[280px] truncate px-3 py-2 text-gray-600"
+                                title={extractBodyText(t)}
+                              >
+                                {extractBodyText(t)}
+                              </td>
+                              <td className="px-3 py-2">
+                                <button
+                                  onClick={() => handleTemplateSelect(t)}
+                                  className="px-3 py-1 text-xs font-medium text-white transition-colors bg-purple-600 rounded hover:bg-purple-700"
+                                >
+                                  Use
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                      )}
+                      {!tplLoading && (tpls || []).length === 0 && (
+                        <tr>
+                          <td className="px-3 py-3 text-gray-500" colSpan={6}>
+                            No templates found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 
-            {/* Template Selector */}
+            {/* Message Preview */}
             <div className="mb-4">
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Choose Template
-              </label>
-              <select
-                value={selectedTemplate}
-                onChange={(e) => handleTemplateSelect(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">Select a template...</option>
-                {getCurrentTemplates().map((template) => (
-                  <option key={template.id} value={template.content}>
-                    {template.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Message Input */}
-            <div className="mb-4">
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Message
+              <label className="block mb-2 text-sm font-medium text-gray-700">
+                Message Preview
               </label>
               <motion.textarea
-                key={activeTab} // Force re-render on tab change
+                key="whatsapp"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
                 value={message}
                 onChange={(e) => setMessage(e.target.value.slice(0, maxLength))}
-                placeholder={`Type your ${activeTab === 'email' ? 'Email' : 'WhatsApp'} message here...`}
-                className="h-32 w-full resize-none rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-purple-500"
+                placeholder="Select a template to preview the message..."
+                className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg resize-none focus:border-transparent focus:ring-2 focus:ring-purple-500"
+                disabled={!selectedTemplateObj}
               />
-              <div className="mt-2 flex items-center justify-between">
+              <div className="flex items-center justify-between mt-2">
                 <span className="text-xs text-gray-500">
                   {message.length}/{maxLength} characters
                 </span>
                 <span
                   className={`text-xs ${
-                    message.length > maxLength * 0.9
-                      ? 'text-red-500'
-                      : 'text-gray-400'
+                    message.length > maxLength * 0.9 ? 'text-red-500' : 'text-gray-400'
                   }`}
                 >
                   {maxLength - message.length} remaining
@@ -315,34 +595,16 @@ const MessageModal = ({
                 exit={{ opacity: 0, height: 0 }}
                 className="mb-4"
               >
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Preview
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  WhatsApp Preview
                 </label>
-                <div
-                  className={`rounded-lg border-2 border-dashed p-3 ${
-                    activeTab === 'email'
-                      ? 'border-purple-200 bg-purple-50'
-                      : 'border-green-200 bg-green-50'
-                  }`}
-                >
+                <div className="p-3 border-2 border-green-200 border-dashed rounded-lg bg-green-50">
                   <div className="flex items-start gap-2">
-                    <div
-                      className={`flex h-6 w-6 items-center justify-center rounded-full ${
-                        activeTab === 'email'
-                          ? 'bg-purple-100 text-purple-600'
-                          : 'bg-green-100 text-green-600'
-                      }`}
-                    >
-                      {activeTab === 'email' ? (
-                        <Mail size={12} />
-                      ) : (
-                        <MessageSquare size={12} />
-                      )}
+                    <div className="flex items-center justify-center w-6 h-6 text-green-600 bg-green-100 rounded-full">
+                      <MessageSquare size={12} />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm whitespace-pre-wrap text-gray-700">
-                        {message}
-                      </p>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{message}</p>
                     </div>
                   </div>
                 </div>
@@ -353,90 +615,80 @@ const MessageModal = ({
             <div className="flex gap-3">
               <button
                 onClick={handleClose}
-                className="flex-1 rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                className="flex-1 px-4 py-2 font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSend}
-                disabled={!message.trim() || isLoading}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 font-medium text-white transition-colors disabled:bg-gray-300 ${
-                  activeTab === 'email'
-                    ? 'bg-purple-600 hover:bg-purple-700'
-                    : 'bg-green-600 hover:bg-green-700'
-                }`}
+                disabled={
+                  !message.trim() || !selectedTemplateObj || isLoading || (mediaType && !mediaFile)
+                }
+                className="flex items-center justify-center flex-1 gap-2 px-4 py-2 font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 {isLoading ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <div className="w-4 h-4 border-2 border-white rounded-full animate-spin border-t-transparent" />
                 ) : (
                   <Send size={16} />
                 )}
-                Send {activeTab === 'email' ? 'Email' : 'WhatsApp'}
+                Send WhatsApp
               </button>
             </div>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
-  )
-}
+  );
+};
 
-// Table Component
+// Table Skeleton Component
 const TableSkeleton = () => {
   return (
     <div className="space-y-4">
       {[...Array(10)].map((_, i) => (
-        <div
-          key={i}
-          className="flex animate-pulse items-center gap-4 rounded-lg bg-white p-4"
-        >
-          <div className="h-10 w-10 rounded-full bg-gray-300"></div>
+        <div key={i} className="flex items-center gap-4 p-4 bg-white rounded-lg animate-pulse">
+          <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
           <div className="flex-1 space-y-2">
-            <div className="h-4 w-1/4 rounded bg-gray-300"></div>
-            <div className="h-3 w-1/6 rounded bg-gray-300"></div>
+            <div className="w-1/4 h-4 bg-gray-300 rounded"></div>
+            <div className="w-1/6 h-3 bg-gray-300 rounded"></div>
           </div>
-          <div className="hidden h-4 w-1/6 rounded bg-gray-300 md:block"></div>
-          <div className="hidden h-4 w-1/8 rounded bg-gray-300 lg:block"></div>
-          <div className="hidden h-4 w-1/8 rounded bg-gray-300 lg:block"></div>
-          <div className="hidden h-4 w-1/8 rounded bg-gray-300 lg:block"></div>
+          <div className="hidden w-1/6 h-4 bg-gray-300 rounded md:block"></div>
+          <div className="hidden h-4 bg-gray-300 rounded w-1/8 lg:block"></div>
+          <div className="hidden h-4 bg-gray-300 rounded w-1/8 lg:block"></div>
+          <div className="hidden h-4 bg-gray-300 rounded w-1/8 lg:block"></div>
           <div className="flex gap-2">
-            <div className="h-8 w-8 rounded bg-gray-300"></div>
-            <div className="h-8 w-8 rounded bg-gray-300"></div>
+            <div className="w-8 h-8 bg-gray-300 rounded"></div>
+            <div className="w-8 h-8 bg-gray-300 rounded"></div>
           </div>
         </div>
       ))}
     </div>
-  )
-}
+  );
+};
 
-// Main Customer Management Component
 const CustomerManagement = () => {
-  const [customers, setCustomers] = useState([])
-  const [filteredCustomers, setFilteredCustomers] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [selectedCustomer, setSelectedCustomer] = useState(null)
-  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false)
+  const [customers, setCustomers] = useState([]);
+  const [filteredCustomers, setFilteredCustomers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
   const [toast, setToast] = useState({
     message: '',
     type: 'success',
     isVisible: false,
-  })
+  });
 
-  const { loading, error, data } = useGetCustomerDataFetch()
-
-  const sendEmail = useSendEmail()
-
-  const itemsPerPage = 10
-
-  // Map DB rows to UI and handle loading state from hook
-  useEffect(() => {
-    setIsLoading(loading)
-  }, [loading])
+  const { loading, error, data } = useGetCustomerDataFetch();
+  const itemsPerPage = 10;
 
   useEffect(() => {
-    if (!data) return
+    setIsLoading(loading);
+  }, [loading]);
+
+  useEffect(() => {
+    if (!data) return;
     const mapped = (data || []).map((row) => ({
       id: row.id,
       name: row.customer_name || 'Unknown',
@@ -445,136 +697,133 @@ const CustomerManagement = () => {
       lastVisit: row.timestamp || row.created_at || null,
       totalVisits: row.total_visits ?? null,
       totalSpent: row.total_spent ?? null,
-    }))
+    }));
 
-    setCustomers(mapped)
-    setFilteredCustomers(mapped)
-  }, [data])
+    setCustomers(mapped);
+    setFilteredCustomers(mapped);
+  }, [data]);
 
-  // Search functionality
   useEffect(() => {
     const filtered = customers.filter(
       (customer) =>
         customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.phone.includes(searchTerm) ||
-        customer.email.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    setFilteredCustomers(filtered)
-    setCurrentPage(1)
-  }, [searchTerm, customers])
+        customer.phone.includes(searchTerm)
+    );
+    setFilteredCustomers(filtered);
+    setCurrentPage(1);
+  }, [searchTerm, customers]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentCustomers = filteredCustomers.slice(startIndex, endIndex)
-
-  const handleSendMessage = (message) => {
-    setToast({
-      message: `Message sent to ${selectedCustomer?.name} successfully!`,
-      type: 'success',
-      isVisible: true,
-    })
-  }
+  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentCustomers = filteredCustomers.slice(startIndex, endIndex);
 
   const handleViewProfile = (customer) => {
-    // This would typically navigate to a detailed customer profile page
     setToast({
       message: `Opening profile for ${customer.name}`,
       type: 'success',
       isVisible: true,
-    })
-  }
+    });
+  };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    })
-  }
+    });
+  };
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(amount)
-  }
+    }).format(amount);
+  };
 
-  const handleSendEmail = async (message, emailAddress) => {
-    const res = await sendEmail(message, emailAddress)
-    // Fallback local toast in case global toasts are not visible
-    // console.log(res, "res")
-    setToast({
-      message:
-        res?.message || (res?.success ? 'Email sent' : 'Failed to send email'),
-      type: res?.success ? 'success' : 'error',
-      isVisible: true,
-    })
-    return res
-  }
+  const handleSendWhatsApp = async (
+    message,
+    phoneNumber,
+    name,
+    templateName,
+    templateLanguage,
+    components
+  ) => {
+    const payload = { message, phoneNumber, name, templateName, templateLanguage, components };
 
-  const handleSendWhatsApp = (message, phoneNumber) => {
-    // console.log(message)
-    // console.log(customer, 'customer')
-    // sendWhatsApp(message, phoneNumber)
-  }
+    
+
+  
+    try {
+      const { data, status } = await axios.post(
+        `${import.meta.env.VITE_BACKEND_API}/messages/whatsapp/sendMessage`,
+        payload
+      );
+      
+      if (status === 200) {
+        setToast({
+          message: 'WhatsApp message sent successfully!',
+          type: 'success',
+          isVisible: true,
+        });
+        setIsMessageModalOpen(false);
+      }
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || 'Request failed';
+      const err = e?.response?.data?.error;
+      console.error('Send error:', err || msg);
+      setToast({ message: `Failed: ${msg}`, type: 'error', isVisible: true });
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen p-4 bg-gray-50 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="mb-8"
         >
-          <h1 className="mb-2 text-3xl font-bold text-gray-900">
-            Customer Management
-          </h1>
-          <p className="text-gray-600">
-            Manage your salon customers and their information
-          </p>
+          <h1 className="mb-2 text-3xl font-bold text-gray-900">Customer Management</h1>
+          <p className="text-gray-600">Manage your salon customers and their information</p>
         </motion.div>
 
-        {/* Search and Filters */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="mb-6 rounded-xl bg-white p-6 shadow-lg"
+          className="p-6 mb-6 bg-white shadow-lg rounded-xl"
         >
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="relative flex-1">
               <Search
-                className="absolute top-1/2 left-3 -translate-y-1/2 transform text-gray-400"
+                className="absolute text-gray-400 transform -translate-y-1/2 top-1/2 left-3"
                 size={20}
               />
               <input
                 type="text"
-                placeholder="Search by name, phone, or email..."
+                placeholder="Search by name or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 focus:border-transparent focus:ring-2 focus:ring-purple-500"
+                className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:border-transparent focus:ring-2 focus:ring-purple-500"
               />
             </div>
-            <button className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-200">
+            <button className="flex items-center gap-2 px-4 py-2 font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200">
               <Filter size={16} />
               Filters
             </button>
           </div>
         </motion.div>
 
-        {/* Customer Table */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="overflow-hidden rounded-xl bg-white shadow-lg"
+          className="max-h-[60vh] overflow-y-auto rounded-xl bg-white shadow-lg"
         >
           {error && (
-            <div className="mx-6 mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+            <div className="p-3 mx-6 mt-4 text-sm text-red-700 rounded-md bg-red-50">
               Failed to load customers: {String(error)}
             </div>
           )}
@@ -584,27 +833,26 @@ const CustomerManagement = () => {
             </div>
           ) : (
             <>
-              {/* Desktop Table */}
               <div className="hidden overflow-x-auto lg:block">
                 <table className="w-full">
                   <thead className="border-b border-gray-200 bg-gray-50">
                     <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                      <th className="px-6 py-4 text-sm font-semibold text-left text-gray-900">
                         Customer
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                      <th className="px-6 py-4 text-sm font-semibold text-left text-gray-900">
                         Contact
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                      <th className="px-6 py-4 text-sm font-semibold text-left text-gray-900">
                         Last Visit
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                      <th className="px-6 py-4 text-sm font-semibold text-left text-gray-900">
                         Visits
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                      <th className="px-6 py-4 text-sm font-semibold text-left text-gray-900">
                         Total Spent
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                      <th className="px-6 py-4 text-sm font-semibold text-left text-gray-900">
                         Actions
                       </th>
                     </tr>
@@ -616,19 +864,17 @@ const CustomerManagement = () => {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="border-b border-gray-100 transition-colors hover:bg-gray-50"
+                        className="transition-colors border-b border-gray-100 hover:bg-gray-50"
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
+                            <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-full">
                               <span className="font-semibold text-purple-600">
                                 {customer.name.charAt(0).toUpperCase()}
                               </span>
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900">
-                                {customer.name}
-                              </p>
+                              <p className="font-medium text-gray-900">{customer.name}</p>
                             </div>
                           </div>
                         </td>
@@ -643,9 +889,7 @@ const CustomerManagement = () => {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <Calendar size={14} />
-                            {customer.lastVisit
-                              ? formatDate(customer.lastVisit)
-                              : '-'}
+                            {customer.lastVisit ? formatDate(customer.lastVisit) : '-'}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -671,19 +915,12 @@ const CustomerManagement = () => {
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
-                              onClick={() => handleViewProfile(customer)}
-                              className="rounded-lg p-2 text-blue-600 transition-colors hover:bg-blue-50"
-                              title="View Profile"
-                            ></motion.button>
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
                               onClick={() => {
-                                setSelectedCustomer(customer)
-                                setIsMessageModalOpen(true)
+                                setSelectedCustomer(customer);
+                                setIsMessageModalOpen(true);
                               }}
-                              className="rounded-lg p-2 text-green-600 transition-colors hover:cursor-pointer hover:bg-green-50"
-                              title="Send Message"
+                              className="p-2 text-green-600 transition-colors rounded-lg hover:cursor-pointer hover:bg-green-50"
+                              title="Send WhatsApp Message"
                             >
                               <MessageCircle size={16} />
                             </motion.button>
@@ -695,47 +932,36 @@ const CustomerManagement = () => {
                 </table>
               </div>
 
-              {/* Mobile Cards */}
-              <div className="space-y-4 p-4 lg:hidden">
+              <div className="p-4 space-y-4 lg:hidden">
                 {currentCustomers.map((customer, index) => (
                   <motion.div
                     key={customer.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="rounded-lg bg-gray-50 p-4"
+                    className="p-4 rounded-lg bg-gray-50"
                   >
-                    <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
+                        <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full">
                           <span className="text-lg font-semibold text-purple-600">
                             {customer.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900">
-                            {customer.name}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            {customer.phone}
-                          </p>
+                          <h3 className="font-semibold text-gray-900">{customer.name}</h3>
+                          <p className="text-sm text-gray-600">{customer.phone}</p>
                         </div>
                       </div>
                       <div className="flex gap-2">
                         <motion.button
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          onClick={() => handleViewProfile(customer)}
-                          className="rounded-lg p-2 text-blue-600 transition-colors hover:bg-blue-50"
-                        ></motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
                           onClick={() => {
-                            setSelectedCustomer(customer)
-                            setIsMessageModalOpen(true)
+                            setSelectedCustomer(customer);
+                            setIsMessageModalOpen(true);
                           }}
-                          className="rounded-lg p-2 text-green-600 transition-colors hover:bg-green-50"
+                          className="p-2 text-green-600 transition-colors rounded-lg hover:bg-green-50"
                         >
                           <MessageCircle size={16} />
                         </motion.button>
@@ -746,23 +972,17 @@ const CustomerManagement = () => {
                       <div>
                         <p className="text-gray-500">Last Visit</p>
                         <p className="font-medium text-gray-900">
-                          {customer.lastVisit
-                            ? formatDate(customer.lastVisit)
-                            : '-'}
+                          {customer.lastVisit ? formatDate(customer.lastVisit) : '-'}
                         </p>
                       </div>
                       <div>
                         <p className="text-gray-500">Total Visits</p>
-                        <p className="font-medium text-gray-900">
-                          {customer.totalVisits ?? '-'}
-                        </p>
+                        <p className="font-medium text-gray-900">{customer.totalVisits ?? '-'}</p>
                       </div>
                       <div>
                         <p className="text-gray-500">Total Spent</p>
                         <p className="font-semibold text-green-600">
-                          {customer.totalSpent != null
-                            ? formatCurrency(customer.totalSpent)
-                            : '-'}
+                          {customer.totalSpent != null ? formatCurrency(customer.totalSpent) : '-'}
                         </p>
                       </div>
                     </div>
@@ -770,23 +990,19 @@ const CustomerManagement = () => {
                 ))}
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
+                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
                   <div className="text-sm text-gray-600">
-                    Showing {startIndex + 1} to{' '}
-                    {Math.min(endIndex, filteredCustomers.length)} of{' '}
+                    Showing {startIndex + 1} to {Math.min(endIndex, filteredCustomers.length)} of{' '}
                     {filteredCustomers.length} customers
                   </div>
                   <div className="flex items-center gap-2">
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.max(prev - 1, 1))
-                      }
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
-                      className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <ChevronLeft size={16} />
                     </motion.button>
@@ -812,11 +1028,9 @@ const CustomerManagement = () => {
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                      }
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                       disabled={currentPage === totalPages}
-                      className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <ChevronRight size={16} />
                     </motion.button>
@@ -827,17 +1041,13 @@ const CustomerManagement = () => {
           )}
         </motion.div>
 
-        {/* Message Modal */}
         <MessageModal
           isOpen={isMessageModalOpen}
           onClose={() => setIsMessageModalOpen(false)}
           customer={selectedCustomer}
-          onSendMessage={handleSendMessage}
           onSendWhatsApp={handleSendWhatsApp}
-          onSendEmail={handleSendEmail}
         />
 
-        {/* Toast Notification */}
         <Toast
           message={toast.message}
           type={toast.type}
@@ -846,7 +1056,7 @@ const CustomerManagement = () => {
         />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default CustomerManagement
+export default CustomerManagement;

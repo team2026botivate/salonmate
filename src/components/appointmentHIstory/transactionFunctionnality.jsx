@@ -43,18 +43,18 @@ const TransactionFunctionality = ({
   const [discountError, setDiscountError] = useState('');
   const { data: promoCardData, loading: promoCardLoading } = useGetPromoCardData();
 
-  // Initialize selectedExtras with extraServices when component mounts or extraServices changes
+
   useEffect(() => {
     if (extraServices && extraServices.length > 0) {
       setSelectedExtras(extraServices);
     }
   }, [extraServices]);
 
-  // Calculations
+
   const subtotal =
     baseService?.price + selectedExtras.reduce((sum, extra) => sum + extra?.base_price, 0);
   const discountAmount = Math.min((subtotal * discountPercent) / 100, subtotal);
-  // GST calculations (18% on taxable amount = subtotal - discount)
+  
   const taxableAmount = Math.max(0, subtotal - discountAmount);
   const GST_PERCENT = 18;
   const gstAmount = +(taxableAmount * (GST_PERCENT / 100)).toFixed(2);

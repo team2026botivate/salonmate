@@ -9,6 +9,7 @@ import {
   CreditCard,
   Edit,
   LoaderCircle,
+  MessageCircle,
   User,
   XCircle,
 } from 'lucide-react';
@@ -21,6 +22,7 @@ import { cn } from '../../utils/cn';
 import { pdf } from '@react-pdf/renderer';
 import { InvoicePDF } from '../inVoice/invoicePdf';
 import supabase from '@/dataBase/connectdb';
+import WhatsappPdfSendModel from './whatsapp.Components';
 
 const TodayTransaction = ({ searchItem, filterDate }) => {
   const { data, loading } = useGetSelectedExtraServiceDataForTransaction();
@@ -32,8 +34,17 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
     extra_services: '',
   });
 
+  
+
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [expandedStaff, setExpandedStaff] = useState(new Set());
+  const [isWhatsappModelOpen, setIsWhatsappModelOpen] = useState(false);
+  const [whatsappPropsData, setWhatsappPropsData] = useState({
+    customer_name: '',
+    customer_number: '',
+    pdf_name: '',
+    store_id: '',
+  });
 
   //todo i have to check here for one time
   const toggleRowExpansion = (id) => {
@@ -92,7 +103,6 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
     const matchesDate = filterDate ? transaction?.date === filterDate : true;
     return matchesDate && matchesSearch;
   });
-
 
   const handleTransaction = async (transaction) => {
     if (!transaction?.transaction_id || !transaction?.transactions_date) {
@@ -187,7 +197,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      // Use a more descriptive filename
+      
       const safeName = (customerInfo.name || 'customer').replace(/[^a-z0-9\-_. ]/gi, '_');
       link.download = `${invoiceNumber}-${safeName}.pdf`;
       link.click();
@@ -202,12 +212,20 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
   return (
     <div className="relative p-5 shadow-md rounded-xl bg-gradient-to-b to-blue-50">
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 bg-red-500">
+        <div className="fixed inset-0 z-50">
           <TransactionsPanel
             setIsEditModalOpen={setIsEditModalOpen}
             transactionFromData={transactionPanelData}
           />
         </div>
+      )}
+      {/* here the whatsapp pdf send button will ne    */}
+
+      {isWhatsappModelOpen && (
+        <WhatsappPdfSendModel
+          setIsWhatsappModelOpen={setIsWhatsappModelOpen}
+          transactionFromData={whatsappPropsData}
+        />
       )}
       <div className="mx-auto max-w-7xl">
         {/* Header */}
@@ -236,16 +254,15 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
           ) : filteredTransactions.length === 0 ? (
             <div className="p-8 text-center bg-white rounded-lg shadow">
               <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="mb-2 text-xl font-semibold text-gray-600">
-                No transactions found
-              </h3>
-              <p className="text-gray-500">
-                Try adjusting your search or filter criteria
-              </p>
+              <h3 className="mb-2 text-xl font-semibold text-gray-600">No transactions found</h3>
+              <p className="text-gray-500">Try adjusting your search or filter criteria</p>
             </div>
           ) : (
             filteredTransactions.map((transaction) => (
-              <div key={transaction.id} className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm">
+              <div
+                key={transaction.id}
+                className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm"
+              >
                 {/* Card Header */}
                 <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
                   <div className="flex items-center justify-between">
@@ -257,8 +274,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                     </div>
                     <span className={getStatusBadge(transaction.status)}>
                       {getStatusIcon(transaction.status)}
-                      {transaction.status.charAt(0).toUpperCase() +
-                        transaction.status.slice(1)}
+                      {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
                     </span>
                   </div>
                   <div className="mt-2 text-xs text-gray-500">
@@ -296,11 +312,12 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                         {formateCurrency(transaction['Service Price'])}
                       </span>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
                         <span className="text-gray-500">Staff:</span>
-                        {Array.isArray(transaction?.staff_information) && transaction.staff_information.length > 0 ? (
+                        {Array.isArray(transaction?.staff_information) &&
+                        transaction.staff_information.length > 0 ? (
                           <div className="mt-1">
                             <button
                               onClick={() => toggleStaffExpansion(transaction.id)}
@@ -319,7 +336,9 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                                 {transaction.staff_information.map((s, i) => (
                                   <div key={i} className="flex items-center gap-2 text-gray-700">
                                     <User className="w-3 h-3 text-gray-500" />
-                                    <span className="text-xs font-medium">{s?.staffName || s?.name || 'Staff'}</span>
+                                    <span className="text-xs font-medium">
+                                      {s?.staffName || s?.name || 'Staff'}
+                                    </span>
                                   </div>
                                 ))}
                               </div>
@@ -331,7 +350,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                       </div>
                       <div className="flex flex-col items-end justify-end">
                         <span className="text-gray-500">Payment:</span>
-                        <div className="mt-1 ">
+                        <div className="mt-1">
                           <span className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-800 bg-gray-200 rounded-full">
                             <CreditCard className="w-3 h-3" />
                             {transaction.payment_method || 'N/A'}
@@ -387,8 +406,14 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                   <div className="pt-3 border-t border-gray-200">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-gray-600">Discount:</span>
-                      <span className={transaction.discount > 0 ? "font-semibold text-green-600" : "text-gray-400"}>
-                        {transaction.discount > 0 ? formateCurrency(transaction.discount) : "₹0.00"}
+                      <span
+                        className={
+                          transaction.discount > 0
+                            ? 'font-semibold text-green-600'
+                            : 'text-gray-400'
+                        }
+                      >
+                        {transaction.discount > 0 ? formateCurrency(transaction.discount) : '₹0.00'}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -434,10 +459,10 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                         setIsEditModalOpen(true);
                       }}
                       className={cn(
-                        'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium',
+                        'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                         transaction?.transactions_status
-                          ? 'text-gray-500 cursor-not-allowed bg-gray-100'
-                          : 'text-red-600 hover:text-red-800 hover:bg-red-50'
+                          ? 'cursor-not-allowed bg-gray-100 text-gray-500'
+                          : 'text-red-600 hover:bg-red-50 hover:text-red-800'
                       )}
                     >
                       <Edit className="w-4 h-4" />
@@ -445,15 +470,13 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                     </button>
 
                     <button
-                      disabled={
-                        !transaction?.transaction_id || !transaction?.transactions_date
-                      }
+                      disabled={!transaction?.transaction_id || !transaction?.transactions_date}
                       onClick={() => handleTransaction(transaction)}
                       className={cn(
-                        'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium',
+                        'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                         !transaction?.transaction_id || !transaction?.transactions_date
-                          ? 'cursor-not-allowed text-gray-400 bg-gray-100'
-                          : 'text-green-600 hover:text-green-800 hover:bg-green-50'
+                          ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                          : 'text-green-600 hover:bg-green-50 hover:text-green-800'
                       )}
                       title={
                         !transaction?.transaction_id || !transaction?.transactions_date
@@ -472,7 +495,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
         </div>
         {/* Desktop view */}
         <div className="overflow-hidden bg-white rounded-md">
-          <div className="overflow-x-auto ">
+          <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
@@ -589,7 +612,8 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                           </span>
                         </td>
                         <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
-                          {Array.isArray(transaction?.staff_information) && transaction.staff_information.length > 0 ? (
+                          {Array.isArray(transaction?.staff_information) &&
+                          transaction.staff_information.length > 0 ? (
                             <button
                               onClick={() => toggleStaffExpansion(transaction.id)}
                               className="flex items-center gap-1 text-blue-600 transition-colors hover:text-blue-800"
@@ -689,6 +713,36 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                           </div>
                         </td>
                         <td className="flex items-center justify-center px-4 py-4 whitespace-nowrap">
+                          
+                          <button
+                            disabled={
+                              !transaction?.transaction_id || !transaction?.transactions_date
+                            }
+                            onClick={() => {
+                              setWhatsappPropsData(
+                                {
+                                  customer_name:transaction['Customer Name'],
+                                  customer_number:transaction['Mobile Number'],
+                                  store_id:transaction.store_id,
+                                  
+                                }
+                              );
+                              setIsWhatsappModelOpen(true);
+                            }}
+                            className={cn(
+                              'rounded p-2 transition-colors',
+                              !transaction?.transaction_id || !transaction?.transactions_date
+                                ? 'cursor-not-allowed text-gray-400'
+                                : 'hover:cursor-pointer hover:bg-green-50 hover:text-green-600'
+                            )}
+                            title={
+                              !transaction?.transaction_id || !transaction?.transactions_date
+                                ? 'Invoice will be available after payment is recorded'
+                                : 'Share invoice'
+                            }
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </button>
                           <button
                             disabled={
                               !transaction?.transaction_id || !transaction?.transactions_date
