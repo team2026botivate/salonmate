@@ -4,8 +4,10 @@ import {
   AlertCircle,
   Calendar,
   CheckCircle,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Circle,
   DollarSign,
   Filter,
   MessageCircle,
@@ -19,12 +21,14 @@ import {
   Image as ImageIcon,
   Video as VideoIcon,
   File as FileIcon,
+  Loader2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useGetCustomerDataFetch } from './hook/dbOperation';
+import { useAppData } from './zustand/appData';
 
 // Toast Notification Component
-const Toast = ({ message, type, isVisible, onClose }) => {
+export const Toast = ({ message, type, isVisible, onClose }) => {
   useEffect(() => {
     if (isVisible) {
       const timer = setTimeout(() => {
@@ -57,7 +61,15 @@ const Toast = ({ message, type, isVisible, onClose }) => {
   );
 };
 
-const MessageModal = ({ isOpen, onClose, customer, onSendWhatsApp }) => {
+const MessageModal = ({
+  isOpen,
+  onClose,
+  customer,
+  onSendWhatsApp,
+  loaderPorps,
+  bulkPhoneNumbers = [],
+  onSendWhatsAppBulk,
+}) => {
   const [message, setMessage] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [selectedTemplateName, setSelectedTemplateName] = useState('');
@@ -108,7 +120,6 @@ const MessageModal = ({ isOpen, onClose, customer, onSendWhatsApp }) => {
           (item) => item?.name !== 'hello_world' && item?.name !== 'transaction_bill'
         );
 
-        console.log('Templates loaded:', filteredData.length);
         setTpls(filteredData);
       } catch (e) {
         if (e.name !== 'AbortError') {
@@ -166,11 +177,13 @@ const MessageModal = ({ isOpen, onClose, customer, onSendWhatsApp }) => {
         }
       } else if (fmt === 'IMAGE' || fmt === 'VIDEO' || fmt === 'DOCUMENT') {
         if (mediaFile) {
+          // When a file is selected, do NOT embed base64 data URLs in components (too large).
+          // Send a small blob marker; backend will replace with uploaded Supabase URL.
           const mediaKey = fmt === 'IMAGE' ? 'image' : fmt === 'VIDEO' ? 'video' : 'document';
           const mediaParam = { type: mediaKey };
           mediaParam[mediaKey] = {
             filename: mediaFile.name,
-            link: mediaPreview || '',
+            link: 'blob://upload',
           };
           comps.push({ type: 'header', parameters: [mediaParam] });
         } else {
@@ -276,15 +289,28 @@ const MessageModal = ({ isOpen, onClose, customer, onSendWhatsApp }) => {
       return;
     }
     const comps = buildComponentsForTemplate(selectedTemplateObj);
-    console.log('Sending with components:', JSON.stringify(comps, null, 2));
-    onSendWhatsApp?.(
-      message,
-      customer?.phone,
-      customer?.name,
-      selectedTemplateName,
-      selectedTemplateLanguage,
-      comps
-    );
+
+    // Check if bulk mode
+    if (Array.isArray(bulkPhoneNumbers) && bulkPhoneNumbers.length > 0) {
+      onSendWhatsAppBulk?.(
+        message,
+        bulkPhoneNumbers,
+        selectedTemplateName,
+        selectedTemplateLanguage,
+        comps,
+        mediaFile
+      );
+    } else {
+      onSendWhatsApp?.(
+        message,
+        customer?.phone,
+        customer?.name,
+        selectedTemplateName,
+        selectedTemplateLanguage,
+        comps,
+        mediaFile
+      );
+    }
   };
 
   const handleClose = () => {
@@ -314,7 +340,6 @@ const MessageModal = ({ isOpen, onClose, customer, onSendWhatsApp }) => {
       return;
     }
 
-    // Validate file size
     const maxSize = MAX_FILE_SIZES[mediaType];
     if (file.size > maxSize) {
       setUploadError(`File too large. Max size: ${Math.round(maxSize / 1024 / 1024)}MB`);
@@ -372,7 +397,13 @@ const MessageModal = ({ isOpen, onClose, customer, onSendWhatsApp }) => {
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Send WhatsApp Message</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {bulkPhoneNumbers.length > 0
+                    ? `Send WhatsApp to ${bulkPhoneNumbers.length} Customers`
+                    : 'Send WhatsApp Message'}
+                </h3>
+              </div>
               <button
                 onClick={handleClose}
                 className="text-gray-400 transition-colors hover:text-gray-600"
@@ -446,21 +477,37 @@ const MessageModal = ({ isOpen, onClose, customer, onSendWhatsApp }) => {
               </motion.div>
             )}
 
-            {/* Customer Info */}
-            {customer && (
-              <div className="p-3 mb-4 rounded-lg bg-gray-50">
+            {/* Customer Info or Bulk Mode Info */}
+            {bulkPhoneNumbers.length > 0 ? (
+              <div className="p-3 mb-4 border-2 border-green-200 rounded-lg bg-green-50">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-full">
-                    <span className="font-semibold text-purple-600">
-                      {customer.name.charAt(0).toUpperCase()}
-                    </span>
+                  <div className="flex items-center justify-center w-10 h-10 bg-green-600 rounded-full">
+                    <Send size={20} className="text-white" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{customer.name}</p>
-                    <p className="text-sm text-gray-600">{customer.phone}</p>
+                    <p className="font-medium text-gray-900">Bulk Send Mode</p>
+                    <p className="text-sm text-gray-600">
+                      Sending to {bulkPhoneNumbers.length} customers (1 sec delay between each)
+                    </p>
                   </div>
                 </div>
               </div>
+            ) : (
+              customer && (
+                <div className="p-3 mb-4 rounded-lg bg-gray-50">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-full">
+                      <span className="font-semibold text-purple-600">
+                        {customer.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{customer.name}</p>
+                      <p className="text-sm text-gray-600">{customer.phone}</p>
+                    </div>
+                  </div>
+                </div>
+              )
             )}
 
             {/* Template Table */}
@@ -482,26 +529,31 @@ const MessageModal = ({ isOpen, onClose, customer, onSendWhatsApp }) => {
 
               <div className="overflow-hidden border border-gray-200 rounded-lg">
                 <div className="overflow-y-auto max-h-64">
-                  <table className="min-w-full text-sm">
-                    <thead className="sticky top-0 bg-gray-50">
-                      <tr>
-                        <th className="px-3 py-2 text-left text-gray-700">Name</th>
-                        <th className="px-3 py-2 text-left text-gray-700">Language</th>
-                        <th className="px-3 py-2 text-left text-gray-700">Status</th>
-                        <th className="px-3 py-2 text-left text-gray-700">Category</th>
-                        <th className="px-3 py-2 text-left text-gray-700">Body</th>
-                        <th className="px-3 py-2 text-left text-gray-700">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {tplLoading ? (
-                        <tr>
-                          <td className="px-3 py-3 text-gray-500" colSpan={6}>
-                            Loading templates...
-                          </td>
-                        </tr>
-                      ) : (
-                        (tpls || [])
+                  <div className="p-2">
+                    {tplLoading ? (
+                      <div className="flex items-center justify-center py-10">
+                        <div className="text-gray-500">Loading templates...</div>
+                      </div>
+                    ) : (tpls || []).filter((t) => {
+                        const q = tplQuery.toLowerCase();
+                        return (
+                          t.name?.toLowerCase().includes(q) ||
+                          t.category?.toLowerCase().includes(q) ||
+                          t.status?.toLowerCase().includes(q) ||
+                          extractBodyText(t)?.toLowerCase().includes(q)
+                        );
+                      }).length === 0 ? (
+                      <div className="flex items-center justify-center py-10">
+                        <div className="text-center">
+                          <div className="mb-1 text-gray-400">No templates found</div>
+                          <p className="text-xs text-gray-500">
+                            Try adjusting your search criteria
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {(tpls || [])
                           .filter((t) => {
                             const q = tplQuery.toLowerCase();
                             return (
@@ -512,52 +564,59 @@ const MessageModal = ({ isOpen, onClose, customer, onSendWhatsApp }) => {
                             );
                           })
                           .map((t) => (
-                            <tr key={t.id} className="border-t hover:bg-gray-50">
-                              <td className="px-3 py-2 font-medium text-gray-900">{t.name}</td>
-                              <td className="px-3 py-2 text-gray-700">{t.language}</td>
-                              <td className="px-3 py-2">
+                            <div
+                              key={t.id}
+                              className="p-3 transition bg-white border border-gray-200 rounded-lg hover:shadow-sm"
+                            >
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="font-medium text-gray-900">{t.name}</div>
+                                {(t.status || '').toUpperCase() === 'APPROVED' ? (
+                                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                ) : (
+                                  <Circle className="w-4 h-4 text-gray-300" />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-700">
+                                  {(t.language || '').toUpperCase()}
+                                </span>
                                 <span
-                                  className={`rounded px-2 py-0.5 text-xs ${
+                                  className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-medium ${
                                     (t.status || '').toUpperCase() === 'APPROVED'
-                                      ? 'bg-green-100 text-green-700'
-                                      : 'bg-gray-100 text-gray-700'
+                                      ? 'border border-green-200 bg-green-50 text-green-700'
+                                      : 'border border-amber-200 bg-amber-50 text-amber-700'
                                   }`}
                                 >
                                   {t.status}
                                 </span>
-                              </td>
-                              <td className="px-3 py-2 text-gray-700">{t.category}</td>
-                              <td
-                                className="max-w-[280px] truncate px-3 py-2 text-gray-600"
-                                title={extractBodyText(t)}
-                              >
+                              </div>
+                              <div className="mb-1 text-xs font-medium tracking-wide text-gray-500 uppercase">
+                                Category
+                              </div>
+                              <div className="mb-2 text-sm text-gray-700">{t.category}</div>
+                              <div className="mb-1 text-xs font-medium tracking-wide text-gray-500 uppercase">
+                                Preview
+                              </div>
+                              <p className="text-sm text-gray-600 line-clamp-2">
                                 {extractBodyText(t)}
-                              </td>
-                              <td className="px-3 py-2">
-                                <button
-                                  onClick={() => handleTemplateSelect(t)}
-                                  className="px-3 py-1 text-xs font-medium text-white transition-colors bg-purple-600 rounded hover:bg-purple-700"
-                                >
-                                  Use
-                                </button>
-                              </td>
-                            </tr>
-                          ))
-                      )}
-                      {!tplLoading && (tpls || []).length === 0 && (
-                        <tr>
-                          <td className="px-3 py-3 text-gray-500" colSpan={6}>
-                            No templates found
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                              </p>
+                              <button
+                                onClick={() => handleTemplateSelect(t)}
+                                className="mt-3 w-full rounded bg-purple-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-purple-700"
+                              >
+                                Use
+                              </button>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Message Preview */}
+            {/* todo: i have to come here and check it  */}
             <div className="mb-4">
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Message Preview
@@ -626,12 +685,14 @@ const MessageModal = ({ isOpen, onClose, customer, onSendWhatsApp }) => {
                 }
                 className="flex items-center justify-center flex-1 gap-2 px-4 py-2 font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
               >
-                {isLoading ? (
+                {loaderPorps ? (
                   <div className="w-4 h-4 border-2 border-white rounded-full animate-spin border-t-transparent" />
                 ) : (
                   <Send size={16} />
                 )}
-                Send WhatsApp
+                {bulkPhoneNumbers.length > 0
+                  ? `Send to ${bulkPhoneNumbers.length} Customers`
+                  : 'Send WhatsApp'}
               </button>
             </div>
           </motion.div>
@@ -674,13 +735,19 @@ const CustomerManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [loader, setLoader] = useState(false);
   const [toast, setToast] = useState({
     message: '',
     type: 'success',
     isVisible: false,
   });
 
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkNumbersForModal, setBulkNumbersForModal] = useState([]);
+
   const { loading, error, data } = useGetCustomerDataFetch();
+  const { store_id } = useAppData();
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -718,6 +785,24 @@ const CustomerManagement = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentCustomers = filteredCustomers.slice(startIndex, endIndex);
 
+  // Selection helpers
+  const isSelected = (id) => selectedIds.includes(id);
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+  const currentPageIds = currentCustomers.map((c) => c.id);
+  const allSelectedOnPage =
+    currentPageIds.length > 0 && currentPageIds.every((id) => selectedIds.includes(id));
+  const toggleSelectAllOnPage = () => {
+    if (allSelectedOnPage) {
+      // Clear only current page selections
+      setSelectedIds((prev) => prev.filter((id) => !currentPageIds.includes(id)));
+    } else {
+      // Add all current page ids
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...currentPageIds])));
+    }
+  };
+
   const handleViewProfile = (customer) => {
     setToast({
       message: `Opening profile for ${customer.name}`,
@@ -747,19 +832,44 @@ const CustomerManagement = () => {
     name,
     templateName,
     templateLanguage,
-    components
+    components,
+    mediaFile
   ) => {
-    const payload = { message, phoneNumber, name, templateName, templateLanguage, components };
+    const formData = new FormData();
+    formData.append('message', message);
+    formData.append('phoneNumber', phoneNumber);
+    formData.append('name', name);
+    formData.append('templateName', templateName);
+    formData.append('templateLanguage', templateLanguage);
+  
+    if (components && components.length > 0) {
+      formData.append('components', JSON.stringify(components));
+    }
+    
+    if (mediaFile) {
+      formData.append('mediaFile', mediaFile);
+    }
+
+    // Add storeId for quota checking
+    if (store_id) {
+      formData.append('storeId', store_id);
+    }
 
     
 
-  
+    
     try {
+      setLoader(true);
       const { data, status } = await axios.post(
         `${import.meta.env.VITE_BACKEND_API}/messages/whatsapp/sendMessage`,
-        payload
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
       );
-      
+
       if (status === 200) {
         setToast({
           message: 'WhatsApp message sent successfully!',
@@ -773,6 +883,81 @@ const CustomerManagement = () => {
       const err = e?.response?.data?.error;
       console.error('Send error:', err || msg);
       setToast({ message: `Failed: ${msg}`, type: 'error', isVisible: true });
+    } finally {
+      setLoader(false);
+    }
+  };
+
+  const handleSendWhatsAppBulk = async (
+    message,
+    phoneNumbers,
+    templateName,
+    templateLanguage,
+    components,
+    mediaFile
+  ) => {
+    const formData = new FormData();
+    formData.append('message', message);
+    formData.append('phoneNumbers', JSON.stringify(phoneNumbers));
+    formData.append('templateName', templateName);
+    formData.append('templateLanguage', templateLanguage);
+
+    // Add storeId for quota checking
+    if (store_id) {
+      formData.append('storeId', store_id);
+    }
+
+    // Only append components if it's defined and not empty
+    if (components && components.length > 0) {
+      formData.append('components', JSON.stringify(components));
+    }
+
+    if (mediaFile) {
+      formData.append('mediaFile', mediaFile);
+    }
+
+    try {
+      setLoader(true);
+      const { data, status } = await axios.post(
+        `${import.meta.env.VITE_BACKEND_API}/messages/whatsapp/sendMessageBulk`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (status === 200) {
+        const succ = data?.success ?? 0;
+        const fail = data?.failed ?? 0;
+        setToast({
+          message: `Bulk WhatsApp: ${succ} sent, ${fail} failed (1 sec delay between each)`,
+          type: fail > 0 ? 'error' : 'success',
+          isVisible: true,
+        });
+        setIsMessageModalOpen(false);
+        setBulkNumbersForModal([]);
+      }
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || 'Request failed';
+      const err = e?.response?.data?.error;
+      const quota = e?.response?.data?.quota;
+
+      console.error('Bulk send error:', err || msg);
+
+      // Show quota information if available
+      if (quota) {
+        setToast({
+          message: `${msg} (${quota.remaining}/${quota.monthly_quota} messages remaining)`,
+          type: 'error',
+          isVisible: true,
+        });
+      } else {
+        setToast({ message: `Bulk failed: ${msg}`, type: 'error', isVisible: true });
+      }
+    } finally {
+      setLoader(false);
     }
   };
 
@@ -813,6 +998,38 @@ const CustomerManagement = () => {
               <Filter size={16} />
               Filters
             </button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={toggleSelectAllOnPage}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition-colors ${
+                allSelectedOnPage
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <CheckCircle size={16} />
+              {allSelectedOnPage ? 'Clear Selection (Page)' : 'Select All (Page)'}
+            </motion.button>
+            {selectedIds.length > 0 && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  const phones = customers
+                    .filter((c) => selectedIds.includes(c.id))
+                    .map((c) => c.phone)
+                    .filter(Boolean);
+                  setSelectedCustomer(null);
+                  setIsMessageModalOpen(true);
+                  setBulkNumbersForModal(phones);
+                }}
+                className="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700"
+              >
+                <Send size={16} />
+                Send WhatsApp to Selected ({selectedIds.length})
+              </motion.button>
+            )}
           </div>
         </motion.div>
 
@@ -837,6 +1054,9 @@ const CustomerManagement = () => {
                 <table className="w-full">
                   <thead className="border-b border-gray-200 bg-gray-50">
                     <tr>
+                      <th className="px-4 py-4 text-sm font-semibold text-left text-gray-900">
+                        Select
+                      </th>
                       <th className="px-6 py-4 text-sm font-semibold text-left text-gray-900">
                         Customer
                       </th>
@@ -866,6 +1086,14 @@ const CustomerManagement = () => {
                         transition={{ duration: 0.3, delay: index * 0.05 }}
                         className="transition-colors border-b border-gray-100 hover:bg-gray-50"
                       >
+                        <td className="px-4 py-4">
+                          <input
+                            type="checkbox"
+                            checked={isSelected(customer.id)}
+                            onChange={() => toggleSelect(customer.id)}
+                            className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                          />
+                        </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-full">
@@ -943,6 +1171,12 @@ const CustomerManagement = () => {
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isSelected(customer.id)}
+                          onChange={() => toggleSelect(customer.id)}
+                          className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                        />
                         <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full">
                           <span className="text-lg font-semibold text-purple-600">
                             {customer.name.charAt(0).toUpperCase()}
@@ -1043,9 +1277,15 @@ const CustomerManagement = () => {
 
         <MessageModal
           isOpen={isMessageModalOpen}
-          onClose={() => setIsMessageModalOpen(false)}
+          onClose={() => {
+            setIsMessageModalOpen(false);
+            setBulkNumbersForModal([]);
+          }}
           customer={selectedCustomer}
           onSendWhatsApp={handleSendWhatsApp}
+          loaderPorps={loader}
+          bulkPhoneNumbers={bulkNumbersForModal}
+          onSendWhatsAppBulk={handleSendWhatsAppBulk}
         />
 
         <Toast

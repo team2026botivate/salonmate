@@ -55,7 +55,7 @@ const DailyEntry = () => {
     }
     if (staffLoading) return data;
 
-    // Resolve current staff from staff_info via email first, then id
+    
     let me = null;
     if (user?.email && Array.isArray(staffData)) {
       me = staffData.find(
@@ -159,7 +159,7 @@ const DailyEntry = () => {
     return formattedAmount;
   }, []);
 
-  // Compute total revenue after discount for visible (filtered) appointments
+  
   const totalAfterDiscount = useMemo(() => {
     try {
       return filteredAppointments.reduce((sum, apt) => {

@@ -149,6 +149,7 @@ export default function Sidebar({
     { id: 'customerDb', label: 'Customers', icon: <Users size={20} /> },
     { id: 'promoCard', label: 'Offers & Membership', icon: <Tag size={20} /> },
     { id: 'license', label: 'License', icon: <KeyRound size={20} /> },
+    { id: 'whatsapp', label: 'Whatsapp', icon: <MessageSquare size={20} /> },
 
   
   ]

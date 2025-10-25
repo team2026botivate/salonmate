@@ -530,19 +530,9 @@ const handleAddDiscountClick = () => {
 
       console.log('Submitting data with preserved date formats:', rowData)
 
-      const formData = new FormData()
-      formData.append('sheetName', sheetName)
-      formData.append('rowData', JSON.stringify(rowData))
-      formData.append('rowIndex', rowIndex)
-      formData.append('action', 'update')
+      
 
-      const response = await fetch(scriptUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: formData,
-      })
-
-      console.log('Update submitted successfully')
+    
 
       const uiTransaction = { ...editingTransaction }
 

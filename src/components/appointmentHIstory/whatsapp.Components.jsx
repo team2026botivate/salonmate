@@ -15,8 +15,6 @@ export default function BillingDashboard({ setIsWhatsappModelOpen, transactionFr
     type: 'success',
   });
 
-  //   console.log(transactionFromData, 'data form here');
-
   const clientName = transactionFromData?.customer_name || transactionFromData?.['Customer Name'];
   const clientNumber =
     transactionFromData?.customer_number || transactionFromData?.['Mobile Number'];
@@ -44,7 +42,7 @@ export default function BillingDashboard({ setIsWhatsappModelOpen, transactionFr
     try {
       // fetch store name from DB
       let storeName = '';
-      console.log(storeId);
+
       if (storeId) {
         const { data: store, error } = await supabase
           .from('stores')
@@ -54,8 +52,6 @@ export default function BillingDashboard({ setIsWhatsappModelOpen, transactionFr
         if (!error && store) {
           storeName = store.name || '';
         }
-        console.log(store, 'store name');
-        console.log(error);
       }
 
       const formData = new FormData();
@@ -65,6 +61,8 @@ export default function BillingDashboard({ setIsWhatsappModelOpen, transactionFr
       if (storeId) formData.append('storeId', String(storeId));
       if (storeName) formData.append('storeName', storeName);
 
+
+  
       if (!import.meta.env.VITE_BACKEND_API) {
         setToast({ show: true, message: 'Backend API URL not found.', type: 'error' });
         return;
@@ -79,8 +77,6 @@ export default function BillingDashboard({ setIsWhatsappModelOpen, transactionFr
       );
 
       const data = response?.data;
-      console.log('code chala');
-      console.log(data, 'response');
 
       if (response.status >= 200 && response.status < 300) {
         setToast({ show: true, message: 'Bill sent successfully via WhatsApp!', type: 'success' });
@@ -96,9 +92,19 @@ export default function BillingDashboard({ setIsWhatsappModelOpen, transactionFr
         });
       }
     } catch (error) {
+      console.error('WhatsApp send error:', error);
+      const errorMsg =
+        error?.response?.data?.message || 'Network error. Please check your connection.';
+      const quota = error?.response?.data?.quota;
+
+      let displayMsg = errorMsg;
+      if (quota) {
+        displayMsg = `${errorMsg} (${quota.remaining}/${quota.monthly_quota} messages remaining)`;
+      }
+
       setToast({
         show: true,
-        message: 'Network error. Please check your connection.',
+        message: displayMsg,
         type: 'error',
       });
     } finally {

@@ -20,6 +20,8 @@ import {
 } from '../../hook/dbOperation';
 import { generateBookingId } from '../../utils/generateBookingId';
 import { useAuth } from '../../Context/AuthContext';
+import { useSendWhatsappAfterAppointment } from '@/hook/sendWhatsapp-after-appointmen';
+import Toast from '../ui/tost.Components.ui';
 
 const AddNewAppointment = ({
   tableHeaders,
@@ -31,7 +33,9 @@ const AddNewAppointment = ({
   renderFormField,
 }) => {
   const { user } = useAuth();
+
   const { doStaffStatusActive } = useDoStaffStatusActive();
+  const { sendWhatsappAfterAppointment } = useSendWhatsappAfterAppointment();
   const [errors, setErrors] = useState({});
   const [isStaffDropdownOpen, setIsStaffDropdownOpen] = useState(false);
 
@@ -228,22 +232,14 @@ const AddNewAppointment = ({
       return;
     }
 
-    // Create appointment payload with selected staff
-
-    console.log(formData, 'data');
-
     await createNewAppointment(formData, 'busy', onCancel, isNewUser);
-
-    // Update status for all selected staff members
-    // for (const staff of formData.staff) {
-    //   await doStaffStatusActive(
-    //     staff.id,
-    //     formData.serviceTime,
-    //     staff.staffStatus
-    //   )
-    // }
+    await sendWhatsappAfterAppointment(
+      user.profile.store_id,
+      user?.profile?.salon_name || 'Botivate',
+      formData.mobileNumber,
+      formData.customerName
+    );
   };
-
   const availableStaff =
     data?.filter(
       (staff) => isStaffSelectionAllowed() && !loading && staff.status?.toLowerCase() !== 'busy'
@@ -258,15 +254,15 @@ const AddNewAppointment = ({
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Customer Information */}
       <div>
-        <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
-          <User className="w-5 h-5 mr-2" />
+        <h3 className="mb-4 flex items-center text-lg font-semibold text-gray-900">
+          <User className="mr-2 h-5 w-5" />
           Customer Information
         </h3>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-1">
           <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">Mobile Number</label>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Mobile Number</label>
             <div className="relative">
-              <Phone className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 top-1/2 left-3" />
+              <Phone className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
               <input
                 name="mobileNumber"
                 type="tel"
@@ -287,7 +283,7 @@ const AddNewAppointment = ({
           </div>
 
           <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">Customer Name</label>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Customer Name</label>
             <input
               name="customerName"
               type="text"
@@ -307,13 +303,13 @@ const AddNewAppointment = ({
 
       {/* Appointment Schedule */}
       <div>
-        <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
-          <Calendar className="w-5 h-5 mr-2" />
+        <h3 className="mb-4 flex items-center text-lg font-semibold text-gray-900">
+          <Calendar className="mr-2 h-5 w-5" />
           Appointment Schedule
         </h3>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">Slot Date</label>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Slot Date</label>
             <input
               name="slotDate"
               type="date"
@@ -327,9 +323,9 @@ const AddNewAppointment = ({
           </div>
 
           <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">Slot Time</label>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Slot Time</label>
             <div className="relative">
-              <Clock className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 top-1/2 left-3" />
+              <Clock className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
               <input
                 type="time"
                 name="slotTime"
@@ -347,22 +343,22 @@ const AddNewAppointment = ({
 
       {/* Staff Information - Multi-Select */}
       <div>
-        <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
-          <User className="w-5 h-5 mr-2" />
+        <h3 className="mb-4 flex items-center text-lg font-semibold text-gray-900">
+          <User className="mr-2 h-5 w-5" />
           Staff Information
         </h3>
 
         {/* Selected Staff Display */}
         {formData.staff.length > 0 && (
           <div className="mb-4">
-            <label className="block mb-2 text-sm font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-medium text-gray-700">
               Selected Staff ({formData.staff.length})
             </label>
             <div className="flex flex-wrap gap-2">
               {formData.staff.map((staff) => (
                 <div
                   key={staff.id}
-                  className="flex items-center px-3 py-2 text-sm bg-blue-100 border border-blue-200 rounded-lg"
+                  className="flex items-center rounded-lg border border-blue-200 bg-blue-100 px-3 py-2 text-sm"
                 >
                   <span className="text-blue-800">
                     {staff.staffName} ({staff.staffStatus})
@@ -373,7 +369,7 @@ const AddNewAppointment = ({
                       onClick={() => removeStaffMember(staff.id)}
                       className="ml-2 text-blue-600 transition-colors hover:text-blue-800"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="h-4 w-4" />
                     </button>
                   )}
                 </div>
@@ -384,14 +380,14 @@ const AddNewAppointment = ({
 
         {/* Staff Selection Dropdown */}
         <div className="relative">
-          <label className="block mb-2 text-sm font-medium text-gray-700">Add Staff Members</label>
+          <label className="mb-2 block text-sm font-medium text-gray-700">Add Staff Members</label>
           <button
             type="button"
             disabled={user?.role === 'staff' || !isStaffSelectionAllowed() || loading}
             onClick={() => setIsStaffDropdownOpen(!isStaffDropdownOpen)}
-            className={`w-full flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-all ${
+            className={`flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition-all ${
               !isStaffSelectionAllowed()
-                ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400'
                 : 'border-gray-300 hover:border-gray-400 focus:border-transparent focus:ring-2 focus:ring-blue-500'
             }`}
           >
@@ -404,7 +400,7 @@ const AddNewAppointment = ({
             </span>
             {isStaffSelectionAllowed() && !loading && (
               <ChevronDown
-                className={`w-5 h-5 transition-transform ${
+                className={`h-5 w-5 transition-transform ${
                   isStaffDropdownOpen ? 'rotate-180' : ''
                 }`}
               />
@@ -413,7 +409,7 @@ const AddNewAppointment = ({
 
           {/* Dropdown Options */}
           {isStaffDropdownOpen && isStaffSelectionAllowed() && !loading && (
-            <div className="absolute z-10 w-full mt-1 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg max-h-64">
+            <div className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-gray-300 bg-white shadow-lg">
               {/* Available Staff */}
               {availableStaff.length > 0 && (
                 <div className="p-2">
@@ -427,9 +423,9 @@ const AddNewAppointment = ({
                         key={staff.id}
                         type="button"
                         onClick={() => handleStaffSelection(staff)}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-left rounded-md transition-colors ${
+                        className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left transition-colors ${
                           isSelected
-                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                            ? 'border border-blue-200 bg-blue-50 text-blue-700'
                             : 'hover:bg-gray-50'
                         }`}
                       >
@@ -439,7 +435,7 @@ const AddNewAppointment = ({
                             ({staff.status})
                           </span>
                         </span>
-                        {isSelected && <Check className="w-4 h-4 text-blue-600" />}
+                        {isSelected && <Check className="h-4 w-4 text-blue-600" />}
                       </button>
                     );
                   })}
@@ -448,14 +444,14 @@ const AddNewAppointment = ({
 
               {/* Busy Staff */}
               {busyStaff.length > 0 && (
-                <div className="p-2 border-t border-gray-100">
+                <div className="border-t border-gray-100 p-2">
                   <div className="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
                     Unavailable Staff
                   </div>
                   {busyStaff.map((staff) => (
                     <div
                       key={staff.id}
-                      className="flex items-center justify-between px-3 py-2 text-gray-400 cursor-not-allowed"
+                      className="flex cursor-not-allowed items-center justify-between px-3 py-2 text-gray-400"
                     >
                       <span className="flex items-center">
                         <span className="font-medium">{staff.staff_name}</span>
@@ -485,13 +481,13 @@ const AddNewAppointment = ({
 
       {/* Service Information */}
       <div>
-        <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
-          <CreditCard className="w-5 h-5 mr-2" />
+        <h3 className="mb-4 flex items-center text-lg font-semibold text-gray-900">
+          <CreditCard className="mr-2 h-5 w-5" />
           Service Information
         </h3>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-1">
           <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">Service</label>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Service</label>
             <select
               name="service"
               value={formData.service}
@@ -504,7 +500,7 @@ const AddNewAppointment = ({
               <option value="">Select Service</option>
               {serviceslist?.map((service) => (
                 <option
-                  className="bg-white rounded-md"
+                  className="rounded-md bg-white"
                   key={service.id}
                   value={service.service_name}
                 >
@@ -519,21 +515,21 @@ const AddNewAppointment = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-end pt-6 space-x-4 border-t border-gray-200">
+      <div className="flex items-center justify-end space-x-4 border-t border-gray-200 pt-6">
         <button
           type="button"
           onClick={onCancel}
-          className="px-6 py-3 font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200"
+          className="rounded-lg bg-gray-100 px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-200"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isLoading}
-          className="flex items-center px-8 py-3 space-x-2 font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="flex items-center space-x-2 rounded-lg bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
         >
           <span>{isLoading ? 'Creating...' : 'Create'}</span>
-          <ArrowRight className="w-5 h-5" />
+          <ArrowRight className="h-5 w-5" />
         </button>
       </div>
     </form>

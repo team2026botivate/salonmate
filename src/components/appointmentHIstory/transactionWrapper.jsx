@@ -145,8 +145,15 @@ const TransactionsPanel = ({ setIsEditModalOpen, transactionFromData }) => {
               toast.error('Failed to send invoice via WhatsApp');
             }
           } catch (sendErr) {
-            console.error(sendErr);
-            toast.error('Network error while sending WhatsApp message');
+            console.error('WhatsApp send error:', sendErr);
+            const errorMsg = sendErr?.response?.data?.message || 'Network error while sending WhatsApp message';
+            const quota = sendErr?.response?.data?.quota;
+            
+            if (quota) {
+              toast.error(`${errorMsg} (${quota.remaining}/${quota.monthly_quota} messages remaining)`);
+            } else {
+              toast.error(errorMsg);
+            }
           }
         }
       } catch (werr) {

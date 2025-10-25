@@ -23,6 +23,7 @@ import { useNavigate } from 'react-router-dom';
 import Footer from './footer.jsx';
 import OffersAndMemberships from './layout/Offers_&_Memberships.jsx';
 import DailyExpenses from './dailyExpences/dailyExpences.jsx';
+import WhatsappMessage from './whatsappMessage-component.jsx';
 
 // Map component names to identifiers used in permissions
 const COMPONENT_PERMISSION_MAP = {
@@ -41,6 +42,7 @@ const COMPONENT_PERMISSION_MAP = {
   customerDb: 'customers',
   promoCard: 'promocards',
   license: 'license',
+  whatsapp: 'whatsapp',
 };
 
 // AccessDenied component moved outside for better performance
@@ -124,6 +126,7 @@ export default function Dashboard() {
       'customerDb',
       'promoCard',
       'license',
+      'whatsapp',
       
     ];
 
@@ -219,6 +222,7 @@ export default function Dashboard() {
       customerDb: () => <CustomerDb />,
       promoCard: () => <OffersAndMemberships />,
       license: () => <License />,
+      whatsapp: () => <WhatsappMessage />,
       
     };
 

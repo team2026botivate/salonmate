@@ -2169,6 +2169,7 @@ export const useRecentTransactions = () => {
         id:
           transaction.transaction_id ||
           `TXN${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+          
         clientName: transaction['Customer Name'] || 'Unknown',
         paymentMethod: transaction.payment_method || 'cash',
         status:

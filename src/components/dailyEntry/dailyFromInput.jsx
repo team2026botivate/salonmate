@@ -61,17 +61,17 @@ const MultiServiceSelector = ({ appointmentId, bookingStatus, closeEditBox, serv
 
     setIsSubmitting(true);
     try {
-      // Close the modal immediately so the overlay doesn't block the page during async calls
+      
       closeEditBox(false);
 
-      // 1) Record extra services and optionally mark appointment status as done
+    
       await createExtraService(
         appointmentId,
         selectedServices,
         status === 'done' ? 'done' : null
       );
 
-      // 2) If marked as done, set assigned staff status back to 'active'
+    
       if (status === 'done' && staffId) {
         const ids = Array.isArray(staffId)
           ? staffId
