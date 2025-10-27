@@ -2169,7 +2169,7 @@ export const useRecentTransactions = () => {
         id:
           transaction.transaction_id ||
           `TXN${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-          
+
         clientName: transaction['Customer Name'] || 'Unknown',
         paymentMethod: transaction.payment_method || 'cash',
         status:
@@ -2215,15 +2215,16 @@ export const useStaffPaymentData = () => {
       const monthStart = new Date(currentYear, currentMonth - 1, 1);
       const monthEnd = new Date(currentYear, currentMonth, 0);
 
-      // Fetch all active staff
+      // Fetch all active staff for the current store with latest payment method
       const { data: staffList, error: staffError } = await supabase
         .from('staff_info')
-        .select(
-          'id, staff_name, mobile_number, position, base_salary, commission_rate, commission_type, payment_status'
-        )
+        .select(`
+          id, staff_name, mobile_number, position, base_salary, commission_rate, commission_type, payment_status,
+          staff_payments(payment_method, payment_date, amount, status)
+        `)
         .neq('delete_flag', true)
-        .order('staff_name', { ascending: true })
-        .eq('store_id', store_id);
+        .eq('store_id', store_id)
+        .order('staff_name', { ascending: true });
 
       if (staffError) throw staffError;
 
@@ -2231,6 +2232,12 @@ export const useStaffPaymentData = () => {
       const staffWithPaymentData = await Promise.all(
         (staffList || []).map(async (staff) => {
           try {
+            // Get latest payment record from staff_payments table for payment method
+            const paymentRecords = staff.staff_payments || [];
+            const latestPayment = paymentRecords.length > 0
+              ? paymentRecords.sort((a, b) => new Date(b.payment_date) - new Date(a.payment_date))[0]
+              : null;
+
             // Get attendance count for current month
             const { data: attendanceData, error: attendanceError } = await supabase
               .from('staff_attendance')
@@ -2295,6 +2302,9 @@ export const useStaffPaymentData = () => {
               calculatedCommission: calculatedCommission,
               totalRevenue: totalRevenue,
               paymentStatus: staff.payment_status || 'pending',
+              paymentMethod: latestPayment?.payment_method || null,
+              lastPaymentDate: latestPayment?.payment_date || null,
+              lastPaymentAmount: latestPayment?.amount || null,
             };
           } catch (err) {
             console.error(`Error processing staff ${staff.staff_name}:`, err);
@@ -2314,6 +2324,9 @@ export const useStaffPaymentData = () => {
               calculatedCommission: 0,
               totalRevenue: 0,
               paymentStatus: 'pending',
+              paymentMethod: null,
+              lastPaymentDate: null,
+              lastPaymentAmount: null,
             };
           }
         })
@@ -2342,13 +2355,28 @@ export const useUpdateStaffPaymentStatus = () => {
   const { store_id } = useAppData();
 
   const updatePaymentStatus = async (staffData) => {
+    console.log(staffData, 'staffData');
     try {
       setLoading(true);
       setError(null);
 
+      // Validate required data
+      if (!staffData?.id) {
+        throw new Error('Staff ID is required');
+      }
+
+      // Ensure amount is a valid number
+      const proRatedSalary = Number(staffData.proRatedSalary) || 0;
+      const calculatedCommission = Number(staffData.calculatedCommission) || 0;
+      const totalSalary = proRatedSalary + calculatedCommission;
+
+      if (totalSalary <= 0) {
+        throw new Error('Invalid payment amount. Please check salary and commission values.');
+      }
+
       const now = new Date();
       const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM format
-      const totalSalary = staffData.proRatedSalary + staffData.calculatedCommission;
+      const paymentMethod = staffData.paymentMethod || 'Bank Transfer';
 
       // Insert payment record into staff_payments table
       const { data: paymentData, error: paymentError } = await supabase
@@ -2359,20 +2387,21 @@ export const useUpdateStaffPaymentStatus = () => {
           payment_date: now.toISOString().split('T')[0],
           salary_month: currentMonth,
           amount: totalSalary,
-          payment_method: 'Bank Transfer',
-          status: 'Paid',
-          notes: `Salary: ₹${staffData.proRatedSalary} (${staffData.totalPresent}/${staffData.totalDaysInMonth} days) + Commission: ₹${staffData.calculatedCommission}`,
+          payment_method: paymentMethod,
+          status: 'paid',
+          notes: `Salary: ₹${proRatedSalary} (${staffData.totalPresent || 0}/${staffData.totalDaysInMonth || 0} days) + Commission: ₹${calculatedCommission}`,
         })
         .select()
         .single();
 
       if (paymentError) throw paymentError;
 
-      // Update payment status in staff_info table
+      // Update payment status in staff_info table with store_id filter
       const { error: statusError } = await supabase
         .from('staff_info')
         .update({ payment_status: 'paid' })
-        .eq('id', staffData.id);
+        .eq('id', staffData.id)
+        .eq('store_id', store_id);
 
       if (statusError) throw statusError;
 

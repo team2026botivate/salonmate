@@ -30,7 +30,7 @@ const DashboardCards = ({ stats }) => {
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-3">
       {cards.map((card, index) => (
         <motion.div
           key={card.title}
@@ -41,7 +41,7 @@ const DashboardCards = ({ stats }) => {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">
+              <p className="mb-1 text-sm font-medium text-gray-600">
                 {card.title}
               </p>
               <p className={`text-3xl font-bold ${card.textColor}`}>

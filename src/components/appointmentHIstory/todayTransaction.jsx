@@ -34,8 +34,6 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
     extra_services: '',
   });
 
-  
-
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [expandedStaff, setExpandedStaff] = useState(new Set());
   const [isWhatsappModelOpen, setIsWhatsappModelOpen] = useState(false);
@@ -67,11 +65,11 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'done':
-        return <CheckCircle className="w-4 h-4 text-blue-600" />;
+        return <CheckCircle className="h-4 w-4 text-blue-600" />;
       case 'pending':
-        return <AlertCircle className="w-4 h-4 text-yellow-600" />;
+        return <AlertCircle className="h-4 w-4 text-yellow-600" />;
       case 'cancelled':
-        return <XCircle className="w-4 h-4 text-red-600" />;
+        return <XCircle className="h-4 w-4 text-red-600" />;
       default:
         return null;
     }
@@ -197,7 +195,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      
+
       const safeName = (customerInfo.name || 'customer').replace(/[^a-z0-9\-_. ]/gi, '_');
       link.download = `${invoiceNumber}-${safeName}.pdf`;
       link.click();
@@ -210,7 +208,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
   };
 
   return (
-    <div className="relative p-5 shadow-md rounded-xl bg-gradient-to-b to-blue-50">
+    <div className="relative rounded-xl bg-gradient-to-b to-blue-50 p-5 shadow-md">
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50">
           <TransactionsPanel
@@ -230,10 +228,10 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <div>
               <h1 className="flex items-center gap-3 text-3xl font-bold text-gray-900">
-                <Calendar className="w-8 h-8 text-blue-600" />
+                <Calendar className="h-8 w-8 text-blue-600" />
                 Today's Transactions
               </h1>
               <p className="mt-2 text-gray-600">
@@ -248,12 +246,12 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
         {/* Mobile Card View */}
         <div className="space-y-4 md:hidden">
           {loading ? (
-            <div className="flex items-center justify-center py-12 bg-white rounded-lg shadow">
-              <LoaderCircle className="text-gray-600 size-10 animate-spin" />
+            <div className="flex items-center justify-center rounded-lg bg-white py-12 shadow">
+              <LoaderCircle className="size-10 animate-spin text-gray-600" />
             </div>
           ) : filteredTransactions.length === 0 ? (
-            <div className="p-8 text-center bg-white rounded-lg shadow">
-              <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <div className="rounded-lg bg-white p-8 text-center shadow">
+              <Calendar className="mx-auto mb-4 h-16 w-16 text-gray-300" />
               <h3 className="mb-2 text-xl font-semibold text-gray-600">No transactions found</h3>
               <p className="text-gray-500">Try adjusting your search or filter criteria</p>
             </div>
@@ -261,13 +259,13 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
             filteredTransactions.map((transaction) => (
               <div
                 key={transaction.id}
-                className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm"
+                className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
               >
                 {/* Card Header */}
-                <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-gray-500" />
+                      <Clock className="h-4 w-4 text-gray-500" />
                       <span className="font-mono text-sm text-gray-600">
                         {transaction.transaction_id || 'N/A'}
                       </span>
@@ -283,11 +281,11 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                 </div>
 
                 {/* Card Body */}
-                <div className="p-4 space-y-3">
+                <div className="space-y-3 p-4">
                   {/* Customer & Booking Info */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-gray-500" />
+                      <User className="h-4 w-4 text-gray-500" />
                       <span className="font-medium text-gray-900">
                         {transaction['Customer Name']}
                       </span>
@@ -303,8 +301,8 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                   </div>
 
                   {/* Service Info */}
-                  <div className="p-3 rounded-lg bg-gray-50">
-                    <div className="flex items-center justify-between mb-2">
+                  <div className="rounded-lg bg-gray-50 p-3">
+                    <div className="mb-2 flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-900">
                         {transaction.Services}
                       </span>
@@ -321,21 +319,21 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                           <div className="mt-1">
                             <button
                               onClick={() => toggleStaffExpansion(transaction.id)}
-                              className="inline-flex items-center gap-2 px-2 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full"
+                              className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800"
                             >
-                              <User className="w-3 h-3" />
+                              <User className="h-3 w-3" />
                               {transaction.staff_information.length} assigned
                               {expandedStaff.has(transaction.id) ? (
-                                <ChevronUp className="w-3 h-3" />
+                                <ChevronUp className="h-3 w-3" />
                               ) : (
-                                <ChevronDown className="w-3 h-3" />
+                                <ChevronDown className="h-3 w-3" />
                               )}
                             </button>
                             {expandedStaff.has(transaction.id) && (
                               <div className="mt-2 space-y-1">
                                 {transaction.staff_information.map((s, i) => (
                                   <div key={i} className="flex items-center gap-2 text-gray-700">
-                                    <User className="w-3 h-3 text-gray-500" />
+                                    <User className="h-3 w-3 text-gray-500" />
                                     <span className="text-xs font-medium">
                                       {s?.staffName || s?.name || 'Staff'}
                                     </span>
@@ -351,8 +349,8 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                       <div className="flex flex-col items-end justify-end">
                         <span className="text-gray-500">Payment:</span>
                         <div className="mt-1">
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-800 bg-gray-200 rounded-full">
-                            <CreditCard className="w-3 h-3" />
+                          <span className="inline-flex items-center gap-1 rounded-full bg-gray-200 px-2 py-1 text-xs text-gray-800">
+                            <CreditCard className="h-3 w-3" />
                             {transaction.payment_method || 'N/A'}
                           </span>
                         </div>
@@ -362,21 +360,21 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
 
                   {/* Extra Services */}
                   {transaction.extra_Services?.length > 0 && (
-                    <div className="pt-3 border-t border-gray-200">
+                    <div className="border-t border-gray-200 pt-3">
                       <button
                         onClick={() => toggleRowExpansion(transaction.id)}
-                        className="flex items-center justify-between w-full p-2 text-left transition-colors rounded-lg hover:bg-gray-50"
+                        className="flex w-full items-center justify-between rounded-lg p-2 text-left transition-colors hover:bg-gray-50"
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-gray-600">Extra Services</span>
-                          <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">
+                          <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
                             {transaction.extra_Services.length} services
                           </span>
                         </div>
                         {expandedRows.has(transaction.id) ? (
-                          <ChevronUp className="w-4 h-4 text-blue-600" />
+                          <ChevronUp className="h-4 w-4 text-blue-600" />
                         ) : (
-                          <ChevronDown className="w-4 h-4 text-blue-600" />
+                          <ChevronDown className="h-4 w-4 text-blue-600" />
                         )}
                       </button>
 
@@ -385,7 +383,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                           {transaction.extra_Services.map((service, index) => (
                             <div
                               key={index}
-                              className="p-3 border border-blue-200 rounded-lg bg-blue-50"
+                              className="rounded-lg border border-blue-200 bg-blue-50 p-3"
                             >
                               <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium text-gray-800">
@@ -403,8 +401,8 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                   )}
 
                   {/* Financial Summary */}
-                  <div className="pt-3 border-t border-gray-200">
-                    <div className="flex items-center justify-between mb-2">
+                  <div className="border-t border-gray-200 pt-3">
+                    <div className="mb-2 flex items-center justify-between">
                       <span className="text-sm text-gray-600">Discount:</span>
                       <span
                         className={
@@ -425,17 +423,17 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                   </div>
 
                   {/* Transaction Status */}
-                  <div className="pt-3 border-t border-gray-200">
+                  <div className="border-t border-gray-200 pt-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Payment Status:</span>
                       {transaction?.transactions_status ? (
-                        <div className="flex items-center gap-2 px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
-                          <CheckCircle className="w-4 h-4 text-green-600" />
+                        <div className="flex items-center gap-2 rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
                           paid
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2 px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-full">
-                          <XCircle className="w-4 h-4 text-red-600" />
+                        <div className="flex items-center gap-2 rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">
+                          <XCircle className="h-4 w-4 text-red-600" />
                           unpaid
                         </div>
                       )}
@@ -444,7 +442,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                 </div>
 
                 {/* Card Footer - Actions */}
-                <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                <div className="border-t border-gray-200 bg-gray-50 px-4 py-3">
                   <div className="flex items-center justify-between">
                     <button
                       disabled={transaction?.transactions_status}
@@ -465,7 +463,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                           : 'text-red-600 hover:bg-red-50 hover:text-red-800'
                       )}
                     >
-                      <Edit className="w-4 h-4" />
+                      <Edit className="h-4 w-4" />
                       Edit
                     </button>
 
@@ -484,7 +482,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                           : 'Download invoice'
                       }
                     >
-                      <ArrowDownToLine className="w-4 h-4" />
+                      <ArrowDownToLine className="h-4 w-4" />
                       Invoice
                     </button>
                   </div>
@@ -494,75 +492,75 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
           )}
         </div>
         {/* Desktop view */}
-        <div className="overflow-hidden bg-white rounded-md">
+        <div className="overflow-hidden rounded-md bg-white">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
+                      <Clock className="h-4 w-4" />
                       Time
                     </div>
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Transaction ID
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Date
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Booking ID
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     <div className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
+                      <User className="h-4 w-4" />
                       Customer
                     </div>
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Service
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Service Price
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     <div className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4" />
+                      <CreditCard className="h-4 w-4" />
                       Payment
                     </div>
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Staff
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Extra Services
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Total
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Status
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Discount
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Transaction Status
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Actions
                   </th>
-                  <th className="px-4 py-4 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase">
+                  <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Invoice
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 bg-white">
                 {loading ? (
                   <tr>
                     <td colSpan="15" className="px-4 py-8 text-center">
-                      <div className="flex items-center justify-center w-full">
+                      <div className="flex w-full items-center justify-center">
                         <LoaderCircle className="size-10 animate-spin" />
                       </div>
                     </td>
@@ -570,8 +568,8 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                 ) : filteredTransactions.length === 0 ? (
                   <tr>
                     <td colSpan="15" className="px-4 py-12 text-center">
-                      <div className="p-8 text-center bg-white rounded-xl">
-                        <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <div className="rounded-xl bg-white p-8 text-center">
+                        <Calendar className="mx-auto mb-4 h-16 w-16 text-gray-300" />
                         <h3 className="mb-2 text-xl font-semibold text-gray-600">
                           No transactions found
                         </h3>
@@ -585,72 +583,72 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                   filteredTransactions.map((transaction) => (
                     <React.Fragment key={transaction.id}>
                       <tr className="transition-colors hover:bg-gray-50">
-                        <td className="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                        <td className="px-4 py-4 text-sm font-medium whitespace-nowrap text-gray-900">
                           {formatDateTime(transaction.transactions_date) || 'N/A'}
                         </td>
-                        <td className="px-4 py-4 font-mono text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-4 py-4 font-mono text-sm whitespace-nowrap text-gray-600">
                           {transaction.transaction_id || 'N/A'}
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
                           {new Date(transaction['Slot Date']).toLocaleDateString()}
                         </td>
-                        <td className="px-4 py-4 font-mono text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-4 py-4 font-mono text-sm whitespace-nowrap text-gray-600">
                           {transaction['Booking ID']}
                         </td>
-                        <td className="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                        <td className="px-4 py-4 text-sm font-medium whitespace-nowrap text-gray-900">
                           {transaction['Customer Name']}
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
                           {transaction.Services}
                         </td>
-                        <td className="px-4 py-4 text-sm font-semibold text-green-600 whitespace-nowrap">
+                        <td className="px-4 py-4 text-sm font-semibold whitespace-nowrap text-green-600">
                           {formateCurrency(transaction['Service Price'])}
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2 py-1 text-xs text-gray-800 bg-gray-100 rounded-full">
+                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
+                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-800">
                             {transaction.payment_method || 'N/A'}
                           </span>
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
                           {Array.isArray(transaction?.staff_information) &&
                           transaction.staff_information.length > 0 ? (
                             <button
                               onClick={() => toggleStaffExpansion(transaction.id)}
                               className="flex items-center gap-1 text-blue-600 transition-colors hover:text-blue-800"
                             >
-                              <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">
+                              <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
                                 {transaction.staff_information.length} staff
                               </span>
                               {expandedStaff.has(transaction.id) ? (
-                                <ChevronUp className="w-4 h-4" />
+                                <ChevronUp className="h-4 w-4" />
                               ) : (
-                                <ChevronDown className="w-4 h-4" />
+                                <ChevronDown className="h-4 w-4" />
                               )}
                             </button>
                           ) : (
                             <span className="text-xs text-gray-400">None</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
                           {transaction.extra_Services?.length > 0 ? (
                             <button
                               onClick={() => toggleRowExpansion(transaction.id)}
                               className="flex items-center gap-1 text-blue-600 transition-colors hover:text-blue-800"
                             >
-                              <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">
+                              <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
                                 {transaction.extra_Services.length} services
                               </span>
                               {expandedRows.has(transaction.id) ? (
-                                <ChevronUp className="w-4 h-4" />
+                                <ChevronUp className="h-4 w-4" />
                               ) : (
-                                <ChevronDown className="w-4 h-4" />
+                                <ChevronDown className="h-4 w-4" />
                               )}
                             </button>
                           ) : (
                             <span className="text-xs text-gray-400">None</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 text-sm font-bold text-gray-900 whitespace-nowrap">
+                        <td className="px-4 py-4 text-sm font-bold whitespace-nowrap text-gray-900">
                           {formateCurrency(transaction.transaction_final_amount)}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
@@ -660,7 +658,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                               transaction.status.slice(1)}
                           </span>
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
                           {transaction.discount > 0 ? (
                             <span className="font-semibold text-green-600">
                               {formateCurrency(transaction.discount)}
@@ -672,22 +670,22 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
 
                         {/* todo yaha pe agr transaction status dalna hai ho ji
                       backend se ayega */}
-                        <td className="px-4 py-4 text-sm text-gray-700 whitespace-nowrap">
-                          <span className="flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full">
+                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-700">
+                          <span className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold">
                             {transaction?.transactions_status ? (
-                              <div className="flex items-center gap-2 px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
-                                <CheckCircle className="w-4 h-4 text-green-600" />
+                              <div className="flex items-center gap-2 rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
+                                <CheckCircle className="h-4 w-4 text-green-600" />
                                 paid
                               </div>
                             ) : (
-                              <div className="flex items-center gap-2 px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-full">
-                                <XCircle className="w-4 h-4 text-red-600" />
+                              <div className="flex items-center gap-2 rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">
+                                <XCircle className="h-4 w-4 text-red-600" />
                                 unpaid
                               </div>
                             )}
                           </span>
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-4 py-4 text-sm whitespace-nowrap text-gray-600">
                           <div className="flex items-center gap-2">
                             <button
                               disabled={transaction?.transactions_status}
@@ -708,25 +706,21 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                                   : 'text-red-600 hover:text-red-800'
                               )}
                             >
-                              <Edit className="w-4 h-4" />
+                              <Edit className="h-4 w-4" />
                             </button>
                           </div>
                         </td>
                         <td className="flex items-center justify-center px-4 py-4 whitespace-nowrap">
-                          
                           <button
                             disabled={
                               !transaction?.transaction_id || !transaction?.transactions_date
                             }
                             onClick={() => {
-                              setWhatsappPropsData(
-                                {
-                                  customer_name:transaction['Customer Name'],
-                                  customer_number:transaction['Mobile Number'],
-                                  store_id:transaction.store_id,
-                                  
-                                }
-                              );
+                              setWhatsappPropsData({
+                                customer_name: transaction['Customer Name'],
+                                customer_number: transaction['Mobile Number'],
+                                store_id: transaction.store_id,
+                              });
                               setIsWhatsappModelOpen(true);
                             }}
                             className={cn(
@@ -741,7 +735,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                                 : 'Share invoice'
                             }
                           >
-                            <MessageCircle className="w-4 h-4" />
+                            <MessageCircle className="h-4 w-4" />
                           </button>
                           <button
                             disabled={
@@ -760,7 +754,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                                 : 'Download invoice'
                             }
                           >
-                            <ArrowDownToLine className="w-4 h-4" />
+                            <ArrowDownToLine className="h-4 w-4" />
                           </button>
                         </td>
                       </tr>
@@ -774,7 +768,7 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                                   {transaction.extra_Services.map((service, index) => (
                                     <div
                                       key={index}
-                                      className="p-3 bg-white border border-blue-200 rounded-lg"
+                                      className="rounded-lg border border-blue-200 bg-white p-3"
                                     >
                                       <div className="flex items-center justify-between">
                                         <span className="text-sm font-medium text-gray-800">
@@ -802,10 +796,10 @@ const TodayTransaction = ({ searchItem, filterDate }) => {
                                   {transaction.staff_information.map((s, idx) => (
                                     <div
                                       key={idx}
-                                      className="p-3 bg-white border border-blue-200 rounded-lg"
+                                      className="rounded-lg border border-blue-200 bg-white p-3"
                                     >
                                       <div className="flex items-center gap-2">
-                                        <User className="w-4 h-4 text-gray-600" />
+                                        <User className="h-4 w-4 text-gray-600" />
                                         <span className="text-sm font-medium text-gray-800">
                                           {s?.staff_name || s?.staffName || 'Staff'}
                                         </span>

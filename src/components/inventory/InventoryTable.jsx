@@ -15,7 +15,7 @@ const InventoryTable = ({ products, onEditProduct }) => {
   const [sortField, setSortField] = useState('name')
   const [sortDirection, setSortDirection] = useState('asc')
 
-  console.log(products,"products")
+  
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -41,7 +41,7 @@ const InventoryTable = ({ products, onEditProduct }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white border border-gray-200 shadow-sm rounded-xl"
+      className="bg-white border border-gray-200 shadow-sm rounded-xl "
     >
       <div className="p-6 border-b border-gray-200">
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">

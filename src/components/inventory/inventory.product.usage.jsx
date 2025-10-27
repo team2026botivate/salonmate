@@ -1,20 +1,16 @@
-import React, { useState, useEffect } from 'react';
 import {
-  Search,
-  Filter,
-  Package,
   AlertTriangle,
-  Plus,
-  Minus,
-  User,
-  MessageSquare,
   Check,
-  X,
+  MessageSquare,
+  Minus,
+  Package,
+  Plus,
+  Search,
   ShoppingBag,
-  Sparkles,
-  Scissors,
-  Heart,
+  User,
+  X,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import {
   useGetInventoryData,
   useGetStaffData,
@@ -28,7 +24,6 @@ const getCategoryIcon = (category) => {
 };
 
 const InventoryProductUsage = () => {
-  // Fetch inventory from DB
   const { data: invRows, loading: invLoading, error: invError, refetch } = useGetInventoryData();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -46,12 +41,9 @@ const InventoryProductUsage = () => {
   const { recordUsage, loading: usageLoading, error: usageError } = useRecordInventoryUsage();
   const [errorToast, setErrorToast] = useState('');
 
-  // Map DB rows to UI products on load
   useEffect(() => {
-    const placeholderImg =
-      '/3.png';
+    const placeholderImg = '/3.png';
 
-      
     const mapped = (invRows || []).map((row) => ({
       id: row.product_id,
       name: row.product_name,
@@ -63,7 +55,6 @@ const InventoryProductUsage = () => {
       lowStockThreshold: 5,
     }));
 
-    
     setProducts(mapped);
     setFilteredProducts(mapped);
   }, [invRows]);
@@ -186,7 +177,7 @@ const InventoryProductUsage = () => {
                 </div>
               </div>
               {lowStockCount > 0 && (
-                <div className="px-4 py-2 border rounded-lg bg-amber-50 border-amber-200">
+                <div className="px-4 py-2 border rounded-lg border-amber-200 bg-amber-50">
                   <div className="flex items-center space-x-2">
                     <AlertTriangle className="w-5 h-5 text-amber-600" />
                     <span className="text-sm font-medium text-amber-800">
@@ -204,13 +195,13 @@ const InventoryProductUsage = () => {
               {/* Search Bar */}
               <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
+                  <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 top-1/2 left-3" />
                   <input
                     type="text"
                     placeholder="Search products or brands..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full py-3 pl-10 pr-4 transition-all border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full py-3 pl-10 pr-4 transition-all border border-gray-200 rounded-lg focus:border-transparent focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
               </div>
@@ -221,7 +212,7 @@ const InventoryProductUsage = () => {
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                    className={`flex items-center space-x-2 rounded-lg px-4 py-2 font-medium transition-all ${
                       selectedCategory === category
                         ? 'bg-purple-600 text-white shadow-md'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -237,51 +228,41 @@ const InventoryProductUsage = () => {
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filteredProducts.map((product) => (
             <div
               key={product.id}
-              className="overflow-hidden transition-all duration-300 bg-white border shadow-sm rounded-xl hover:shadow-lg group"
+              className="relative overflow-hidden transition-all duration-300 bg-white shadow-lg group rounded-3xl hover:shadow-2xl"
             >
               {/* Product Image */}
-              <div className="relative h-40 overflow-hidden ">
+              <div className="relative h-64 p-6 overflow-hidden bg-gradient-to-br from-pink-50 to-blue-50">
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                  className="object-contain w-full h-full duration-300 group-hover:scale-110"
                 />
-                <div className="absolute top-3 right-3">
-                  <div
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      product.stock <= product.lowStockThreshold
-                        ? 'bg-red-100 text-red-800'
-                        : product.stock <= product.lowStockThreshold * 2
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-green-100 text-green-800'
-                    }`}
-                  >
-                    {product.stock} {product.unit}
-                  </div>
-                </div>
               </div>
 
               {/* Product Info */}
-              <div className="p-5">
-                <div className="mb-3">
-                  <div className="flex items-center mb-1 space-x-2">
-                    {getCategoryIcon(product.category)}
-                    <span className="text-xs font-medium tracking-wide text-gray-500 uppercase">
-                      {product.category}
-                    </span>
-                  </div>
-                  <h3 className="mb-1 font-semibold text-gray-900">{product.name}</h3>
-                  {product.brand ? <p className="text-sm text-gray-600">{product.brand}</p> : null}
+              <div className="p-6 ">
+                {/* Category & Brand */}
+                <div className="flex items-center mb-2 space-x-2 ">
+                  {getCategoryIcon(product.category)}
+                  <span className="text-xs font-medium tracking-wider text-gray-500 uppercase">
+                    {product.category}
+                  </span>
                 </div>
 
+                {/* Product Name */}
+                <h3 className="mb-1 text-base font-bold text-gray-90 max-h-30 min-h-15">{product.name}</h3>
+                {product.brand ? (
+                  <p className="mb-4 text-sm text-gray-500">{product.brand}</p>
+                ) : null}
+
                 {/* Stock Status */}
-                <div className="mb-4">
+                <div className="mb-6">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Stock Level</span>
+                    <span className="text-sm font-medium text-gray-600">Stock Level</span>
                     <span
                       className={`text-sm font-bold ${
                         product.stock <= product.lowStockThreshold
@@ -294,7 +275,7 @@ const InventoryProductUsage = () => {
                       {product.stock} {product.unit}
                     </span>
                   </div>
-                  <div className="w-full h-2 bg-gray-200 rounded-full">
+                  <div className="w-full h-2 overflow-hidden bg-gray-200 rounded-full">
                     <div
                       className={`h-2 rounded-full transition-all ${
                         product.stock <= product.lowStockThreshold
@@ -314,15 +295,15 @@ const InventoryProductUsage = () => {
                 <button
                   onClick={() => handleUseProduct(product)}
                   disabled={product.stock === 0 || usageLoading}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                  className={`trnsform py-2 px-4 w-full  rounded-xl font-semibold transition-all duration-200 ${
                     product.stock === 0
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
+                      ? 'cursor-not-allowed bg-gray-200 text-gray-400'
+                      : 'transform bg-gray-900 text-white shadow-md hover:-translate-y-0.5 hover:bg-gray-800 hover:shadow-xl'
                   }`}
                 >
                   <div className="flex items-center justify-center space-x-2">
-                    <ShoppingBag className="w-4 h-4" />
-                    <span>{product.stock === 0 ? 'Out of Stock' : 'Use Product'}</span>
+                    <ShoppingBag className="w-5 h-5" />
+                    <span>{product.stock === 0 ? 'Out of Stock' : 'Buy'}</span>
                   </div>
                 </button>
               </div>
@@ -343,7 +324,7 @@ const InventoryProductUsage = () => {
       {/* Usage Modal */}
       {isModalOpen && selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white shadow-2xl">
             {/* Modal Header */}
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between">
@@ -386,7 +367,7 @@ const InventoryProductUsage = () => {
                   <button
                     onClick={() => adjustQuantity(-1)}
                     disabled={usageQuantity <= 1}
-                    className="p-2 transition-colors border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 transition-colors border border-gray-300 rounded-lg hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
@@ -402,13 +383,13 @@ const InventoryProductUsage = () => {
                           setUsageQuantity(value);
                         }
                       }}
-                      className="w-full px-4 py-2 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-4 py-2 text-center border border-gray-300 rounded-lg focus:border-transparent focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
                   <button
                     onClick={() => adjustQuantity(1)}
                     disabled={usageQuantity >= selectedProduct.stock}
-                    className="p-2 transition-colors border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 transition-colors border border-gray-300 rounded-lg hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -423,11 +404,11 @@ const InventoryProductUsage = () => {
               <div className="mb-6">
                 <label className="block mb-3 text-sm font-medium text-gray-700">Staff Member</label>
                 <div className="relative">
-                  <User className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
+                  <User className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 top-1/2 left-3" />
                   <select
                     value={selectedStaffId}
                     onChange={(e) => setSelectedStaffId(e.target.value)}
-                    className="w-full py-3 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full py-3 pl-10 pr-4 border border-gray-300 rounded-lg focus:border-transparent focus:ring-2 focus:ring-purple-500"
                   >
                     {(staffRows || []).map((staff) => (
                       <option key={staff.id} value={staff.id}>
@@ -444,13 +425,13 @@ const InventoryProductUsage = () => {
                   Usage Note (Optional)
                 </label>
                 <div className="relative">
-                  <MessageSquare className="absolute w-5 h-5 text-gray-400 left-3 top-3" />
+                  <MessageSquare className="absolute w-5 h-5 text-gray-400 top-3 left-3" />
                   <textarea
                     value={usageNote}
                     onChange={(e) => setUsageNote(e.target.value)}
                     placeholder="Add a note about this usage..."
                     rows="3"
-                    className="w-full py-3 pl-10 pr-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full py-3 pl-10 pr-4 border border-gray-300 rounded-lg resize-none focus:border-transparent focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
               </div>
@@ -471,7 +452,7 @@ const InventoryProductUsage = () => {
                     usageQuantity > selectedProduct.stock ||
                     usageLoading
                   }
-                  className="flex-1 px-4 py-3 font-medium text-white transition-all rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-3 font-medium text-white transition-all rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <div className="flex items-center justify-center space-x-2">
                     <Check className="w-4 h-4" />
@@ -486,7 +467,7 @@ const InventoryProductUsage = () => {
 
       {/* Success Toast */}
       {showSuccessToast && (
-        <div className="fixed z-50 px-6 py-4 text-white bg-green-600 rounded-lg shadow-lg bottom-6 right-6 animate-slide-up">
+        <div className="fixed z-50 px-6 py-4 text-white bg-green-600 rounded-lg shadow-lg animate-slide-up right-6 bottom-6">
           <div className="flex items-center space-x-2">
             <Check className="w-5 h-5" />
             <span className="font-medium">Product usage recorded successfully!</span>
@@ -496,7 +477,7 @@ const InventoryProductUsage = () => {
 
       {/* Error Toast */}
       {!!errorToast && (
-        <div className="fixed z-50 px-6 py-4 text-white bg-red-600 rounded-lg shadow-lg bottom-6 right-6 animate-slide-up">
+        <div className="fixed z-50 px-6 py-4 text-white bg-red-600 rounded-lg shadow-lg animate-slide-up right-6 bottom-6">
           <div className="flex items-center space-x-2">
             <X className="w-5 h-5" />
             <span className="font-medium">{errorToast}</span>
