@@ -316,7 +316,7 @@ export const useUpdateStaffStatus = () => {
   return { updateStaffStatusByName, loading, error };
 };
 
-export const usegetUserByPhoneNumber = () => {
+export const useGetUserByPhoneNumber = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { store_id } = useAppData();
@@ -1021,6 +1021,7 @@ export const useStaffAttendance = (selectedDate) => {
       if (attErr) throw attErr;
 
       const attMap = new Map((attRows || []).map((r) => [r.staff_id, r]));
+      console.log(attMap,"attMap")
 
       // 3) Merge so every staff member appears
       const merged = (staffList || []).map((s) => {
@@ -1037,6 +1038,8 @@ export const useStaffAttendance = (selectedDate) => {
         };
       });
 
+      console.log(merged,"merged")
+
       setAttendance(merged);
     } catch (err) {
       console.error('Error fetching attendance:', err);
@@ -1048,6 +1051,7 @@ export const useStaffAttendance = (selectedDate) => {
 
   // Update staff status
   const updateStatus = async (staffId, newStatus, inTime = null, outTime = null, remark = '') => {
+  
     try {
       // Try update first
       const { data: upd, error: updErr } = await supabase
@@ -1058,6 +1062,7 @@ export const useStaffAttendance = (selectedDate) => {
           out_time: outTime,
           remark,
           update_at: new Date().toISOString(),
+          store_id: store_id,
         })
         .eq('staff_id', staffId)
         .eq('date', selectedDate)
@@ -1075,6 +1080,7 @@ export const useStaffAttendance = (selectedDate) => {
           out_time: outTime,
           remark,
           update_at: new Date().toISOString(),
+          store_id: store_id,
         });
         if (insErr) throw insErr;
       }
@@ -2218,10 +2224,12 @@ export const useStaffPaymentData = () => {
       // Fetch all active staff for the current store with latest payment method
       const { data: staffList, error: staffError } = await supabase
         .from('staff_info')
-        .select(`
+        .select(
+          `
           id, staff_name, mobile_number, position, base_salary, commission_rate, commission_type, payment_status,
           staff_payments(payment_method, payment_date, amount, status)
-        `)
+        `
+        )
         .neq('delete_flag', true)
         .eq('store_id', store_id)
         .order('staff_name', { ascending: true });
@@ -2234,9 +2242,12 @@ export const useStaffPaymentData = () => {
           try {
             // Get latest payment record from staff_payments table for payment method
             const paymentRecords = staff.staff_payments || [];
-            const latestPayment = paymentRecords.length > 0
-              ? paymentRecords.sort((a, b) => new Date(b.payment_date) - new Date(a.payment_date))[0]
-              : null;
+            const latestPayment =
+              paymentRecords.length > 0
+                ? paymentRecords.sort(
+                    (a, b) => new Date(b.payment_date) - new Date(a.payment_date)
+                  )[0]
+                : null;
 
             // Get attendance count for current month
             const { data: attendanceData, error: attendanceError } = await supabase
@@ -2399,7 +2410,7 @@ export const useUpdateStaffPaymentStatus = () => {
       // Update payment status in staff_info table with store_id filter
       const { error: statusError } = await supabase
         .from('staff_info')
-        .update({ payment_status: 'paid' })
+        .update({ payment_status: 'paid', last_payment: now.toISOString().split('T')[0] })
         .eq('id', staffData.id)
         .eq('store_id', store_id);
 

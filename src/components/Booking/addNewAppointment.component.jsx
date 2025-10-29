@@ -1,27 +1,26 @@
 'use client';
+import { useSendWhatsappAfterAppointment } from '@/hook/sendWhatsapp-after-appointmen';
 import {
   ArrowRight,
   Calendar,
+  Check,
+  ChevronDown,
   Clock,
   CreditCard,
   Phone,
   User,
   X,
-  ChevronDown,
-  Check,
 } from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../../Context/AuthContext';
 import {
   useCreatenewAppointment,
+  useDoStaffStatusActive,
   useGetServicesList,
   useGetStaffData,
-  usegetUserByPhoneNumber,
-  useDoStaffStatusActive,
+  useGetUserByPhoneNumber,
 } from '../../hook/dbOperation';
 import { generateBookingId } from '../../utils/generateBookingId';
-import { useAuth } from '../../Context/AuthContext';
-import { useSendWhatsappAfterAppointment } from '@/hook/sendWhatsapp-after-appointmen';
-import Toast from '../ui/tost.Components.ui';
 
 const AddNewAppointment = ({
   tableHeaders,
@@ -61,7 +60,7 @@ const AddNewAppointment = ({
   const { data, loading } = useGetStaffData();
   const [isNewUser, setisNewUser] = useState(false);
 
-  const { getUserByPhoneNumber } = usegetUserByPhoneNumber();
+  const { getUserByPhoneNumber } = useGetUserByPhoneNumber();
 
   const getBookingId = useMemo(() => generateBookingId(), []);
 

@@ -28,7 +28,6 @@ function App() {
               <Route element={<LicenseGuard />}>
                 <Route path="/admin-dashboard/*" element={<Dashboard />} />
                 <Route path="/profile/:id" element={<ProfilePage />} />
-                
               </Route>
             </Route>
 

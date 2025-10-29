@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
   Users,
   CheckCircle,
@@ -12,76 +12,66 @@ import {
   Filter,
   Search,
   RefreshCw,
-} from 'lucide-react'
-import { useStaffAttendance } from './hook/dbOperation'
+} from 'lucide-react';
+import { useStaffAttendance } from './hook/dbOperation';
 
 // Import your actual hook
 
 const StaffAttendance = () => {
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split('T')[0]
-  )
-  const [searchTerm, setSearchTerm] = useState('')
-  const [departmentFilter, setDepartmentFilter] = useState('all')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
 
-  const { attendance, loading, updateStatus, fetchAttendance } =
-    useStaffAttendance(selectedDate)
+  const { attendance, loading, updateStatus } = useStaffAttendance(selectedDate);
 
   // Normalize any legacy status values
-  const normalizeStatus = (s) => (s === 'on_leave' ? 'half_day' : s)
+  const normalizeStatus = (s) => (s === 'on_leave' ? 'half_day' : s);
 
   // Get filtered staff based on search and filters
   const getFilteredStaff = () => {
     return attendance.filter((staff) => {
       const matchesSearch =
         staff.staff_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        staff.position.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesDepartment =
-        departmentFilter === 'all' || staff.position === departmentFilter
+        staff.position.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesDepartment = departmentFilter === 'all' || staff.position === departmentFilter;
       const matchesStatus =
-        statusFilter === 'all' || normalizeStatus(staff.status) === statusFilter
+        statusFilter === 'all' || normalizeStatus(staff.status) === statusFilter;
 
-      return matchesSearch && matchesDepartment && matchesStatus
-    })
-  }
+      return matchesSearch && matchesDepartment && matchesStatus;
+    });
+  };
 
   // Get unique departments
   const getDepartments = () => {
-    const departments = [...new Set(attendance.map((staff) => staff.position))]
-    return departments.sort()
-  }
+    const departments = [...new Set(attendance.map((staff) => staff.position))];
+    return departments.sort();
+  };
 
   // Calculate attendance summary
   const getAttendanceSummary = () => {
-    const filteredData = getFilteredStaff()
+    const filteredData = getFilteredStaff();
     return {
       totalStaff: filteredData.length,
-      present: filteredData.filter(
-        (staff) => normalizeStatus(staff.status) === 'present'
-      ).length,
-      absent: filteredData.filter(
-        (staff) => normalizeStatus(staff.status) === 'absent'
-      ).length,
-      halfDay: filteredData.filter(
-        (staff) => normalizeStatus(staff.status) === 'half_day'
-      ).length,
-    }
-  }
+      present: filteredData.filter((staff) => normalizeStatus(staff.status) === 'present').length,
+      absent: filteredData.filter((staff) => normalizeStatus(staff.status) === 'absent').length,
+      halfDay: filteredData.filter((staff) => normalizeStatus(staff.status) === 'half_day').length,
+    };
+  };
 
   // Mark all staff as present
   const markAllPresent = () => {
     const currentTime = new Date().toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
-    })
+    });
 
     getFilteredStaff().forEach((staff) => {
       if (staff.status !== 'present') {
-        updateStatus(staff.staff_id, 'present', currentTime)
+        updateStatus(staff.staff_id, 'present', currentTime);
       }
-    })
-  }
+    });
+  };
 
   // Update staff status
   const handleStatusUpdate = (staffId, newStatus) => {
@@ -91,9 +81,9 @@ const StaffAttendance = () => {
         : new Date().toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit',
-          })
-    updateStatus(staffId, newStatus, currentTime)
-  }
+          });
+    updateStatus(staffId, newStatus, currentTime);
+  };
 
   // Status configuration
   const statusConfig = {
@@ -125,10 +115,14 @@ const StaffAttendance = () => {
       bgColor: 'bg-yellow-100',
       borderColor: 'border-yellow-200',
     },
-  }
+  };
 
-  const summary = getAttendanceSummary()
-  const filteredStaff = getFilteredStaff()
+  const summary = getAttendanceSummary();
+  const filteredStaff = getFilteredStaff();
+
+  //todo: i have to come here
+
+  // console.log(filteredStaff, 'filterd staff');
 
   // Loading skeleton component
   const LoadingSkeleton = () => (
@@ -136,10 +130,7 @@ const StaffAttendance = () => {
       {/* Summary skeleton */}
       <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
         {[...Array(4)].map((_, i) => (
-          <div
-            key={i}
-            className="animate-pulse rounded-2xl bg-white p-6 shadow-lg"
-          >
+          <div key={i} className="animate-pulse rounded-2xl bg-white p-6 shadow-lg">
             <div className="flex items-center justify-between">
               <div>
                 <div className="mb-2 h-4 w-20 rounded bg-gray-200"></div>
@@ -175,7 +166,7 @@ const StaffAttendance = () => {
         </div>
       </div>
     </div>
-  )
+  );
 
   if (loading) {
     return (
@@ -184,16 +175,14 @@ const StaffAttendance = () => {
           <div className="mb-8 text-center">
             <div className="mb-4 flex items-center justify-center">
               <Users className="mr-3 h-8 w-8 text-blue-600" />
-              <h1 className="text-3xl font-bold text-gray-900">
-                Staff Attendance
-              </h1>
+              <h1 className="text-3xl font-bold text-gray-900">Staff Attendance</h1>
             </div>
             <p className="text-gray-600">Loading attendance data...</p>
           </div>
           <LoadingSkeleton />
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -203,25 +192,19 @@ const StaffAttendance = () => {
         <div className="mb-8 text-center">
           <div className="mb-4 flex items-center justify-center">
             <Users className="mr-3 h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">
-              Staff Attendance
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900">Staff Attendance</h1>
           </div>
-          <p className="text-gray-600">
-            Manage and track staff attendance efficiently
-          </p>
+          <p className="text-gray-600">Manage and track staff attendance efficiently</p>
         </div>
 
         {/* Date Picker and Controls */}
-        <div className="mb-8 rounded-2xl bg-white p-6  shadow-lg md:p-6">
+        <div className="mb-8 rounded-2xl bg-white p-6 shadow-lg md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-col items-center  md:flex-row gap-4">
-              <div className=' w-full flex items-center justify-between flex-col gap-3 sm:flex-row'>
-                <div className="flex items-center gap-2 ">
+            <div className="flex flex-col items-center gap-4 md:flex-row">
+              <div className="flex w-full flex-col items-center justify-between gap-3 sm:flex-row">
+                <div className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-gray-500" />
-                  <label className="text-sm font-medium text-gray-700">
-                    Date:
-                  </label>
+                  <label className="text-sm font-medium text-gray-700">Date:</label>
                   <input
                     type="date"
                     value={selectedDate}
@@ -229,33 +212,27 @@ const StaffAttendance = () => {
                     className="rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-
-              
               </div>
 
               <button
                 onClick={markAllPresent}
                 className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white transition-colors hover:bg-green-700"
               >
-                <CheckCircle className="h-4 w-4  " />
+                <CheckCircle className="h-4 w-4" />
 
-                <span className='text-nowrap'>Mark All Present</span>
+                <span className="text-nowrap">Mark All Present</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Attendance Summary */}
-        <div className="mb-8 rounded-2xl bg-white md:p-6 p-2 shadow-lg">
-          <div className="mb-6 flex items-center justify-between  flex-col gap-5">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Attendance Summary
-            </h2>
+        <div className="mb-8 rounded-2xl bg-white p-2 shadow-lg md:p-6">
+          <div className="mb-6 flex flex-col items-center justify-between gap-5">
+            <h2 className="text-2xl font-bold text-gray-900">Attendance Summary</h2>
             <div className="flex items-center gap-2">
               <Filter className="h-5 w-5 text-gray-500" />
-              <label className="text-sm font-medium text-gray-700">
-                Department:
-              </label>
+              <label className="text-sm font-medium text-gray-700">Department:</label>
               <select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
@@ -274,12 +251,8 @@ const StaffAttendance = () => {
             <div className="rounded-2xl border-l-4 border-blue-500 bg-white p-6 shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Total Staff
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {summary.totalStaff}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Total Staff</p>
+                  <p className="text-3xl font-bold text-gray-900">{summary.totalStaff}</p>
                 </div>
                 <div className="rounded-full bg-blue-100 p-3">
                   <Users className="h-8 w-8 text-blue-600" />
@@ -291,9 +264,7 @@ const StaffAttendance = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Present</p>
-                  <p className="text-3xl font-bold text-green-600">
-                    {summary.present}
-                  </p>
+                  <p className="text-3xl font-bold text-green-600">{summary.present}</p>
                 </div>
                 <div className="rounded-full bg-green-100 p-3">
                   <CheckCircle className="h-8 w-8 text-green-600" />
@@ -305,9 +276,7 @@ const StaffAttendance = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Absent</p>
-                  <p className="text-3xl font-bold text-red-600">
-                    {summary.absent}
-                  </p>
+                  <p className="text-3xl font-bold text-red-600">{summary.absent}</p>
                 </div>
                 <div className="rounded-full bg-red-100 p-3">
                   <XCircle className="h-8 w-8 text-red-600" />
@@ -319,9 +288,7 @@ const StaffAttendance = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Half Day</p>
-                  <p className="text-3xl font-bold text-yellow-600">
-                    {summary.halfDay}
-                  </p>
+                  <p className="text-3xl font-bold text-yellow-600">{summary.halfDay}</p>
                 </div>
                 <div className="rounded-full bg-yellow-100 p-3">
                   <Clock className="h-8 w-8 text-yellow-600" />
@@ -399,19 +366,16 @@ const StaffAttendance = () => {
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
                 {filteredStaff.map((staff) => {
-                  const config = statusConfig[staff.status]
-                  const StatusIcon = config.icon
+                  const config = statusConfig[staff.status];
+                  const StatusIcon = config.icon;
                   const initials = (staff.staff_name || '')
                     .split(' ')
                     .filter(Boolean)
                     .map((n) => n[0])
-                    .join('')
+                    .join('');
 
                   return (
-                    <tr
-                      key={staff.staff_id}
-                      className="transition-colors hover:bg-gray-50"
-                    >
+                    <tr key={staff.staff_id} className="transition-colors hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 font-semibold text-white">
@@ -445,15 +409,8 @@ const StaffAttendance = () => {
                           <select
                             value={normalizeStatus(staff.status)}
                             onChange={(e) => {
-                              const val = e.target.value
-                              const time =
-                                val === 'absent'
-                                  ? null
-                                  : new Date().toLocaleTimeString([], {
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    })
-                              handleStatusUpdate(staff.staff_id, val)
+                              const val = e.target.value;
+                              handleStatusUpdate(staff.staff_id, val);
                             }}
                             className="cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2 pr-8 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500"
                           >
@@ -465,7 +422,7 @@ const StaffAttendance = () => {
                         </div>
                       </td>
                     </tr>
-                  )
+                  );
                 })}
               </tbody>
             </table>
@@ -474,18 +431,14 @@ const StaffAttendance = () => {
           {filteredStaff.length === 0 && (
             <div className="py-12 text-center">
               <Users className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-              <h3 className="mb-2 text-lg font-semibold text-gray-600">
-                No staff found
-              </h3>
-              <p className="text-gray-500">
-                Try adjusting your search or filter criteria
-              </p>
+              <h3 className="mb-2 text-lg font-semibold text-gray-600">No staff found</h3>
+              <p className="text-gray-500">Try adjusting your search or filter criteria</p>
             </div>
           )}
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default StaffAttendance
+export default StaffAttendance;
