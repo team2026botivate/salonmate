@@ -119,6 +119,7 @@ export default function Dashboard() {
       'dailyEntry',
       'appointmentHistory',
       'staff',
+      'storePurches',
       'inventory',
       'dailyExpences',
       'services',
@@ -126,8 +127,7 @@ export default function Dashboard() {
       'customerDb',
       'promoCard',
       'license',
-      'whatsapp',
-      
+      'whatsapp'
     ];
 
     // Admins automatically get all tabs
@@ -257,7 +257,12 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 to-indigo-100 md:flex-row">
+    <motion.div 
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 1 }}
+    exit={{ opacity: 0 }}
+    className="flex flex-col h-screen bg-gradient-to-br from-blue-50 to-indigo-100 md:flex-row">
       <Sidebar
         activeTab={activeTab}
         setActiveTab={handleTabChange}
@@ -286,6 +291,6 @@ export default function Dashboard() {
         </motion.main>
         <Footer />
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -18,7 +18,6 @@ import NotificationSystem from '../offers_&_Membership/notificationSystem';
 import { useAuth } from '@/Context/AuthContext';
 import supabase from '@/dataBase/connectdb';
 
-
 const PERMISSIONS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'appointment', label: 'Appointment' },
@@ -32,11 +31,10 @@ const PERMISSIONS = [
   { id: 'customers', label: 'Customers' },
   { id: 'promocards', label: 'Offers & Memberships' },
   { id: 'license', label: 'License' },
+  { id: 'storepurches', label: 'Store & Purches' },
 ];
 
-
 async function fetchStaffWithPermissions(storeId) {
-  
   const { data: staff, error: staffErr } = await supabase
     .from('profiles')
     .select('id, full_name, email, role')
@@ -105,9 +103,7 @@ async function updateStaffPermissions(storeId, userId, permissionIds) {
   }
 
   // Validate permission IDs against DB to avoid FK errors
-  const { data: permRows, error: permErr } = await supabase
-    .from('permissions')
-    .select('id');
+  const { data: permRows, error: permErr } = await supabase.from('permissions').select('id');
   if (permErr) {
     console.error('Failed to fetch permissions list', permErr);
     throw permErr;
@@ -138,7 +134,7 @@ async function updateStaffPermissions(storeId, userId, permissionIds) {
   return inserted;
 }
 
-const StaffPermissions = ({setStaffGivePermission}) => {
+const StaffPermissions = ({ setStaffGivePermission }) => {
   const { user } = useAuth();
   const storeId = user?.profile?.store_id;
   const [staffList, setStaffList] = useState([]);
@@ -254,9 +250,7 @@ const StaffPermissions = ({setStaffGivePermission}) => {
         .filter((key) => validIds.has(key));
 
       // Fetch actual permission IDs from DB to ensure FK validity
-      const { data: permRows, error: permErr } = await supabase
-        .from('permissions')
-        .select('id');
+      const { data: permRows, error: permErr } = await supabase.from('permissions').select('id');
       if (permErr) {
         throw permErr;
       }
@@ -266,10 +260,7 @@ const StaffPermissions = ({setStaffGivePermission}) => {
       // Notify if any selected permissions are not present in DB
       const skipped = updatedPermissions.filter((id) => !dbIds.has(id));
       if (skipped.length > 0) {
-        showNotification(
-          `Skipped unknown permissions (not in DB): ${skipped.join(', ')}`,
-          'error'
-        );
+        showNotification(`Skipped unknown permissions (not in DB): ${skipped.join(', ')}`, 'error');
       }
 
       // Persist to Supabase
@@ -307,12 +298,12 @@ const StaffPermissions = ({setStaffGivePermission}) => {
   };
 
   return (
-    <div className="absolute z-50 w-full min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50">
-      <div className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+    <div className="absolute z-50 min-h-screen w-full bg-gradient-to-br from-purple-50 via-white to-indigo-50">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center mb-2 space-x-3">
-            <div className="p-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600">
+          <div className="mb-2 flex items-center space-x-3">
+            <div className="rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 p-2">
               <Shield className="text-white" size={24} />
             </div>
             <h1 className="text-3xl font-bold text-gray-900">Staff Permissions</h1>
@@ -324,14 +315,14 @@ const StaffPermissions = ({setStaffGivePermission}) => {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           {/* Staff List - Left Sidebar */}
           <div className="lg:col-span-4">
-            <div className="overflow-hidden bg-white border border-gray-200 shadow-sm rounded-2xl">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between mb-4">
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+              <div className="border-b border-gray-200 p-6">
+                <div className="mb-4 flex items-center justify-between">
                   <h2 className="flex items-center text-lg font-semibold text-gray-900">
                     <Users size={20} className="mr-2 text-purple-600" />
                     Staff Members
                   </h2>
-                  <span className="px-3 py-1 text-sm font-medium text-purple-700 bg-purple-100 rounded-full">
+                  <span className="rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-700">
                     {filteredStaff.length}
                   </span>
                 </div>
@@ -339,13 +330,13 @@ const StaffPermissions = ({setStaffGivePermission}) => {
                 {/* Search */}
                 <div className="relative">
                   <Search
-                    className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2"
+                    className="absolute top-1/2 left-3 -translate-y-1/2 transform text-gray-400"
                     size={18}
                   />
                   <input
                     type="text"
                     placeholder="Search staff..."
-                    className="w-full py-3 pl-10 pr-4 transition-colors border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full rounded-xl border border-gray-300 py-3 pr-4 pl-10 transition-colors focus:border-purple-500 focus:ring-2 focus:ring-purple-500"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -353,14 +344,14 @@ const StaffPermissions = ({setStaffGivePermission}) => {
               </div>
 
               {/* Staff List */}
-              <div className="overflow-y-auto max-h-96 custom-scrollbar">
+              <div className="custom-scrollbar max-h-96 overflow-y-auto">
                 {filteredStaff.map((staff) => (
                   <button
                     key={staff.id}
                     onClick={() => handleStaffSelect(staff)}
-                    className={`w-full p-4 text-left hover:bg-purple-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                    className={`w-full border-b border-gray-100 p-4 text-left transition-colors last:border-b-0 hover:bg-purple-50 ${
                       selectedStaff?.id === staff.id
-                        ? 'bg-purple-50 border-r-4 border-r-purple-500'
+                        ? 'border-r-4 border-r-purple-500 bg-purple-50'
                         : ''
                     }`}
                   >
@@ -369,18 +360,18 @@ const StaffPermissions = ({setStaffGivePermission}) => {
                         <img
                           src={staff.profileImage || '/3.png'}
                           alt={staff.name}
-                          className="object-cover w-12 h-12 border-2 border-white rounded-full shadow-sm"
+                          className="h-12 w-12 rounded-full border-2 border-white object-cover shadow-sm"
                         />
                         <div
-                          className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+                          className={`absolute -right-1 -bottom-1 h-4 w-4 rounded-full border-2 border-white ${
                             staff.isActive ? 'bg-green-400' : 'bg-gray-400'
                           }`}
                         />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{staff.name}</p>
-                        <p className="text-sm text-gray-500 truncate">{staff.role}</p>
-                        <p className="text-xs text-gray-400 truncate">{staff.email}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-gray-900">{staff.name}</p>
+                        <p className="truncate text-sm text-gray-500">{staff.role}</p>
+                        <p className="truncate text-xs text-gray-400">{staff.email}</p>
                       </div>
                       <ChevronRight size={16} className="text-gray-400" />
                     </div>
@@ -395,17 +386,17 @@ const StaffPermissions = ({setStaffGivePermission}) => {
             {selectedStaff ? (
               <div className="space-y-6">
                 {/* Selected Staff Header */}
-                <div className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="relative">
                         <img
                           src={selectedStaff.profileImage || '/3.png'}
                           alt={selectedStaff.name}
-                          className="object-cover w-16 h-16 border-4 border-white rounded-full shadow-lg"
+                          className="h-16 w-16 rounded-full border-4 border-white object-cover shadow-lg"
                         />
                         <div
-                          className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${
+                          className={`absolute -right-1 -bottom-1 h-5 w-5 rounded-full border-2 border-white ${
                             selectedStaff.isActive ? 'bg-green-400' : 'bg-gray-400'
                           }`}
                         />
@@ -418,7 +409,7 @@ const StaffPermissions = ({setStaffGivePermission}) => {
                     </div>
                     <div className="flex items-center space-x-2">
                       <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        className={`rounded-full px-3 py-1 text-sm font-medium ${
                           selectedStaff.isActive
                             ? 'bg-green-100 text-green-700'
                             : 'bg-gray-100 text-gray-700'
@@ -431,7 +422,7 @@ const StaffPermissions = ({setStaffGivePermission}) => {
                 </div>
 
                 {/* Bulk Actions */}
-                <div className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="mb-1 text-lg font-semibold text-gray-900">Quick Actions</h4>
@@ -442,14 +433,14 @@ const StaffPermissions = ({setStaffGivePermission}) => {
                     <div className="flex space-x-3">
                       <button
                         onClick={handleGrantAll}
-                        className="flex items-center px-4 py-2 text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700"
+                        className="flex items-center rounded-lg bg-green-600 px-4 py-2 text-white transition-colors hover:bg-green-700"
                       >
                         <CheckCircle2 size={16} className="mr-2" />
                         Grant All
                       </button>
                       <button
                         onClick={handleRevokeAll}
-                        className="flex items-center px-4 py-2 text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700"
+                        className="flex items-center rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700"
                       >
                         <X size={16} className="mr-2" />
                         Revoke All
@@ -459,8 +450,8 @@ const StaffPermissions = ({setStaffGivePermission}) => {
                 </div>
 
                 {/* Permission Matrix */}
-                <div className="overflow-hidden bg-white border border-gray-200 shadow-sm rounded-2xl">
-                  <div className="p-6 border-b border-gray-200">
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                  <div className="border-b border-gray-200 p-6">
                     <h4 className="flex items-center text-lg font-semibold text-gray-900">
                       <Settings size={20} className="mr-2 text-indigo-600" />
                       Permission Matrix
@@ -475,11 +466,11 @@ const StaffPermissions = ({setStaffGivePermission}) => {
                       {PERMISSIONS.map(({ id, label }) => (
                         <div
                           key={id}
-                          className="flex items-center justify-between p-4 transition-colors border border-gray-200 rounded-xl hover:border-purple-300"
+                          className="flex items-center justify-between rounded-xl border border-gray-200 p-4 transition-colors hover:border-purple-300"
                         >
                           <div className="flex items-center space-x-3">
                             <div
-                              className={`p-2 rounded-lg ${
+                              className={`rounded-lg p-2 ${
                                 pendingPermissions[id]
                                   ? 'bg-green-100 text-green-600'
                                   : 'bg-gray-100 text-gray-400'
@@ -494,14 +485,14 @@ const StaffPermissions = ({setStaffGivePermission}) => {
                               </p>
                             </div>
                           </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
+                          <label className="relative inline-flex cursor-pointer items-center">
                             <input
                               type="checkbox"
-                              className="sr-only peer"
+                              className="peer sr-only"
                               checked={pendingPermissions[id] || false}
                               onChange={() => handlePermissionToggle(id)}
                             />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            <div className="peer h-6 w-11 rounded-full bg-gray-200 peer-checked:bg-purple-600 peer-focus:ring-4 peer-focus:ring-purple-300 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                           </label>
                         </div>
                       ))}
@@ -511,7 +502,7 @@ const StaffPermissions = ({setStaffGivePermission}) => {
 
                 {/* Save Button */}
                 {hasChanges() && (
-                  <div className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                  <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-gray-900">Unsaved Changes</p>
@@ -520,11 +511,11 @@ const StaffPermissions = ({setStaffGivePermission}) => {
                       <button
                         onClick={handleSavePermissions}
                         disabled={isLoading}
-                        className="flex items-center px-6 py-3 text-white transition-all duration-200 shadow-lg bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl hover:from-purple-700 hover:to-indigo-700 hover:shadow-xl disabled:opacity-50"
+                        className="flex items-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-3 text-white shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-indigo-700 hover:shadow-xl disabled:opacity-50"
                       >
                         {isLoading ? (
                           <>
-                            <div className="w-4 h-4 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
+                            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                             Saving...
                           </>
                         ) : (
@@ -539,8 +530,8 @@ const StaffPermissions = ({setStaffGivePermission}) => {
                 )}
               </div>
             ) : (
-              <div className="p-12 text-center bg-white border border-gray-200 shadow-sm rounded-2xl">
-                <UserCheck className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+              <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center shadow-sm">
+                <UserCheck className="mx-auto mb-4 h-16 w-16 text-gray-400" />
                 <h3 className="mb-2 text-lg font-medium text-gray-900">Select a Staff Member</h3>
                 <p className="text-gray-600">
                   Choose a staff member from the list to manage their permissions
@@ -553,16 +544,16 @@ const StaffPermissions = ({setStaffGivePermission}) => {
         {/* Confirmation Dialog */}
         {showConfirmDialog && (
           <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
               <div
-                className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
+                className="bg-opacity-75 fixed inset-0 bg-gray-500 transition-opacity"
                 onClick={() => setShowConfirmDialog(false)}
               ></div>
 
-              <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
-                <div className="flex items-center mb-4">
-                  <div className="flex items-center justify-center w-12 h-12 mx-auto bg-purple-100 rounded-full">
-                    <Shield className="w-6 h-6 text-purple-600" />
+              <div className="my-8 inline-block w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <div className="mb-4 flex items-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
+                    <Shield className="h-6 w-6 text-purple-600" />
                   </div>
                 </div>
 
@@ -579,7 +570,7 @@ const StaffPermissions = ({setStaffGivePermission}) => {
                   <button
                     type="button"
                     onClick={() => setShowConfirmDialog(false)}
-                    className="px-4 py-2 text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
                     disabled={isLoading}
                   >
                     Cancel
@@ -587,12 +578,12 @@ const StaffPermissions = ({setStaffGivePermission}) => {
                   <button
                     type="button"
                     onClick={confirmSavePermissions}
-                    className="flex items-center px-4 py-2 text-white transition-colors bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                    className="flex items-center rounded-lg bg-purple-600 px-4 py-2 text-white transition-colors hover:bg-purple-700 disabled:opacity-50"
                     disabled={isLoading}
                   >
                     {isLoading ? (
                       <>
-                        <div className="w-4 h-4 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                         Updating...
                       </>
                     ) : (

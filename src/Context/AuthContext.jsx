@@ -66,7 +66,8 @@ export const AuthProvider = ({ children }) => {
           const newPerms = rows.map((r) => String(r.permission_id));
           // Only update if changed to avoid loops
           const current = user.permissions || [];
-          const same = current.length === newPerms.length && current.every((p) => newPerms.includes(p));
+          const same =
+            current.length === newPerms.length && current.every((p) => newPerms.includes(p));
           if (!same) {
             const updated = { ...user, permissions: newPerms };
             setUser(updated);
@@ -109,7 +110,8 @@ export const AuthProvider = ({ children }) => {
               if (Array.isArray(rows)) {
                 const newPerms = rows.map((r) => String(r.permission_id));
                 const current = user.permissions || [];
-                const same = current.length === newPerms.length && current.every((p) => newPerms.includes(p));
+                const same =
+                  current.length === newPerms.length && current.every((p) => newPerms.includes(p));
                 if (!same) {
                   const updated = { ...user, permissions: newPerms };
                   setUser(updated);
@@ -123,7 +125,9 @@ export const AuthProvider = ({ children }) => {
       .subscribe();
 
     return () => {
-      try { supabase.removeChannel(channel); } catch (_) {}
+      try {
+        supabase.removeChannel(channel);
+      } catch (_) {}
     };
   }, [user?.id, user?.profile?.store_id]);
 
@@ -182,7 +186,7 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={value}>
       {loading ? (
-        <div>Loading...</div> // You can replace this with a spinner or any other loading UI
+        <div></div> // You can replace this with a spinner or any other loading UI
       ) : (
         children
       )}

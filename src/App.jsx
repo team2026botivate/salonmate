@@ -12,6 +12,7 @@ import { Toaster } from 'react-hot-toast';
 import AuthPage from './components/AuthPage.jsx';
 import LicenseGuard from './components/license/licenseGuard.jsx';
 import ForgetPassword from './Pages/forgetPassword.jsx';
+import EcommerceStorePage from './Pages/ecommerce-store-page.jsx';
 function App() {
   return (
     <Router>
@@ -29,6 +30,7 @@ function App() {
                 <Route path="/admin-dashboard/*" element={<Dashboard />} />
                 <Route path="/profile/:id" element={<ProfilePage />} />
               </Route>
+              <Route path="/store" element={<EcommerceStorePage />} />
             </Route>
 
             {/* Redirects */}
