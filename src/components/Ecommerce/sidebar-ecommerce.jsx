@@ -1,9 +1,10 @@
 'use client';
 
 import { useEcommerceStore } from '@/zustand/ecommerce-store-zustand';
-import { motion } from 'framer-motion';
+import { motion } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import { ShoppingCart } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import ShoppingCartNav from './ShoppingCartNav';
 
 export default function SidebarEcommerce() {
   const { cartLength } = useEcommerceStore();
@@ -27,10 +28,7 @@ export default function SidebarEcommerce() {
           variants={sidebarVariants}
           className="flex items-center justify-center"
         >
-          <div className="p-6 text-center font-semibold text-white">
-            <h2 className="mb-2 text-lg">E-commerce Sidebar</h2>
-            <p>This sidebar expands from the right side!</p>
-          </div>
+            <ShoppingCartNav />
         </motion.div>
 
         {/* Toggle button */}
@@ -92,7 +90,7 @@ const MenuToggle = ({ toggle, badge }) => (
 /* ================== Styles ================== */
 
 const nav = {
-  width: 300,
+  width: 400,
   position: 'fixed', // ✅ fix to the screen
   top: 0,
   right: 0,
@@ -112,7 +110,7 @@ const background = {
   top: 0,
   right: 0,
   bottom: 0,
-  width: 300,
+  width: 400,
   height: '100vh',
   display: 'flex',
   alignItems: 'center',
