@@ -1,13 +1,10 @@
-import { Suspense, useState, useEffect } from 'react';
-import ProductSearchBar from './search-bar-ecommerce-component';
-import ProductGrid from './proudct-grid-ecommerce-component';
-import Pagination from './pagination-ecommerce';
-import Header from './header-ecommerce-header';
-import ProductFilter from './product-filter-ecommerce';
-import { Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import SidebarEcommerce from './sideBar-ecommerce';
-import SidebarEcommmerce from './sideBar-ecommerce';
+import { Loader2 } from 'lucide-react';
+import { Suspense, useEffect, useState } from 'react';
+import Header from './header-ecommerce-header';
+import Pagination from './pagination-ecommerce';
+import ProductGrid from './proudct-grid-ecommerce-component';
+
 
 export default function ProductListing() {
   const [searchTerm, setSearchTerm] = useState('');

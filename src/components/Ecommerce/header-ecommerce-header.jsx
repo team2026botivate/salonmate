@@ -1,4 +1,4 @@
-import { MapPin, ChevronDown, Search, ShoppingCart, User, Menu, ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SidebarEcommmerce from './sidebar-ecommerce';
 
