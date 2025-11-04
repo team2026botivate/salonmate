@@ -1,10 +1,9 @@
 import { MapPin, ChevronDown, Search, ShoppingCart, User, Menu, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useEcommerceStore } from '@/zustand/ecommerce-store-zustand';
+import SidebarEcommmerce from './sidebar-ecommerce';
 
 export default function Header({ searchItem, setSearchItem }) {
   const navigate = useNavigate();
-  const { cartLength } = useEcommerceStore();
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white">
       {/* Top Bar */}
@@ -42,12 +41,7 @@ export default function Header({ searchItem, setSearchItem }) {
 
           {/* Right Actions */}
           <div className="flex items-center gap-4">
-            <button className="relative rounded-lg p-2 transition-colors hover:bg-gray-100">
-              <ShoppingCart className="h-5 w-5 text-gray-700" />
-              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                {cartLength}
-              </span>
-            </button>
+            <SidebarEcommmerce />
           </div>
         </div>
       </div>

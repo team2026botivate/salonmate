@@ -10,21 +10,25 @@ import { useEffect } from 'react';
 import { useEcommerceStoreFetchAllProduct } from '@/hook/ecommerce-store-hook';
 
 export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onProductsLoaded }) {
-  const { error: allProductError, allProduct } = useAllProductStore();
+  const { allProduct } = useAllProductStore();
   const { fetchAllProducts } = useEcommerceStoreFetchAllProduct();
   const { setCartLength, cartLength } = useEcommerceStore();
   const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
 
   //filter all the products
 
   const handleAddToCart = async (product) => {
-    const payload = {
-      productId: product.id,
-      store_id: user?.profile?.store_id,
-    };
+    //todo: i have to add the add to cart functionality here
+
+    // const payload = {
+    //   productId: product.id,
+    //   store_id: user?.profile?.store_id,
+    // };
+
+    console.log('clicked');
 
     setCartLength(cartLength + 1);
   };
@@ -37,7 +41,7 @@ export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onP
       await fetchAllProducts(currentPage, itemsPerPage);
       setLoading(false);
     };
-    
+
     loadProducts();
   }, [currentPage, itemsPerPage]);
 
@@ -95,6 +99,7 @@ export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onP
   return (
     <div className="grid grid-cols-1 gap-6 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {filterdProduct.map((product) => (
+        console.log(product),
         <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
       ))}
     </div>

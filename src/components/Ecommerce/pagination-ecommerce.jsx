@@ -1,7 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Pagination({ currentPage, totalPages, onPageChange }) {
-
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 8;
@@ -43,7 +42,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
     <div className="my-5 mt-8 flex items-center justify-center gap-2">
       {/* Previous Button */}
       <button
-        onClick={() => onPageChange(currentPage - 1)}
+        onClick={() => onPageChange((prev) => prev - 1)}
         disabled={currentPage === 1}
         className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white"
       >
@@ -54,6 +53,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
       {/* Page Numbers */}
       <div className="flex items-center gap-1">
         {getPageNumbers().map((page, index) => {
+          console.log(page, 'page from there ');
           if (page === '...') {
             return (
               <span key={`ellipsis-${index}`} className="px-3 py-2 text-gray-500">
@@ -80,7 +80,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
 
       {/* Next Button */}
       <button
-        onClick={() => onPageChange(currentPage + 1)}
+        onClick={() => onPageChange((prev) => prev + 1)}
         disabled={currentPage === totalPages}
         className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white"
       >
