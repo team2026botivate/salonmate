@@ -21,16 +21,12 @@ export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onP
   //filter all the products
 
   const handleAddToCart = async (product) => {
-    //todo: i have to add the add to cart functionality here
 
-    // const payload = {
-    //   productId: product.id,
-    //   store_id: user?.profile?.store_id,
-    // };
+    console.log(product,"form outter page ")
+    
 
-    console.log('clicked');
 
-    setCartLength(cartLength + 1);
+    // setCartLength(cartLength + 1);
   };
 
   const filterdProduct = allProduct?.data ? doFilterProduct(allProduct.data, searchTerm) : [];
@@ -99,7 +95,7 @@ export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onP
   return (
     <div className="grid grid-cols-1 gap-6 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {filterdProduct.map((product) => (
-        console.log(product),
+
         <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
       ))}
     </div>

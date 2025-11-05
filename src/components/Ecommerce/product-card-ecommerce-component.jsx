@@ -9,6 +9,8 @@ export default function ProductCard({ product, onAddToCart }) {
     image_url,
   } = product;
 
+
+
   return (
     <div className="relative flex w-full max-w-sm flex-col overflow-hidden rounded-xl bg-white shadow-xl">
       {/* Image Section */}
