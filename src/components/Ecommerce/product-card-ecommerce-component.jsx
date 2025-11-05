@@ -1,4 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
+// import { supabase } from "@/dataBase/connectdb";
+// import { useState } from "react";
 
 export default function ProductCard({ product, onAddToCart }) {
   const {
@@ -9,6 +11,7 @@ export default function ProductCard({ product, onAddToCart }) {
     image_url,
   } = product;
 
+  console.log(product)
 
 
   return (
