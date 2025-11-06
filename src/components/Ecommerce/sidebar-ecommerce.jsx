@@ -28,7 +28,7 @@ export default function SidebarEcommerce() {
           variants={sidebarVariants}
           className="flex items-center justify-center"
         >
-            <ShoppingCartNav />
+            <ShoppingCartNav  storeId={yourStoreId}/>
         </motion.div>
 
         {/* Toggle button */}

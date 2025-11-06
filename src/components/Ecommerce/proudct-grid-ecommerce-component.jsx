@@ -23,7 +23,9 @@ export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onP
   const handleAddToCart = async (product) => {
 
     console.log(product,"form outter page ")
+
     
+    const {} = product
 
 
     // setCartLength(cartLength + 1);

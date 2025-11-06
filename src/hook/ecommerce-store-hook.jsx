@@ -1,10 +1,14 @@
 import { useAllProductStore } from '../zustand/ecommerce-store-zustand';
 import axios from 'axios';
 import { useAuth } from '@/Context/AuthContext';
+import { useState } from "react";
+import supabase from "@/dataBase/connectdb";
 
 export const useEcommerceStoreFetchAllProduct = () => {
   const { setAllProduct, setError } = useAllProductStore();
   const { user } = useAuth();
+
+  console.log(user,"user")
   
   const fetchAllProducts = async (page, limit) => {
     try {
@@ -29,4 +33,68 @@ export const useEcommerceStoreFetchAllProduct = () => {
   };
 
   return { fetchAllProducts };
+};
+
+export const useAddToCart = () => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const addToCart = async (product) => {
+    const storeId  = user?.profile?.store_id ;
+    try {
+      if (!product?.id || !storeId) {
+        console.error("❌ Missing product or store ID:", { product, storeId });
+        throw new Error("Missing product or store ID");
+      }
+
+      setLoading(true);
+      setError(null);
+
+      // 1️⃣ Check if product already exists in the cart for this store
+      const { data: existing, error: fetchError } = await supabase
+        .from("saloon_e_commerce_cart_items")
+        .select("id, quantity")
+        .eq("product_id", product.id)
+        .eq("store_id", storeId)
+        .maybeSingle();
+
+        console.log("existing", existing)
+
+      if (fetchError) throw fetchError;
+
+      if (existing) {
+        // 2️⃣ Update quantity if product already exists
+        const { error: updateError } = await supabase
+          .from("saloon_e_commerce_cart_items")
+          .update({ quantity: existing.quantity + 1 })
+          .eq("id", existing.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // 3️⃣ Insert a new product row into the cart
+        const { error: insertError } = await supabase
+          .from("saloon_e_commerce_cart_items")
+          .insert([
+            {
+              product_id: product.id,
+              quantity: 1,
+              price_snapshot: product.price,
+              store_id: storeId,
+            },
+          ]);
+
+        if (insertError) throw insertError;
+      }
+
+      console.log("✅ Product added/updated in cart:", product.name);
+    } catch (err) {
+      console.error("❌ Error adding to cart:", err);
+      setError(err.message || "Failed to add to cart");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { addToCart, loading, error };
 };
