@@ -9,7 +9,7 @@ import { useAllProductStore, useEcommerceStore } from '@/zustand/ecommerce-store
 import { useEffect } from 'react';
 import { useEcommerceStoreFetchAllProduct } from '@/hook/ecommerce-store-hook';
 
-export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onProductsLoaded }) {
+export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onProductsLoaded, storeId }) {
   const { allProduct } = useAllProductStore();
   const { fetchAllProducts } = useEcommerceStoreFetchAllProduct();
   const { setCartLength, cartLength } = useEcommerceStore();
@@ -22,13 +22,7 @@ export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onP
 
   const handleAddToCart = async (product) => {
 
-    console.log(product,"form outter page ")
-
-    
-    const {} = product
-
-
-    // setCartLength(cartLength + 1);
+    console.log('Product added to cart:', product);
   };
 
   const filterdProduct = allProduct?.data ? doFilterProduct(allProduct.data, searchTerm) : [];
@@ -43,7 +37,7 @@ export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onP
     loadProducts();
   }, [currentPage, itemsPerPage]);
 
-  // Effect to update total products when API response changes
+  // Update total product count
   useEffect(() => {
     if (!allProduct) return;
 
@@ -60,13 +54,13 @@ export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onP
     }
   }, [allProduct, currentPage, onProductsLoaded]);
 
-  if (filterdProduct?.length === 0 && !loading) {
-    return (
-      <div className="rounded-lg border border-gray-200 bg-gray-50 p-12 text-center">
-        <p className="text-lg font-medium text-gray-600">No products found</p>
-      </div>
-    );
-  }
+  // if (filterdProduct?.length === 0 && !loading) {
+  //   return (
+  //     <div className="rounded-lg border border-gray-200 bg-gray-50 p-12 text-center">
+  //       <p className="text-lg font-medium text-gray-600">No products found</p>
+  //     </div>
+  //   );
+  // }
 
   if (loading) {
     return (
@@ -98,7 +92,12 @@ export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onP
     <div className="grid grid-cols-1 gap-6 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {filterdProduct.map((product) => (
 
-        <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
+        <ProductCard
+         key={product.id}
+          product={product}
+           onAddToCart={handleAddToCart} 
+           storeId={storeId}
+        />
       ))}
     </div>
   );

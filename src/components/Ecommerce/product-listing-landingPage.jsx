@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { Suspense, useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useAuth } from '@/Context/AuthContext';
 import Header from './header-ecommerce-header';
 import Pagination from './pagination-ecommerce';
 import ProductGrid from './proudct-grid-ecommerce-component';
@@ -9,6 +11,9 @@ export default function ProductListing() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
+
+// ✅ Option 1: Get storeId from URL params
+  const { storeId } = useParams(); // If route is /store/:storeId/products
 
   // console.log(totalProducts, 'totalProducts from there ');
   const itemsPerPage = 8;
@@ -22,6 +27,18 @@ export default function ProductListing() {
     }
   }, [totalPages, currentPage]);
 
+    // ✅ Validate storeId exists
+    // if (!storeId) {
+    //   return (
+    //     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    //       <div className="text-center">
+    //         <p className="text-xl font-semibold text-red-600">Store Id not found</p>
+    //         <p className="text-gray-600 mt-2">Please</p>
+    //       </div>
+    //     </div>
+    //   )
+    // }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -30,7 +47,7 @@ export default function ProductListing() {
       exit={{ opacity: 0 }}
       className="min-h-screen bg-gray-50"
     >
-      <Header searchItem={searchTerm} setSearchItem={setSearchTerm} />
+      <Header searchItem={searchTerm} setSearchItem={setSearchTerm} storeId={storeId}/>
 
       <div className="mx-auto max-w-[1400px] px-6 py-6">
         <div className="flex gap-6">
@@ -47,7 +64,7 @@ export default function ProductListing() {
 
               
 
-              <h1>hello from here</h1>
+              {/* <h1>hello from here</h1> */}
             </div>
 
             <Pagination

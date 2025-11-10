@@ -5,12 +5,14 @@ import { motion } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import { ShoppingCart } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ShoppingCartNav from './ShoppingCartNav';
+import { useCartCount } from './useCartCount';
 
 export default function SidebarEcommerce() {
   const { cartLength } = useEcommerceStore();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
   const { height } = useDimensions(containerRef);
+  const cartCount = useCartCount();
 
   return (
   
@@ -26,13 +28,14 @@ export default function SidebarEcommerce() {
         <motion.div
           style={{...background, pointerEvents: isOpen ? 'auto' : 'none', zIndex: 55}}
           variants={sidebarVariants}
-          className="flex items-center justify-center"
+          className="flex items-center justify-center w-full"
         >
-            <ShoppingCartNav  storeId={yourStoreId}/>
+            <ShoppingCartNav  />
+            {/* <CartList/> */}
         </motion.div>
 
         {/* Toggle button */}
-        <MenuToggle toggle={() => setIsOpen(!isOpen)} badge={cartLength} />
+        <MenuToggle toggle={() => setIsOpen(!isOpen)} badge={cartCount ?? 0} />
       </motion.nav>
   
   );
@@ -81,7 +84,7 @@ const MenuToggle = ({ toggle, badge }) => (
     >
       <ShoppingCart className="h-6 w-6 text-white" />
       <span className="absolute -top-2 right-2 z-50 size-5 rounded-full bg-red-500">
-        <p className="text-xs text-white">{badge}</p>
+        <p className="text-xs text-bold text-white flex justify-center ">{badge ?? 0}</p>
       </span>
     </motion.div>
   </button>
