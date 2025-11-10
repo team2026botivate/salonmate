@@ -24,6 +24,7 @@ import Footer from './footer.jsx';
 import OffersAndMemberships from './layout/Offers_&_Memberships.jsx';
 import DailyExpenses from './dailyExpences/dailyExpences.jsx';
 import WhatsappMessage from './whatsappMessage-component.jsx';
+import ChatBot from './ai/chatBot.jsx';
 
 // Map component names to identifiers used in permissions
 const COMPONENT_PERMISSION_MAP = {
@@ -257,40 +258,43 @@ export default function Dashboard() {
   }
 
   return (
-    <motion.div 
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ duration: 1 }}
-    exit={{ opacity: 0 }}
-    className="flex flex-col h-screen bg-gradient-to-br from-blue-50 to-indigo-100 md:flex-row">
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={handleTabChange}
-        activeStaffTab={activeStaffTab}
-        setActiveStaffTab={setActiveStaffTab}
-        isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-        allowedTabs={allowedTabs}
-        userRole={user?.role}
-      />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Navbar
+    <>
+      <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 1 }}
+      exit={{ opacity: 0 }}
+      className="flex flex-col h-screen bg-gradient-to-br from-blue-50 to-indigo-100 md:flex-row">
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={handleTabChange}
+          activeStaffTab={activeStaffTab}
+          setActiveStaffTab={setActiveStaffTab}
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
+          allowedTabs={allowedTabs}
           userRole={user?.role}
         />
-        <motion.main
-          key={activeTab === 'staff' ? activeStaffTab : activeTab}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 20 }}
-          transition={{ duration: 0.3 }}
-          className="flex-1 p-4 overflow-y-auto md:p-6"
-        >
-          {renderContent()}
-        </motion.main>
-        <Footer />
-      </div>
-    </motion.div>
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <Navbar
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+            userRole={user?.role}
+          />
+          <motion.main
+            key={activeTab === 'staff' ? activeStaffTab : activeTab}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1 p-4 overflow-y-auto md:p-6"
+          >
+            {renderContent()}
+          </motion.main>
+          <Footer />
+        </div>
+      </motion.div>
+      <ChatBot />
+    </>
   );
 }
