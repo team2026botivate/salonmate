@@ -332,7 +332,7 @@ export const useGetUserByPhoneNumber = () => {
         .from('customer_info')
         .select('id, customer_name, mobile_number')
         .eq('store_id', store_id)
-        .ilike('mobile_number', phoneNumber);
+        .eq('mobile_number', phoneNumber);
       if (error) throw error;
       return data;
     } catch (err) {
@@ -417,12 +417,17 @@ export const useCreatenewAppointment = () => {
         appointmentInsertData.staff_id = appointmentData.staff[0].id;
       }
       if (isNewUser) {
-        const { error } = await supabase.from('customer_info').insert({
-          customer_name: appointmentData.customerName,
-          mobile_number: appointmentData.mobileNumber,
-          timestamp: new Date().toISOString(),
-          store_id: store_id,
-        });
+        const { error } = await supabase
+          .from('customer_info')
+          .upsert(
+            {
+              customer_name: appointmentData.customerName,
+              mobile_number: appointmentData.mobileNumber,
+              timestamp: new Date().toISOString(),
+              store_id: store_id,
+            },
+            { onConflict: 'mobile_number', ignoreDuplicates: true }
+          );
         if (error) throw error;
       }
       const { error } = await supabase.from('appointment').insert(appointmentInsertData);

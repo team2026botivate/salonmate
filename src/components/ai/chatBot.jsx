@@ -1,11 +1,14 @@
-import { useState, useRef, useEffect } from 'react';
+import { useChatBot } from '@/hook/chatBot-hook';
 import { motion } from 'framer-motion';
-import { MessageCircle, X, Send, Bot } from 'lucide-react';
+import { Bot, Send, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 
 
 
-export default function ChatBot({ sendMessage }) {
+
+export default function ChatBot() {
+  const doChat_with_Bot = useChatBot();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
@@ -48,36 +51,14 @@ export default function ChatBot({ sendMessage }) {
     setInputValue('');
     setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
 
-    if (sendMessage) {
-      setIsTyping(true);
-      setStreamingContent('');
+    setIsTyping(true);
+    setStreamingContent('');
 
-      try {
-        const stream = await sendMessage(userMessage);
-        let fullResponse = '';
-
-        for await (const chunk of stream) {
-          fullResponse += chunk;
-          setStreamingContent(fullResponse);
-        }
-
-        setMessages((prev) => [...prev, { role: 'assistant', content: fullResponse }]);
-        setStreamingContent('');
-        setIsTyping(false);
-      } catch (error) {
-        console.error('Error sending message:', error);
-        setIsTyping(false);
-        setStreamingContent('');
-      }
+    const data = await doChat_with_Bot(userMessage);
+    if (data.success) {
+      await simulateStreamingResponse(data.message);
     } else {
-      const responses = [
-        'I can help you book an appointment! What date works best for you?',
-        'Let me check today\'s appointments for you...',
-        'We have several talented stylists available. Would you like to see their profiles?',
-        'Great question! Let me look that up for you.',
-      ];
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      await simulateStreamingResponse(randomResponse);
+      await simulateStreamingResponse(data.message || 'Sorry, something went wrong.');
     }
   };
 
@@ -118,13 +99,13 @@ export default function ChatBot({ sendMessage }) {
       >
         <motion.div
           variants={panelVariants}
-          className="absolute bottom-0 right-0 w-[400px] h-[600px] bg-gradient-to-br from-stone-50 to-amber-50 rounded-2xl shadow-2xl overflow-hidden max-[640px]:w-[calc(100vw-3rem)] max-[640px]:h-[60vh]"
+          className="absolute bottom-0 right-0 w-[400px] h-[600px] bg-gradient-to-br from-white to-slate-50 rounded-2xl shadow-2xl overflow-hidden max-[640px]:w-[calc(100vw-3rem)] max-[640px]:h-[60vh]"
         >
           {isOpen && (
             <div className="flex flex-col h-full">
-              <div className="bg-gradient-to-r from-amber-100 to-stone-100 px-6 py-4 flex items-center justify-between border-b border-stone-200">
+              <div className="bg-gradient-to-r from-[#387AFF]/10 to-white px-6 py-4 flex items-center justify-between border-b border-slate-200">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#387AFF] to-[#2C6DFF] rounded-full flex items-center justify-center">
                     <Bot className="w-5 h-5 text-white" />
                   </div>
                   <div>
@@ -134,9 +115,9 @@ export default function ChatBot({ sendMessage }) {
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-200 transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition-colors"
                 >
-                  <X className="w-5 h-5 text-stone-600" />
+                  <X className="w-5 h-5 text-slate-600" />
                 </button>
               </div>
 
@@ -149,8 +130,8 @@ export default function ChatBot({ sendMessage }) {
                     <div
                       className={`max-w-[80%] px-4 py-3 rounded-2xl ${
                         message.role === 'user'
-                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-br-md'
-                          : 'bg-white text-stone-800 rounded-bl-md shadow-sm border border-stone-100'
+                          ? 'bg-gradient-to-r from-[#387AFF] to-[#2C6DFF] text-white rounded-br-md'
+                          : 'bg-white text-slate-800 rounded-bl-md shadow-sm border border-slate-100'
                       }`}
                     >
                       <p className="text-sm leading-relaxed">{message.content}</p>
@@ -160,14 +141,14 @@ export default function ChatBot({ sendMessage }) {
 
                 {(isTyping || streamingContent) && (
                   <div className="flex justify-start">
-                    <div className="max-w-[80%] px-4 py-3 rounded-2xl bg-white text-stone-800 rounded-bl-md shadow-sm border border-stone-100">
+                    <div className="max-w-[80%] px-4 py-3 rounded-2xl bg-white text-slate-800 rounded-bl-md shadow-sm border border-slate-100">
                       {streamingContent ? (
                         <p className="text-sm leading-relaxed">{streamingContent}</p>
                       ) : (
                         <div className="flex gap-1">
-                          <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                         </div>
                       )}
                     </div>
@@ -177,7 +158,7 @@ export default function ChatBot({ sendMessage }) {
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="border-t border-stone-200 px-4 py-3 bg-white">
+              <div className="border-t border-slate-200 px-4 py-3 bg-white">
                 <div className="flex gap-2 items-end mb-2">
                   <input
                     type="text"
@@ -186,17 +167,17 @@ export default function ChatBot({ sendMessage }) {
                     onKeyPress={handleKeyPress}
                     placeholder="Type your message..."
                     disabled={isTyping}
-                    className="flex-1 px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-stone-50 disabled:cursor-not-allowed text-sm"
+                    className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#387AFF] focus:border-transparent disabled:bg-slate-50 disabled:cursor-not-allowed text-sm"
                   />
                   <button
                     onClick={handleSendMessage}
                     disabled={!inputValue.trim() || isTyping}
-                    className="w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl flex items-center justify-center hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                    className="w-12 h-12 bg-gradient-to-r from-[#387AFF] to-[#2C6DFF] text-white rounded-xl flex items-center justify-center hover:from-[#2E6FFF] hover:to-[#2A63E6] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                   >
                     <Send className="w-5 h-5" />
                   </button>
                 </div>
-                <p className="text-[10px] text-center text-stone-400 mt-1">
+                <p className="text-[10px] text-center text-slate-400 mt-1">
                   Powered by Botivate AI
                 </p>
               </div>
@@ -208,15 +189,15 @@ export default function ChatBot({ sendMessage }) {
           onClick={() => setIsOpen(!isOpen)}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
-          className={`group relative w-16 h-16 bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 text-white rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 ${
+          className={`group relative w-16 h-16 bg-gradient-to-br from-[#387AFF] via-[#2C6DFF] to-[#387AFF] text-white rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 ${
             isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
           style={{
-            boxShadow: '0 8px 32px rgba(251, 146, 60, 0.4), 0 2px 8px rgba(0, 0, 0, 0.1)'
+            boxShadow: '0 8px 32px rgba(56, 122, 255, 0.4), 0 2px 8px rgba(0, 0, 0, 0.1)'
           }}
         >
           {/* Pulse ring animation */}
-          <span className="absolute inset-0 rounded-full bg-amber-400 opacity-75 animate-ping" style={{ animationDuration: '2s' }}></span>
+          <span className="absolute inset-0 rounded-full bg-[#387AFF] opacity-75 animate-ping" style={{ animationDuration: '2s' }}></span>
           
           {/* Button content */}
           <span className="relative z-10 flex items-center justify-center">

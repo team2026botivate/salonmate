@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export function useSendWhatsappAfterAppointment() {
   const sendWhatsappAfterAppointment = async (storeId, storeName, customerNumber, customerName) => {
-    if (!storeId || !customerNumber || !customerName) {
+    if (!storeId || !customerNumber || !customerName || !storeName) {
       console.log('Missing required parameters');
       return;
     }

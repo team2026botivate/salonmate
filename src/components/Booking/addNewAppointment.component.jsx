@@ -88,17 +88,17 @@ const AddNewAppointment = ({
       const resp = await getUserByPhoneNumber(formData.mobileNumber);
       setisNewUser(Array.isArray(resp) && resp.length === 0);
 
-      if (resp?.data?.length === 0) return;
+      if (!Array.isArray(resp) || resp.length === 0) return;
 
       const number =
-        resp.find((item) => item.mobile_number === formData.mobileNumber) || formData.customerName;
+        resp.find((item) => item.mobile_number === formData.mobileNumber) || null;
       setFormData((prev) => ({
         ...prev,
-        customerName: number?.customer_name || formData.customerName,
+        customerName: number?.customer_name || prev.customerName,
       }));
     };
     getUserData();
-  }, [formData.mobileNumber || formData.mobileNumber.length < 10]);
+  }, [formData.mobileNumber, getUserByPhoneNumber]);
 
   useEffect(() => {
     if (!data || !Array.isArray(data)) return;
@@ -232,6 +232,8 @@ const AddNewAppointment = ({
     }
 
     await createNewAppointment(formData, 'busy', onCancel, isNewUser);
+
+    
     await sendWhatsappAfterAppointment(
       user.profile.store_id,
       user?.profile?.salon_name || 'Botivate',
