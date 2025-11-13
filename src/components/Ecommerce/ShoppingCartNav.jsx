@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useFetchCart } from '@/hook/ecommerce-store-hook';
 import supabase from '@/dataBase/connectdb';
-import { CreditCardIcon } from './cart/Icons';
+import { CreditCardIcon } from './cart/CartItmeIcon';
 import CartItem from './cart/CartItem';
 import PaymentMethodModal from './cart/PaymentMethodModal';
 import ToastPortal from './cart/ToastPortal';

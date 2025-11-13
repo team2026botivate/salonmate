@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { TrashIcon, MinusIcon, PlusIcon } from './icons';
+import { useState } from 'react';
+import { MinusIcon, PlusIcon, TrashIcon } from './CartItmeIcon.jsx';
 
 
 const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
