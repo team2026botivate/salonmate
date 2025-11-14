@@ -20,6 +20,18 @@
   .font-color {
     color: #000000;
   }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+  
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      /* IE and Edge */
+      scrollbar-width: none;
+      /* Firefox */
+    }
 }
 
 /* Legacy fallback styles: apply ONLY when a parent has `.legacy-only` */

@@ -45,7 +45,7 @@ export const Toast = ({ message, type, isVisible, onClose }) => {
           initial={{ opacity: 0, y: -50, x: '-50%' }}
           animate={{ opacity: 1, y: 0, x: '-50%' }}
           exit={{ opacity: 0, y: -50, x: '-50%' }}
-          className="fixed z-50 transform top-4 left-1/2"
+          className="fixed top-4 left-1/2 z-50 transform"
         >
           <div
             className={`flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg ${
@@ -385,7 +385,7 @@ const MessageModal = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+          className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black p-4"
           onClick={handleClose}
         >
           <motion.div
@@ -396,7 +396,7 @@ const MessageModal = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-semibold text-gray-900">
                   {bulkPhoneNumbers.length > 0
@@ -420,12 +420,12 @@ const MessageModal = ({
                 exit={{ opacity: 0, height: 0 }}
                 className="mb-4"
               >
-                <label className="block mb-2 text-sm font-medium text-gray-700">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   Upload {mediaType} *
                 </label>
 
                 {!mediaFile ? (
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-purple-300 border-dashed rounded-lg cursor-pointer bg-purple-50 hover:bg-purple-100">
+                  <label className="flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-purple-300 bg-purple-50 hover:bg-purple-100">
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                       {getMediaIcon()}
                       <p className="mb-2 text-sm text-gray-600">
@@ -444,16 +444,16 @@ const MessageModal = ({
                     />
                   </label>
                 ) : (
-                  <div className="p-4 border-2 border-green-300 rounded-lg bg-green-50">
+                  <div className="rounded-lg border-2 border-green-300 bg-green-50 p-4">
                     {mediaType === 'IMAGE' && mediaPreview && (
                       <img
                         src={mediaPreview}
                         alt="Preview"
-                        className="object-contain w-full h-32 mb-2 rounded"
+                        className="mb-2 h-32 w-full rounded object-contain"
                       />
                     )}
                     {mediaType === 'VIDEO' && mediaPreview && (
-                      <video src={mediaPreview} controls className="w-full h-32 mb-2 rounded" />
+                      <video src={mediaPreview} controls className="mb-2 h-32 w-full rounded" />
                     )}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -462,7 +462,7 @@ const MessageModal = ({
                       </div>
                       <button
                         onClick={clearMedia}
-                        className="p-1 text-red-600 transition-colors rounded hover:bg-red-100"
+                        className="rounded p-1 text-red-600 transition-colors hover:bg-red-100"
                       >
                         <X size={16} />
                       </button>
@@ -479,9 +479,9 @@ const MessageModal = ({
 
             {/* Customer Info or Bulk Mode Info */}
             {bulkPhoneNumbers.length > 0 ? (
-              <div className="p-3 mb-4 border-2 border-green-200 rounded-lg bg-green-50">
+              <div className="mb-4 rounded-lg border-2 border-green-200 bg-green-50 p-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-10 h-10 bg-green-600 rounded-full">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-600">
                     <Send size={20} className="text-white" />
                   </div>
                   <div>
@@ -494,9 +494,9 @@ const MessageModal = ({
               </div>
             ) : (
               customer && (
-                <div className="p-3 mb-4 rounded-lg bg-gray-50">
+                <div className="mb-4 rounded-lg bg-gray-50 p-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-full">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
                       <span className="font-semibold text-purple-600">
                         {customer.name.charAt(0).toUpperCase()}
                       </span>
@@ -512,23 +512,23 @@ const MessageModal = ({
 
             {/* Template Table */}
             <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <label className="block text-sm font-medium text-gray-700">Select Template</label>
                 <input
                   type="text"
                   value={tplQuery}
                   onChange={(e) => setTplQuery(e.target.value)}
                   placeholder="Search templates..."
-                  className="w-56 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-transparent focus:ring-2 focus:ring-purple-500"
+                  className="w-56 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
               {tplError && (
-                <div className="p-2 mb-2 text-sm text-red-700 rounded bg-red-50">{tplError}</div>
+                <div className="mb-2 rounded bg-red-50 p-2 text-sm text-red-700">{tplError}</div>
               )}
 
-              <div className="overflow-hidden border border-gray-200 rounded-lg">
-                <div className="overflow-y-auto max-h-64">
+              <div className="overflow-hidden rounded-lg border border-gray-200">
+                <div className="max-h-64 overflow-y-auto">
                   <div className="p-2">
                     {tplLoading ? (
                       <div className="flex items-center justify-center py-10">
@@ -566,17 +566,17 @@ const MessageModal = ({
                           .map((t) => (
                             <div
                               key={t.id}
-                              className="p-3 transition bg-white border border-gray-200 rounded-lg hover:shadow-sm"
+                              className="rounded-lg border border-gray-200 bg-white p-3 transition hover:shadow-sm"
                             >
-                              <div className="flex items-start justify-between mb-2">
+                              <div className="mb-2 flex items-start justify-between">
                                 <div className="font-medium text-gray-900">{t.name}</div>
                                 {(t.status || '').toUpperCase() === 'APPROVED' ? (
-                                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                  <CheckCircle2 className="h-4 w-4 text-green-500" />
                                 ) : (
-                                  <Circle className="w-4 h-4 text-gray-300" />
+                                  <Circle className="h-4 w-4 text-gray-300" />
                                 )}
                               </div>
-                              <div className="flex items-center gap-2 mb-2">
+                              <div className="mb-2 flex items-center gap-2">
                                 <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-700">
                                   {(t.language || '').toUpperCase()}
                                 </span>
@@ -597,7 +597,7 @@ const MessageModal = ({
                               <div className="mb-1 text-xs font-medium tracking-wide text-gray-500 uppercase">
                                 Preview
                               </div>
-                              <p className="text-sm text-gray-600 line-clamp-2">
+                              <p className="line-clamp-2 text-sm text-gray-600">
                                 {extractBodyText(t)}
                               </p>
                               <button
@@ -618,7 +618,7 @@ const MessageModal = ({
             {/* Message Preview */}
             {/* todo: i have to come here and check it  */}
             <div className="mb-4">
-              <label className="block mb-2 text-sm font-medium text-gray-700">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
                 Message Preview
               </label>
               <motion.textarea
@@ -629,10 +629,10 @@ const MessageModal = ({
                 value={message}
                 onChange={(e) => setMessage(e.target.value.slice(0, maxLength))}
                 placeholder="Select a template to preview the message..."
-                className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg resize-none focus:border-transparent focus:ring-2 focus:ring-purple-500"
+                className="h-32 w-full resize-none rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-purple-500"
                 disabled={!selectedTemplateObj}
               />
-              <div className="flex items-center justify-between mt-2">
+              <div className="mt-2 flex items-center justify-between">
                 <span className="text-xs text-gray-500">
                   {message.length}/{maxLength} characters
                 </span>
@@ -654,16 +654,16 @@ const MessageModal = ({
                 exit={{ opacity: 0, height: 0 }}
                 className="mb-4"
               >
-                <label className="block mb-2 text-sm font-medium text-gray-700">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   WhatsApp Preview
                 </label>
-                <div className="p-3 border-2 border-green-200 border-dashed rounded-lg bg-green-50">
+                <div className="rounded-lg border-2 border-dashed border-green-200 bg-green-50 p-3">
                   <div className="flex items-start gap-2">
-                    <div className="flex items-center justify-center w-6 h-6 text-green-600 bg-green-100 rounded-full">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-600">
                       <MessageSquare size={12} />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{message}</p>
+                      <p className="text-sm whitespace-pre-wrap text-gray-700">{message}</p>
                     </div>
                   </div>
                 </div>
@@ -674,7 +674,7 @@ const MessageModal = ({
             <div className="flex gap-3">
               <button
                 onClick={handleClose}
-                className="flex-1 px-4 py-2 font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200"
+                className="flex-1 rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-200"
               >
                 Cancel
               </button>
@@ -683,10 +683,10 @@ const MessageModal = ({
                 disabled={
                   !message.trim() || !selectedTemplateObj || isLoading || (mediaType && !mediaFile)
                 }
-                className="flex items-center justify-center flex-1 gap-2 px-4 py-2 font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 {loaderPorps ? (
-                  <div className="w-4 h-4 border-2 border-white rounded-full animate-spin border-t-transparent" />
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 ) : (
                   <Send size={16} />
                 )}
@@ -707,19 +707,19 @@ const TableSkeleton = () => {
   return (
     <div className="space-y-4">
       {[...Array(10)].map((_, i) => (
-        <div key={i} className="flex items-center gap-4 p-4 bg-white rounded-lg animate-pulse">
-          <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+        <div key={i} className="flex animate-pulse items-center gap-4 rounded-lg bg-white p-4">
+          <div className="h-10 w-10 rounded-full bg-gray-300"></div>
           <div className="flex-1 space-y-2">
-            <div className="w-1/4 h-4 bg-gray-300 rounded"></div>
-            <div className="w-1/6 h-3 bg-gray-300 rounded"></div>
+            <div className="h-4 w-1/4 rounded bg-gray-300"></div>
+            <div className="h-3 w-1/6 rounded bg-gray-300"></div>
           </div>
-          <div className="hidden w-1/6 h-4 bg-gray-300 rounded md:block"></div>
-          <div className="hidden h-4 bg-gray-300 rounded w-1/8 lg:block"></div>
-          <div className="hidden h-4 bg-gray-300 rounded w-1/8 lg:block"></div>
-          <div className="hidden h-4 bg-gray-300 rounded w-1/8 lg:block"></div>
+          <div className="hidden h-4 w-1/6 rounded bg-gray-300 md:block"></div>
+          <div className="hidden h-4 w-1/8 rounded bg-gray-300 lg:block"></div>
+          <div className="hidden h-4 w-1/8 rounded bg-gray-300 lg:block"></div>
+          <div className="hidden h-4 w-1/8 rounded bg-gray-300 lg:block"></div>
           <div className="flex gap-2">
-            <div className="w-8 h-8 bg-gray-300 rounded"></div>
-            <div className="w-8 h-8 bg-gray-300 rounded"></div>
+            <div className="h-8 w-8 rounded bg-gray-300"></div>
+            <div className="h-8 w-8 rounded bg-gray-300"></div>
           </div>
         </div>
       ))}
@@ -841,11 +841,11 @@ const CustomerManagement = () => {
     formData.append('name', name);
     formData.append('templateName', templateName);
     formData.append('templateLanguage', templateLanguage);
-  
+
     if (components && components.length > 0) {
       formData.append('components', JSON.stringify(components));
     }
-    
+
     if (mediaFile) {
       formData.append('mediaFile', mediaFile);
     }
@@ -855,9 +855,6 @@ const CustomerManagement = () => {
       formData.append('storeId', store_id);
     }
 
-    
-
-    
     try {
       setLoader(true);
       const { data, status } = await axios.post(
@@ -962,7 +959,7 @@ const CustomerManagement = () => {
   };
 
   return (
-    <div className="min-h-screen p-4 bg-gray-50 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -978,12 +975,12 @@ const CustomerManagement = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="p-6 mb-6 bg-white shadow-lg rounded-xl"
+          className="mb-6 rounded-xl bg-white p-6 shadow-lg"
         >
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="relative flex-1">
               <Search
-                className="absolute text-gray-400 transform -translate-y-1/2 top-1/2 left-3"
+                className="absolute top-1/2 left-3 -translate-y-1/2 transform text-gray-400"
                 size={20}
               />
               <input
@@ -991,10 +988,10 @@ const CustomerManagement = () => {
                 placeholder="Search by name or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:border-transparent focus:ring-2 focus:ring-purple-500"
+                className="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 focus:border-transparent focus:ring-2 focus:ring-purple-500"
               />
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200">
+            <button className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-200">
               <Filter size={16} />
               Filters
             </button>
@@ -1024,7 +1021,7 @@ const CustomerManagement = () => {
                   setIsMessageModalOpen(true);
                   setBulkNumbersForModal(phones);
                 }}
-                className="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700"
+                className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-700"
               >
                 <Send size={16} />
                 Send WhatsApp to Selected ({selectedIds.length})
@@ -1040,7 +1037,7 @@ const CustomerManagement = () => {
           className="max-h-[60vh] overflow-y-auto rounded-xl bg-white shadow-lg"
         >
           {error && (
-            <div className="p-3 mx-6 mt-4 text-sm text-red-700 rounded-md bg-red-50">
+            <div className="mx-6 mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
               Failed to load customers: {String(error)}
             </div>
           )}
@@ -1054,25 +1051,25 @@ const CustomerManagement = () => {
                 <table className="w-full">
                   <thead className="border-b border-gray-200 bg-gray-50">
                     <tr>
-                      <th className="px-4 py-4 text-sm font-semibold text-left text-gray-900">
+                      <th className="px-4 py-4 text-left text-sm font-semibold text-gray-900">
                         Select
                       </th>
-                      <th className="px-6 py-4 text-sm font-semibold text-left text-gray-900">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
                         Customer
                       </th>
-                      <th className="px-6 py-4 text-sm font-semibold text-left text-gray-900">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
                         Contact
                       </th>
-                      <th className="px-6 py-4 text-sm font-semibold text-left text-gray-900">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
                         Last Visit
                       </th>
-                      <th className="px-6 py-4 text-sm font-semibold text-left text-gray-900">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
                         Visits
                       </th>
-                      <th className="px-6 py-4 text-sm font-semibold text-left text-gray-900">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
                         Total Spent
                       </th>
-                      <th className="px-6 py-4 text-sm font-semibold text-left text-gray-900">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
                         Actions
                       </th>
                     </tr>
@@ -1084,19 +1081,19 @@ const CustomerManagement = () => {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="transition-colors border-b border-gray-100 hover:bg-gray-50"
+                        className="border-b border-gray-100 transition-colors hover:bg-gray-50"
                       >
                         <td className="px-4 py-4">
                           <input
                             type="checkbox"
                             checked={isSelected(customer.id)}
                             onChange={() => toggleSelect(customer.id)}
-                            className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                            className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                           />
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-full">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
                               <span className="font-semibold text-purple-600">
                                 {customer.name.charAt(0).toUpperCase()}
                               </span>
@@ -1147,7 +1144,7 @@ const CustomerManagement = () => {
                                 setSelectedCustomer(customer);
                                 setIsMessageModalOpen(true);
                               }}
-                              className="p-2 text-green-600 transition-colors rounded-lg hover:cursor-pointer hover:bg-green-50"
+                              className="rounded-lg p-2 text-green-600 transition-colors hover:cursor-pointer hover:bg-green-50"
                               title="Send WhatsApp Message"
                             >
                               <MessageCircle size={16} />
@@ -1160,24 +1157,24 @@ const CustomerManagement = () => {
                 </table>
               </div>
 
-              <div className="p-4 space-y-4 lg:hidden">
+              <div className="space-y-4 p-4 lg:hidden">
                 {currentCustomers.map((customer, index) => (
                   <motion.div
                     key={customer.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="p-4 rounded-lg bg-gray-50"
+                    className="rounded-lg bg-gray-50 p-4"
                   >
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="mb-3 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <input
                           type="checkbox"
                           checked={isSelected(customer.id)}
                           onChange={() => toggleSelect(customer.id)}
-                          className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                          className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                         />
-                        <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
                           <span className="text-lg font-semibold text-purple-600">
                             {customer.name.charAt(0).toUpperCase()}
                           </span>
@@ -1195,7 +1192,7 @@ const CustomerManagement = () => {
                             setSelectedCustomer(customer);
                             setIsMessageModalOpen(true);
                           }}
-                          className="p-2 text-green-600 transition-colors rounded-lg hover:bg-green-50"
+                          className="rounded-lg p-2 text-green-600 transition-colors hover:bg-green-50"
                         >
                           <MessageCircle size={16} />
                         </motion.button>
@@ -1225,7 +1222,7 @@ const CustomerManagement = () => {
               </div>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+                <div className="flex w-full items-center justify-between overflow-x-auto border-t border-gray-200 px-6 py-4">
                   <div className="text-sm text-gray-600">
                     Showing {startIndex + 1} to {Math.min(endIndex, filteredCustomers.length)} of{' '}
                     {filteredCustomers.length} customers
@@ -1236,7 +1233,7 @@ const CustomerManagement = () => {
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
-                      className="p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <ChevronLeft size={16} />
                     </motion.button>
@@ -1264,7 +1261,7 @@ const CustomerManagement = () => {
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                       disabled={currentPage === totalPages}
-                      className="p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <ChevronRight size={16} />
                     </motion.button>

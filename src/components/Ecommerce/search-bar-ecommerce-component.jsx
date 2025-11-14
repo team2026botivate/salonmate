@@ -14,7 +14,7 @@ export default function ProductSearchBar({
   sortBy,
   onSortChange,
   resultCount,
-  searchQuery,
+  searchQuery,  
   activeFilters,
   onRemoveFilter,
   onClearAllFilters,
