@@ -13,6 +13,7 @@ import AuthPage from './components/AuthPage.jsx';
 import LicenseGuard from './components/license/licenseGuard.jsx';
 import ForgetPassword from './Pages/forgetPassword.jsx';
 import EcommerceStorePage from './Pages/ecommerce-store-page.jsx';
+import Ecommerce_Add_product from './Pages/ecommerce-add-product.jsx';
 function App() {
   return (
     <Router>
@@ -31,6 +32,7 @@ function App() {
                 <Route path="/profile/:id" element={<ProfilePage />} />
               </Route>
               <Route path="/store" element={<EcommerceStorePage />} />
+              <Route path="/store/add-product" element={<Ecommerce_Add_product />} />
             </Route>
 
             {/* Redirects */}

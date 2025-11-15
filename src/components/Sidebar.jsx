@@ -55,6 +55,7 @@ export default function Sidebar({
   allowedTabs = [],
 }) {
   const [isStaffMenuOpen, setIsStaffMenuOpen] = useState(false);
+  const [isStoreMenuOpen, setIsStoreMenuOpen] = useState(false);
   const { user } = useAuth();
 
   const navigate = useNavigate();
@@ -92,6 +93,12 @@ export default function Sidebar({
       if (!isStaffMenuOpen) {
         setActiveTab('staff');
       }
+    }
+  };
+
+  const toggleStoreMenu = () => {
+    if (isComponentAllowed('storePurches')) {
+      setIsStoreMenuOpen(!isStoreMenuOpen);
     }
   };
 
@@ -147,7 +154,21 @@ export default function Sidebar({
       id: 'storePurches',
       label: 'Store & Purches',
       icon: <ShoppingCart size={20} />,
-      link: '/store',
+      hasSubmenu: true,
+      submenuItems: [
+        {
+          id: 'allProducts',
+          label: 'All Products',
+          icon: <ShoppingCart size={18} />,
+          link: '/store',
+        },
+        {
+          id: 'addProduct',
+          label: 'Add Product',
+          icon: <ShoppingCart size={18} />,
+          link: '/store/add-product',
+        },
+      ],
     },
     { id: 'inventory', label: 'Inventory', icon: <Package size={20} /> },
     { id: 'dailyExpences', label: 'Daily Expenses', icon: <DollarSign size={20} /> },
@@ -165,7 +186,7 @@ export default function Sidebar({
 
   if (isLegacy) {
     return (
-      <div className="flex flex-col w-full h-screen p-4 bg-white border-r border-gray-200 md:w-64">
+      <div className="flex h-screen w-full flex-col border-r border-gray-200 bg-white p-4 md:w-64">
         <div className="mb-4">
           <h2 className="text-xl font-bold text-gray-900">Dashboard</h2>
           {user && (
@@ -174,7 +195,7 @@ export default function Sidebar({
             </p>
           )}
         </div>
-        <nav className="flex-1 overflow-y-auto hideScrollBar">
+        <nav className="hideScrollBar flex-1 overflow-y-auto">
           <ul>
             {menuItems.map((item) => {
               const staffHidden = new Set([
@@ -199,7 +220,7 @@ export default function Sidebar({
                     onClick={() => handleTabClick(item.id)}
                     className={`w-full rounded border border-gray-300 px-3 py-2 text-left ${activeTab === item.id ? 'bg-blue-600 text-white' : 'bg-white text-gray-800'} hover:bg-gray-100`}
                   >
-                    <span className="inline-block mr-2 align-middle">•</span>
+                    <span className="mr-2 inline-block align-middle">•</span>
                     <span className="align-middle">{item.label}</span>
                   </button>
                 </li>
@@ -221,10 +242,10 @@ export default function Sidebar({
       transition={{ duration: 0.6, ease: 'easeInOut' }}
     >
       {/* Header Section */}
-      <div className="relative p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+      <div className="relative border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-indigo-500/5"></div>
         <div className="relative">
-          <h2 className="text-2xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text">
+          <h2 className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-2xl font-bold text-transparent">
             Dashboard
           </h2>
           {user && (
@@ -232,7 +253,7 @@ export default function Sidebar({
               <p className="text-sm text-gray-600">
                 Welcome back, <span className="font-semibold text-gray-900">{user.name}</span>
               </p>
-              <span className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 border border-blue-200 rounded-full bg-gradient-to-r from-blue-100 to-indigo-100">
+              <span className="inline-flex items-center rounded-full border border-blue-200 bg-gradient-to-r from-blue-100 to-indigo-100 px-3 py-1 text-xs font-medium text-blue-700">
                 {user.role}
               </span>
             </div>
@@ -241,7 +262,7 @@ export default function Sidebar({
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto hideScrollBar">
+      <nav className="hideScrollBar flex-1 space-y-2 overflow-y-auto p-4">
         <ul className="space-y-1">
           {menuItems.map((item) => {
             // Additional UI rule: hide certain sections for staff regardless of permissions
@@ -274,7 +295,7 @@ export default function Sidebar({
                 {item.hasSubmenu ? (
                   <div className="space-y-1">
                     <motion.button
-                      onClick={toggleStaffMenu}
+                      onClick={item.id === 'staff' ? toggleStaffMenu : toggleStoreMenu}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       className={`group flex w-full items-center justify-between rounded-xl p-3 transition-all duration-300 ease-out ${
@@ -296,7 +317,11 @@ export default function Sidebar({
                         <span className="font-medium">{item.label}</span>
                       </div>
                       <motion.div
-                        animate={{ rotate: isStaffMenuOpen ? 180 : 0 }}
+                        animate={{
+                          rotate: (item.id === 'staff' ? isStaffMenuOpen : isStoreMenuOpen)
+                            ? 180
+                            : 0,
+                        }}
                         transition={{ duration: 0.3 }}
                         className={`transition-colors duration-300 ${
                           activeTab === item.id
@@ -308,42 +333,68 @@ export default function Sidebar({
                       </motion.div>
                     </motion.button>
 
-                    {/* Staff submenu - only show submenu items that the user has permission for */}
+                    {/* Submenu - supports both staff and storePurches */}
                     <motion.div
                       initial={false}
                       animate={{
-                        height: isStaffMenuOpen ? 'auto' : 0,
-                        opacity: isStaffMenuOpen ? 1 : 0,
+                        height: (item.id === 'staff' ? isStaffMenuOpen : isStoreMenuOpen)
+                          ? 'auto'
+                          : 0,
+                        opacity: (item.id === 'staff' ? isStaffMenuOpen : isStoreMenuOpen) ? 1 : 0,
                       }}
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
                       className="overflow-hidden"
                     >
-                      {isStaffMenuOpen && (
-                        <ul className="pl-4 mt-2 ml-6 space-y-1 border-l-2 border-gray-200">
+                      {(item.id === 'staff' ? isStaffMenuOpen : isStoreMenuOpen) && (
+                        <ul className="mt-2 ml-6 space-y-1 border-l-2 border-gray-200 pl-4">
                           {item.submenuItems.map((subItem) => {
-                            // Skip submenu items the user doesn't have permission for
-                            if (!isStaffSubmenuItemAllowed(subItem.id)) {
-                              return null;
+                            if (item.id === 'staff') {
+                              // Skip submenu items the user doesn't have permission for
+                              if (!isStaffSubmenuItemAllowed(subItem.id)) {
+                                return null;
+                              }
+                              return (
+                                <li key={subItem.id}>
+                                  <motion.button
+                                    onClick={() => handleStaffItemClick(subItem.id)}
+                                    whileHover={{ scale: 1.02, x: 4 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    className={`group flex w-full items-center rounded-lg p-2.5 transition-all duration-300 ${
+                                      activeTab === 'staff' && activeStaffTab === subItem.id
+                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/20'
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    }`}
+                                  >
+                                    <span
+                                      className={`mr-3 transition-colors duration-300 ${
+                                        activeTab === 'staff' && activeStaffTab === subItem.id
+                                          ? 'text-white'
+                                          : 'text-gray-500 group-hover:text-emerald-500'
+                                      }`}
+                                    >
+                                      {subItem.icon}
+                                    </span>
+                                    <span className="text-sm font-medium">{subItem.label}</span>
+                                  </motion.button>
+                                </li>
+                              );
                             }
-
+                            // storePurches submenu items just navigate
                             return (
                               <li key={subItem.id}>
                                 <motion.button
-                                  onClick={() => handleStaffItemClick(subItem.id)}
+                                  onClick={() => {
+                                    if (subItem.link) {
+                                      navigate(subItem.link);
+                                      setIsMobileMenuOpen(false);
+                                    }
+                                  }}
                                   whileHover={{ scale: 1.02, x: 4 }}
                                   whileTap={{ scale: 0.98 }}
-                                  className={`group flex w-full items-center rounded-lg p-2.5 transition-all duration-300 ${
-                                    activeTab === 'staff' && activeStaffTab === subItem.id
-                                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/20'
-                                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                  }`}
+                                  className={`group flex w-full items-center rounded-lg p-2.5 text-gray-600 transition-all duration-300 hover:bg-gray-50 hover:text-gray-900`}
                                 >
                                   <span
-                                    className={`mr-3 transition-colors duration-300 ${
-                                      activeTab === 'staff' && activeStaffTab === subItem.id
-                                        ? 'text-white'
-                                        : 'text-gray-500 group-hover:text-emerald-500'
-                                    }`}
+                                    className={`mr-3 text-gray-500 transition-colors duration-300 group-hover:text-emerald-500`}
                                   >
                                     {subItem.icon}
                                   </span>

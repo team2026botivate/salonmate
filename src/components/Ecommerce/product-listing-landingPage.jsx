@@ -11,15 +11,13 @@ export default function ProductListing() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
 
-// ✅ Option 1: Get storeId from URL params
-  const { storeId } = useParams(); // If route is /store/:storeId/products
 
-  // console.log(totalProducts, 'totalProducts from there ');
+
+
   const itemsPerPage = 8;
 
   const totalPages = Math.max(1, Math.ceil(totalProducts / itemsPerPage));
 
-  // Ensure currentPage doesn't exceed totalPages if totalProducts changes
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
@@ -33,7 +31,7 @@ export default function ProductListing() {
       exit={{ opacity: 0 }}
       className="min-h-screen bg-gray-50"
     >
-      <Header searchItem={searchTerm} setSearchItem={setSearchTerm} storeId={storeId}/>
+      <Header searchItem={searchTerm} setSearchItem={setSearchTerm}  />
 
       <div className="mx-auto max-w-[1400px] px-6 py-6">
         <div className="flex gap-6">
@@ -45,12 +43,9 @@ export default function ProductListing() {
                   currentPage={currentPage}
                   itemsPerPage={itemsPerPage}
                   onProductsLoaded={setTotalProducts}
+                  
                 />
               </Suspense>
-
-              
-
-              {/* <h1>hello from here</h1> */}
             </div>
 
             <Pagination

@@ -1,6 +1,5 @@
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
-// import { supabase } from '../../lib/supabas
 import { doFilterProduct } from '@/lib/filterSearch';
 import ProductCard from './product-card-ecommerce-component';
 
