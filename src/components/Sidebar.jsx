@@ -1,29 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
+  BarChart2,
   Calendar,
-  ClipboardCheck,
-  UserCheck,
-  Package,
-  Scissors,
   ChevronDown,
-  ChevronUp,
+  CirclePlus,
+  ClipboardCheck,
   Database,
-  History,
   DollarSign,
-  Users,
-  Tag,
+  History,
   Home,
   KeyRound,
   MessageSquare,
-  BarChart2,
+  Package,
+  Scissors,
   ShoppingCart,
+  Tag,
+  UserCheck,
+  Users
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-import { useAuth } from '../Context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../Context/AuthContext';
 
 // Map component names to identifiers used in permissions
 const COMPONENT_PERMISSION_MAP = {
@@ -165,7 +165,7 @@ export default function Sidebar({
         {
           id: 'addProduct',
           label: 'Add Product',
-          icon: <ShoppingCart size={18} />,
+          icon: <CirclePlus size={18} />,
           link: '/store/add-product',
         },
       ],

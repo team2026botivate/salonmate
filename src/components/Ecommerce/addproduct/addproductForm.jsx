@@ -6,7 +6,6 @@ const MAX_NAME_LENGTH = 40;
 const MAX_DESCRIPTION_LENGTH = 66;
 
 export function ProductForm({ index, onRemove, showRemove, onFormChange }) {
-  console.log(onRemove, 'onRemove');
   const [formData, setFormData] = useState({
     name: '',
     description: '',

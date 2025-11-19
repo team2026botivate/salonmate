@@ -8,8 +8,6 @@ export const useEcommerceStoreFetchAllProduct = () => {
   const { setAllProduct, setError } = useAllProductStore();
   const { user } = useAuth();
 
-  console.log(user, 'userdetails');
-
   const fetchAllProducts = async (page, limit) => {
     try {
       // Ensure valid page and limit
@@ -137,7 +135,7 @@ export const useFetchCart = () => {
   `
         )
         .eq('store_id', storeId)
-  
+
         .order('id', { ascending: true }); // Optional: ensures a stable order
 
       console.log(data, 'data');
@@ -159,4 +157,29 @@ export const useFetchCart = () => {
 
   // Return the state and the fetch function
   return { fetchCart, cartItems, loading, error, setCartItems };
+};
+
+export const useNewProductIntoStore = () => {
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const add_newProduct_to_store = async (productsWithStore) => {
+    try {
+      setIsLoading(true);
+      const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_API}/store/save`, {
+        store_id: user?.profile?.store_id,
+        products: productsWithStore,
+      });
+      console.log(data, 'res form the api ');
+      if (!data.success) throw new Error(data?.message || 'Failed to save');
+      // eslint-disable-next-line no-alert
+      alert('Products saved successfully');
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert(err.message || 'Error saving products');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { add_newProduct_to_store ,isLoading };
 };

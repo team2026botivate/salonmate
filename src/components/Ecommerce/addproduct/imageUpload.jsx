@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Upload, X } from 'lucide-react';
 
 export function ImageUpload({ images, onImagesChange }) {
+
+
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState('');
 
@@ -57,7 +59,7 @@ export function ImageUpload({ images, onImagesChange }) {
   return (
     <div className="space-y-4">
       <div
-        className={`relative rounded-2xl border-2 border-dashed transition-colors ${
+        className={`relative rounded-2xl border-2 border-dashed transition-colors  ${
           dragActive ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-gray-50'
         }`}
         onDragEnter={handleDrag}

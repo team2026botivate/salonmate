@@ -13,7 +13,7 @@ import AuthPage from './components/AuthPage.jsx';
 import LicenseGuard from './components/license/licenseGuard.jsx';
 import ForgetPassword from './Pages/forgetPassword.jsx';
 import EcommerceStorePage from './Pages/ecommerce-store-page.jsx';
-import Ecommerce_Add_product from './Pages/ecommerce-add-product.jsx';
+import Ecommerce_Add_product from './Pages/Ecommerce_Add_product.jsx';
 function App() {
   return (
     <Router>

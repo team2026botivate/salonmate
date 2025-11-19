@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Upload, X } from 'lucide-react';
 import { uploadProductImage } from '@/lib/uploadProductImage';
 
+
 const initialState = {
   name: '',
   description: '',
@@ -9,16 +10,51 @@ const initialState = {
   imageUrl: '',
 };
 
+const MAX_NAME_LENGTH = 40;
+const MAX_DESCRIPTION_LENGTH = 66;
+
 export default function ProductForm({ index, onChange, onRemove }) {
   const [form, setForm] = useState(initialState);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
-  // Notify parent on any form change
+  // NEW: error states for UI
+  const [fieldErrors, setFieldErrors] = useState({
+    name: '',
+    description: '',
+  });
+
   useEffect(() => {
     if (typeof onChange === 'function') onChange(index, form);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, form]);
+
+  const handleNameInput = (e) => {
+    const value = e.target.value;
+
+    if (value.length <= MAX_NAME_LENGTH) {
+      setForm((prev) => ({ ...prev, name: value }));
+      setFieldErrors((prev) => ({ ...prev, name: '' }));
+    } else {
+      setFieldErrors((prev) => ({
+        ...prev,
+        name: `Maximum ${MAX_NAME_LENGTH} characters allowed`,
+      }));
+    }
+  };
+
+  const handleDescriptionInput = (e) => {
+    const value = e.target.value;
+
+    if (value.length <= MAX_DESCRIPTION_LENGTH) {
+      setForm((prev) => ({ ...prev, description: value }));
+      setFieldErrors((prev) => ({ ...prev, description: '' }));
+    } else {
+      setFieldErrors((prev) => ({
+        ...prev,
+        description: `Maximum ${MAX_DESCRIPTION_LENGTH} characters allowed`,
+      }));
+    }
+  };
 
   const handleInput = (key) => (e) => {
     const value = e.target.value;
@@ -29,7 +65,6 @@ export default function ProductForm({ index, onChange, onRemove }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate type
     const valid = ['image/jpeg', 'image/png'];
     if (!valid.includes(file.type)) {
       setError('Only JPEG or PNG images are allowed');
@@ -65,30 +100,56 @@ export default function ProductForm({ index, onChange, onRemove }) {
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="space-y-4 md:col-span-2">
+
+          {/* NAME FIELD */}
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">Product Name</label>
+
             <input
               type="text"
               value={form.name}
-              onChange={handleInput('name')}
+              onChange={handleNameInput}
               placeholder="Enter product name"
               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 transition outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
             />
+
+            {/* error + counter */}
+            <div className="mt-1 flex items-center justify-between">
+              {fieldErrors.name && (
+                <p className="text-xs text-red-600">{fieldErrors.name}</p>
+              )}
+              <p className="text-xs text-gray-500 ml-auto">
+                {form.name.length}/{MAX_NAME_LENGTH}
+              </p>
+            </div>
           </div>
 
+          {/* DESCRIPTION FIELD */}
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Product Description
             </label>
+
             <textarea
               rows={4}
               value={form.description}
-              onChange={handleInput('description')}
+              onChange={handleDescriptionInput}
               placeholder="Enter product description"
               className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 transition outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
             />
+
+            {/* error + counter */}
+            <div className="mt-1 flex items-center justify-between">
+              {fieldErrors.description && (
+                <p className="text-xs text-red-600">{fieldErrors.description}</p>
+              )}
+              <p className="text-xs text-gray-500 ml-auto">
+                {form.description.length}/{MAX_DESCRIPTION_LENGTH}
+              </p>
+            </div>
           </div>
 
+          {/* PRICE FIELD */}
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">Price</label>
             <input
@@ -103,8 +164,9 @@ export default function ProductForm({ index, onChange, onRemove }) {
           </div>
         </div>
 
+        {/* IMAGE UPLOAD */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">Product Image</label>
+          <label className="mb-2 block text-sm font-medium text-gray-700 ">Product Image</label>
           <div className="relative flex aspect-square w-full items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50">
             {hasImage ? (
               <img
@@ -118,6 +180,7 @@ export default function ProductForm({ index, onChange, onRemove }) {
                 <p className="text-sm">Upload JPEG or PNG</p>
               </div>
             )}
+
             <input
               type="file"
               accept="image/jpeg,image/png"
@@ -125,6 +188,7 @@ export default function ProductForm({ index, onChange, onRemove }) {
               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
             />
           </div>
+
           {uploading && <p className="mt-2 text-sm text-blue-600">Uploading...</p>}
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
         </div>

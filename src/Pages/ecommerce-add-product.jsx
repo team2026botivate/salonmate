@@ -19,6 +19,8 @@ function Ecommerce_Add_product() {
   };
 
   const updateProductForm = (index, data) => {
+    console.log(data, 'data');
+    console.log(index, 'index');
     setProductData((prev) => ({ ...prev, [index]: data }));
   };
 
@@ -32,11 +34,16 @@ function Ecommerce_Add_product() {
         ...p,
         store_id: storeId,
       }));
-      const res = await fetch('http://localhost:3003/api/store/save', {
+
+      console.log(productsPayload, 'product payload ');
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_API}/store/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ products: productsPayload }),
       });
+
+      console.log(res, 'after the api call ');
+
       const text = await res.text();
       if (!res.ok) {
         throw new Error(text || 'Failed to save products');
