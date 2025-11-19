@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { doFilterProduct } from '@/lib/filterSearch';
 import ProductCard from './product-card-ecommerce-component';
 
-import { useAuth } from '@/Context/AuthContext';
 import { useAllProductStore, useEcommerceStore } from '@/zustand/ecommerce-store-zustand';
 import { useEffect } from 'react';
 import { useEcommerceStoreFetchAllProduct } from '@/hook/ecommerce-store-hook';
@@ -12,7 +11,7 @@ export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onP
   const { allProduct } = useAllProductStore();
   const { fetchAllProducts } = useEcommerceStoreFetchAllProduct();
   const { setCartLength, cartLength } = useEcommerceStore();
-  const { user } = useAuth();
+
 
   const [loading, setLoading] = useState(true);
   const [error] = useState(null);
@@ -22,6 +21,7 @@ export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onP
   const handleAddToCart = async (product) => {
 
     console.log('Product added to cart:', product);
+    
   };
 
   const filterdProduct = allProduct?.data ? doFilterProduct(allProduct.data, searchTerm) : [];
@@ -36,7 +36,6 @@ export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onP
     loadProducts();
   }, [currentPage, itemsPerPage]);
 
-  // Update total product count
   useEffect(() => {
     if (!allProduct) return;
 
@@ -53,13 +52,6 @@ export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onP
     }
   }, [allProduct, currentPage, onProductsLoaded]);
 
-  // if (filterdProduct?.length === 0 && !loading) {
-  //   return (
-  //     <div className="rounded-lg border border-gray-200 bg-gray-50 p-12 text-center">
-  //       <p className="text-lg font-medium text-gray-600">No products found</p>
-  //     </div>
-  //   );
-  // }
 
   if (loading) {
     return (
@@ -95,7 +87,7 @@ export default function ProductGrid({ searchTerm, currentPage, itemsPerPage, onP
          key={product.id}
           product={product}
            onAddToCart={handleAddToCart} 
-           storeId={storeId}
+           
         />
       ))}
     </div>

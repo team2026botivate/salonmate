@@ -10,7 +10,7 @@ export function useCartCount(storeId = null) {
                 .from('saloon_e_commerce_cart_items')
                 .select('*', { head: true, count: 'exact' });
                 
-                if (storeId) query = query.eq('store_id', storeId);
+                if (storeId) query = query.eq('store_id', storeId).eq('payment_status', 'pending');
 
                 const { count: total, error } = await query;
                 if (!error) setCount(total ?? 0);

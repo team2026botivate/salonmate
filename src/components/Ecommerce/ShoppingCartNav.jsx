@@ -7,8 +7,12 @@ import { CreditCardIcon } from './cart/CartItmeIcon';
 import CartItem from './cart/CartItem';
 import PaymentMethodModal from './cart/PaymentMethodModal';
 import ToastPortal from './cart/ToastPortal';
+import { useEcommerce_store_payment } from '@/hook/ecommerce-store-hook';
+import { useAuth } from '@/Context/AuthContext';
 
-export default function ShoppingCartNav() {
+export default function ShoppingCartNav({ open = false }) {
+  const { ecommerce_payment, isLoading } = useEcommerce_store_payment();
+  const { user } = useAuth();
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
   const [_itemCount, setItemCount] = useState(0);
@@ -19,12 +23,15 @@ export default function ShoppingCartNav() {
   const { fetchCart, cartItems, loading, error, setCartItems } = useFetchCart();
 
   useEffect(() => {
-    fetchCart(); // Now this will actually call the function
+    fetchCart(); // initial load
   }, []);
 
-  const shippingCost = 0;
+  // Re-fetch when sidebar is opened to ensure fresh data
+  useEffect(() => {
+    if (open) fetchCart();
+  }, [open]);
 
-  console.log('cartItems', cartItems);
+  const shippingCost = 0;
 
   useEffect(() => {
     let newSubtotal = 0;
@@ -93,15 +100,21 @@ export default function ShoppingCartNav() {
   const handleCheckout = () => setShowPaymentModal(true);
 
   const handlePaymentSelect = async (paymentMethod) => {
+    console.log(paymentMethod, 'payment method');
     setIsProcessingPayment(true);
-    try {
-      // Simulate payment processing or add your actual payment logic here
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulated delay
 
+    try {
+      const storeId = user?.profile?.store_id;
+      const resp = await ecommerce_payment(paymentMethod, total, storeId, 'paid');
+      // Refresh cart UI and badge immediately
+      try {
+        await fetchCart();
+        // Also force badge update to 0 by setting zustand store directly (pending items now 0)
+        const { useEcommerceStore } = await import('@/zustand/ecommerce-store-zustand');
+        useEcommerceStore.getState().setCartLength(0);
+      } catch (_) {}
       showToast(`Payment confirmed via ${paymentMethod}!`, 'success');
       setShowPaymentModal(false);
-
-      // Add your additional logic here (e.g., create order, clear cart, etc.)
     } catch (error) {
       console.error('Payment error:', error);
       showToast('Payment failed. Please try again.', 'error');

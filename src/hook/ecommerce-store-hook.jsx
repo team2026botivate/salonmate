@@ -37,6 +37,9 @@ export const useAddToCart = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { setCartLength } = useAllProductStore.getState
+    ? useAllProductStore.getState()
+    : { setCartLength: null };
 
   const addToCart = async (product) => {
     const storeId = user?.profile?.store_id;
@@ -49,44 +52,39 @@ export const useAddToCart = () => {
       setLoading(true);
       setError(null);
 
-      // 1️⃣ Check if product already exists in the cart for this store
-      const { data: existing, error: fetchError } = await supabase
-        .from('saloon_e_commerce_cart_items')
-        .select('id, quantity')
-        .eq('product_id', product.id)
-        .eq('store_id', storeId)
-        .maybeSingle();
+      // Call backend API to perform cart write using server credentials (avoids client RLS issues)
+      const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_API}/store/addToCart`, {
+        productId: product.id,
+        store_id: storeId,
+        price: product.price,
+        quantity: 1,
+      });
 
-      console.log('existing', existing);
-
-      if (fetchError) throw fetchError;
-
-      if (existing) {
-        // 2️⃣ Update quantity if product already exists
-        const { error: updateError } = await supabase
-          .from('saloon_e_commerce_cart_items')
-          .update({ quantity: existing.quantity + 1 })
-          .eq('id', existing.id);
-
-        if (updateError) throw updateError;
-      } else {
-        // 3️⃣ Insert a new product row into the cart
-        const { error: insertError } = await supabase.from('saloon_e_commerce_cart_items').insert([
-          {
-            product_id: product.id,
-            quantity: 1,
-            price_snapshot: product.price,
-            store_id: storeId,
-          },
-        ]);
-
-        if (insertError) throw insertError;
+      if (data && data.message) {
+        console.log('✅ addToCart:', data.message);
       }
 
-      console.log('✅ Product added/updated in cart:', product.name);
+      // Fetch the latest count and update badge immediately
+      try {
+        const { count: total } = await supabase
+          .from('saloon_e_commerce_cart_items')
+          .select('*', { head: true, count: 'exact' })
+          .eq('store_id', storeId);
+        if (typeof total === 'number' && Number.isFinite(total)) {
+          // use zustand store directly to avoid prop drilling
+          // fallback: window event if store not available
+          try {
+            const { useEcommerceStore } = await import('../zustand/ecommerce-store-zustand');
+            useEcommerceStore.getState().setCartLength(total);
+          } catch (_) {}
+        }
+      } catch (_) {}
+
+      return { success: true };
     } catch (err) {
       console.error('❌ Error adding to cart:', err);
       setError(err.message || 'Failed to add to cart');
+      return { success: false, error: err.message || 'Failed to add to cart' };
     } finally {
       setLoading(false);
     }
@@ -102,8 +100,6 @@ export const useFetchCart = () => {
   const [error, setError] = useState(null);
 
   const fetchCart = async () => {
-    console.log('Ram RAm');
-
     const storeId = user?.profile?.store_id;
 
     if (!storeId) {
@@ -114,38 +110,30 @@ export const useFetchCart = () => {
     try {
       setLoading(true);
       setError(null);
-
-      // 1️⃣ Fetch cart items for the specific store
-      // We also fetch related product details using a join.
-      // This assumes 'product_id' is a foreign key to a 'products' table.
       const { data, error: fetchError } = await supabase
         .from('saloon_e_commerce_cart_items')
         .select(
           `
-    id,
-    quantity,
-    price_snapshot,
-    store_id,
-    product_id (
-      id,
-      name,
-      price,
-      image_url
-    )
-  `
+            id,
+            quantity,
+            price_snapshot,
+            store_id,
+            product_id (
+              id,
+              name,
+              price,
+              image_url
+            )
+          `
         )
         .eq('store_id', storeId)
+        .eq('payment_status', 'pending')
 
-        .order('id', { ascending: true }); // Optional: ensures a stable order
-
-      console.log(data, 'data');
-
-      // console.log('data', data);
+        .order('id', { ascending: true });
       if (fetchError) throw fetchError;
 
       if (data) {
         setCartItems(data);
-        // console.log('✅ Cart items fetched:', data);
       }
     } catch (err) {
       console.error('❌ Error fetching cart:', err);
@@ -155,7 +143,6 @@ export const useFetchCart = () => {
     }
   };
 
-  // Return the state and the fetch function
   return { fetchCart, cartItems, loading, error, setCartItems };
 };
 
@@ -181,5 +168,33 @@ export const useNewProductIntoStore = () => {
     }
   };
 
-  return { add_newProduct_to_store ,isLoading };
+  return { add_newProduct_to_store, isLoading };
+};
+
+export const useEcommerce_store_payment = () => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const ecommerce_payment = async (paymentMethod, amount, storeId, paymentStatus = 'paid') => {
+    try {
+      setIsLoading(true);
+      const { data } = await axios.post(
+        `${import.meta.env.VITE_BACKEND_API}/store/ecommerce_payment`,
+        {
+          paymentMethod,
+          amount,
+          store_id: storeId,
+          payment_status: paymentStatus,
+        }
+      );
+
+      if (!data.success) throw new Error(data?.message || 'Payment failed');
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err?.message || 'Payment failed' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { ecommerce_payment, isLoading };
 };

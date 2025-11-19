@@ -1,33 +1,42 @@
-import { ArrowUpRight } from "lucide-react";
-import { useAddToCart } from "@/hook/ecommerce-store-hook";
-import { useEcommerceStore } from "@/zustand/ecommerce-store-zustand";
+import { ArrowUpRight } from 'lucide-react';
+import { useAddToCart } from '@/hook/ecommerce-store-hook';
+import { useEcommerceStore } from '@/zustand/ecommerce-store-zustand';
+import { useEffect, useState } from 'react';
+import ToastPortal from './cart/ToastPortal';
 
-export default function ProductCard({ product, onAddToCart, storeId }) {
+export default function ProductCard({ product, onAddToCart }) {
   const { name, description, price, is_active, image_url } = product;
   const { addToCart, loading, error } = useAddToCart();
   const { cartLength, setCartLength } = useEcommerceStore();
+  const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
+
+  useEffect(() => {
+    if (!toast.show) return;
+    const t = setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 2500);
+    return () => clearTimeout(t);
+  }, [toast.show]);
 
   const handleAddToCart = async () => {
     try {
       // Update global cart count
-      setCartLength(cartLength + 1);
+      setCartLength((prev) => (typeof prev === 'number' ? prev + 1 : 1));
 
-      const result = await addToCart(product, storeId);
+      const result = await addToCart(product);
 
       if (result?.success) {
-
         // Optional: Notify parent component
         onAddToCart?.(product);
         console.log('Product added to cart:', product);
+        setToast({ show: true, type: 'success', message: 'Added to cart' });
         return;
-
       }
       // If addTocart failed, rollback optimistic change
-      setCartLength(prev => Math.max(0, prev - 1));
-      console.log('Error adding product to cart: ', result?.error || error);
+      setCartLength((prev) => Math.max(0, typeof prev === 'number' ? prev - 1 : 0));
+      setToast({ show: true, type: 'error', message: result?.error || 'Failed to add to cart' });
     } catch (err) {
-      setCartLength(prev => Math.max(0, prev - 1));
-      console.error("Error adding product to cart:", err);
+      setCartLength((prev) => Math.max(0, typeof prev === 'number' ? prev - 1 : 0));
+      console.error('Error adding product to cart:', err);
+      setToast({ show: true, type: 'error', message: 'Failed to add to cart' });
     }
   };
 
@@ -46,7 +55,7 @@ export default function ProductCard({ product, onAddToCart, storeId }) {
         )}
       </div>
 
-      <div className="flex flex-col flex-1 p-4">
+      <div className="flex flex-1 flex-col p-4">
         <div className="flex items-start justify-between">
           <h2 className="mb-1 text-xl leading-tight font-bold text-gray-900">{name}</h2>
           <div className="rounded-xl bg-gray-100 px-3 py-1">
@@ -71,6 +80,8 @@ export default function ProductCard({ product, onAddToCart, storeId }) {
           {error && <p className="mt-2 text-center text-sm text-red-500">{error}</p>}
         </div>
       </div>
+
+      <ToastPortal toast={toast} />
     </div>
   );
 }

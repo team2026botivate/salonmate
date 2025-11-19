@@ -1,6 +1,7 @@
 'use client';
 
 import { useEcommerceStore } from '@/zustand/ecommerce-store-zustand';
+import { useAuth } from '@/Context/AuthContext';
 import { motion } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import { ShoppingCart } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -12,32 +13,35 @@ export default function SidebarEcommerce() {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
   const { height } = useDimensions(containerRef);
-  const cartCount = useCartCount();
+  const { user } = useAuth();
+  const cartCount = useCartCount(user?.profile?.store_id ?? null);
+  const safeRealtime = typeof cartCount === 'number' ? cartCount : 0;
+  const safeOptimistic = typeof cartLength === 'number' ? cartLength : 0;
+  const badgeCount = Math.max(safeRealtime, safeOptimistic);
+
+  useEffect(() => {}, [cartCount]);
 
   return (
-  
-      <motion.nav
-        initial={false}
-        animate={isOpen ? 'open' : 'closed'}
-        custom={height}
-        ref={containerRef}
-        style={nav}
-        
+    <motion.nav
+      initial={false}
+      animate={isOpen ? 'open' : 'closed'}
+      custom={height}
+      ref={containerRef}
+      style={nav}
+    >
+      {/* Animated blue background */}
+      <motion.div
+        style={{ ...background, pointerEvents: isOpen ? 'auto' : 'none', zIndex: 55 }}
+        variants={sidebarVariants}
+        className="flex w-full items-center justify-center"
       >
-        {/* Animated blue background */}
-        <motion.div
-          style={{...background, pointerEvents: isOpen ? 'auto' : 'none', zIndex: 55}}
-          variants={sidebarVariants}
-          className="flex items-center justify-center w-full"
-        >
-            <ShoppingCartNav  />
-            {/* <CartList/> */}
-        </motion.div>
+        <ShoppingCartNav open={isOpen} />
+        {/* <CartList/> */}
+      </motion.div>
 
-        {/* Toggle button */}
-        <MenuToggle toggle={() => setIsOpen(!isOpen)} badge={cartCount ?? 0} />
-      </motion.nav>
-  
+      {/* Toggle button */}
+      <MenuToggle toggle={() => setIsOpen(!isOpen)} badge={badgeCount} />
+    </motion.nav>
   );
 }
 
@@ -84,7 +88,7 @@ const MenuToggle = ({ toggle, badge }) => (
     >
       <ShoppingCart className="h-6 w-6 text-white" />
       <span className="absolute -top-2 right-2 z-50 size-5 rounded-full bg-red-500">
-        <p className="text-xs text-bold text-white flex justify-center ">{badge ?? 0}</p>
+        <p className="text-bold flex justify-center text-xs text-white">{badge ?? 0}</p>
       </span>
     </motion.div>
   </button>
