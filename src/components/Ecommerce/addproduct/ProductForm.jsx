@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Upload, X } from 'lucide-react';
 import { uploadProductImage } from '@/lib/uploadProductImage';
 
-
 const initialState = {
   name: '',
   description: '',
@@ -17,6 +16,7 @@ export default function ProductForm({ index, onChange, onRemove }) {
   const [form, setForm] = useState(initialState);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [progress, setProgress] = useState(0);
 
   // NEW: error states for UI
   const [fieldErrors, setFieldErrors] = useState({
@@ -72,10 +72,12 @@ export default function ProductForm({ index, onChange, onRemove }) {
     }
 
     setError('');
+    setProgress(0);
     setUploading(true);
     try {
-      const publicUrl = await uploadProductImage(file);
+      const publicUrl = await uploadProductImage(file, (pct) => setProgress(pct));
       setForm((prev) => ({ ...prev, imageUrl: publicUrl }));
+      setProgress(100);
     } catch (err) {
       setError(err?.message || 'Failed to upload image');
     } finally {
@@ -100,7 +102,6 @@ export default function ProductForm({ index, onChange, onRemove }) {
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="space-y-4 md:col-span-2">
-
           {/* NAME FIELD */}
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">Product Name</label>
@@ -115,10 +116,8 @@ export default function ProductForm({ index, onChange, onRemove }) {
 
             {/* error + counter */}
             <div className="mt-1 flex items-center justify-between">
-              {fieldErrors.name && (
-                <p className="text-xs text-red-600">{fieldErrors.name}</p>
-              )}
-              <p className="text-xs text-gray-500 ml-auto">
+              {fieldErrors.name && <p className="text-xs text-red-600">{fieldErrors.name}</p>}
+              <p className="ml-auto text-xs text-gray-500">
                 {form.name.length}/{MAX_NAME_LENGTH}
               </p>
             </div>
@@ -143,7 +142,7 @@ export default function ProductForm({ index, onChange, onRemove }) {
               {fieldErrors.description && (
                 <p className="text-xs text-red-600">{fieldErrors.description}</p>
               )}
-              <p className="text-xs text-gray-500 ml-auto">
+              <p className="ml-auto text-xs text-gray-500">
                 {form.description.length}/{MAX_DESCRIPTION_LENGTH}
               </p>
             </div>
@@ -166,7 +165,7 @@ export default function ProductForm({ index, onChange, onRemove }) {
 
         {/* IMAGE UPLOAD */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700 ">Product Image</label>
+          <label className="mb-2 block text-sm font-medium text-gray-700">Product Image</label>
           <div className="relative flex aspect-square w-full items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50">
             {hasImage ? (
               <img
@@ -187,6 +186,28 @@ export default function ProductForm({ index, onChange, onRemove }) {
               onChange={handleFile}
               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
             />
+
+            {uploading && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-black/40 text-white">
+                <svg className="h-6 w-6 animate-spin" viewBox="0 0 24 24">
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                </svg>
+                <div className="mt-2 text-sm">Uploading {progress}%</div>
+                <div className="mt-2 h-2 w-3/4 overflow-hidden rounded bg-white/30">
+                  <div
+                    className="h-2 bg-white"
+                    style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {uploading && <p className="mt-2 text-sm text-blue-600">Uploading...</p>}

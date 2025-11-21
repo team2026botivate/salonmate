@@ -58,24 +58,27 @@ export const useAddToCart = () => {
         store_id: storeId,
         price: product.price,
         quantity: 1,
+        user_id: user?.id,
       });
 
       if (data && data.message) {
         console.log('✅ addToCart:', data.message);
       }
 
-      // Fetch the latest count and update badge immediately
+      // Fetch the latest cart quantity (sum of pending quantities) and update badge immediately
       try {
-        const { count: total } = await supabase
+        const { data, error } = await supabase
           .from('saloon_e_commerce_cart_items')
-          .select('*', { head: true, count: 'exact' })
-          .eq('store_id', storeId);
-        if (typeof total === 'number' && Number.isFinite(total)) {
-          // use zustand store directly to avoid prop drilling
-          // fallback: window event if store not available
+          .select('quantity')
+          .eq('store_id', storeId)
+          .eq('payment_status', 'pending')
+          .eq('user_id', user?.id);
+
+        if (!error && Array.isArray(data)) {
+          const totalQty = data.reduce((acc, r) => acc + Number(r?.quantity || 0), 0);
           try {
             const { useEcommerceStore } = await import('../zustand/ecommerce-store-zustand');
-            useEcommerceStore.getState().setCartLength(total);
+            useEcommerceStore.getState().setCartLength(totalQty);
           } catch (_) {}
         }
       } catch (_) {}
@@ -128,6 +131,7 @@ export const useFetchCart = () => {
         )
         .eq('store_id', storeId)
         .eq('payment_status', 'pending')
+        .eq('user_id', user?.id)
 
         .order('id', { ascending: true });
       if (fetchError) throw fetchError;
@@ -174,7 +178,13 @@ export const useNewProductIntoStore = () => {
 export const useEcommerce_store_payment = () => {
   const [isLoading, setIsLoading] = useState(false);
 
-  const ecommerce_payment = async (paymentMethod, amount, storeId, paymentStatus = 'paid') => {
+  const ecommerce_payment = async (
+    paymentMethod,
+    amount,
+    storeId,
+    user,
+    paymentStatus = 'paid'
+  ) => {
     try {
       setIsLoading(true);
       const { data } = await axios.post(
@@ -184,6 +194,7 @@ export const useEcommerce_store_payment = () => {
           amount,
           store_id: storeId,
           payment_status: paymentStatus,
+          user_id: user?.id,
         }
       );
 

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 export const useEcommerceStore = create((set) => ({
   cartLength: 0,
+  
   setCartLength: (next) =>
     set((state) => ({
       cartLength:

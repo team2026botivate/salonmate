@@ -71,14 +71,31 @@ export default function ShoppingCartNav({ open = false }) {
     };
   }, [fetchCart]);
 
-  const handleUpdateQuantity = (id, newQuantity) => {
+  const handleUpdateQuantity = async (id, newQuantity) => {
     if (newQuantity < 1) {
       handleRemoveItem(id);
       return;
     }
+    // Optimistic UI update
     setCartItems((currentItems) =>
       currentItems.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item))
     );
+    try {
+      const { error } = await supabase
+        .from('saloon_e_commerce_cart_items')
+        .update({ quantity: newQuantity })
+        .eq('id', id)
+        .eq('payment_status', 'pending');
+      if (error) throw error;
+    } catch (e) {
+      // Rollback on failure
+      setCartItems((currentItems) =>
+        currentItems.map((item) =>
+          item.id === id ? { ...item, quantity: Math.max(1, item.quantity || 1) } : item
+        )
+      );
+      showToast('Failed to update quantity', 'error');
+    }
   };
 
   const handleRemoveItem = async (id) => {
@@ -105,7 +122,7 @@ export default function ShoppingCartNav({ open = false }) {
 
     try {
       const storeId = user?.profile?.store_id;
-      const resp = await ecommerce_payment(paymentMethod, total, storeId, 'paid');
+      const resp = await ecommerce_payment(paymentMethod, total, storeId, user, 'paid');
       // Refresh cart UI and badge immediately
       try {
         await fetchCart();

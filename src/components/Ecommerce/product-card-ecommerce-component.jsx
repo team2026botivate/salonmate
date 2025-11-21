@@ -7,7 +7,7 @@ import ToastPortal from './cart/ToastPortal';
 export default function ProductCard({ product, onAddToCart }) {
   const { name, description, price, is_active, image_url } = product;
   const { addToCart, loading, error } = useAddToCart();
-  const { cartLength, setCartLength } = useEcommerceStore();
+  const { setCartLength } = useEcommerceStore();
   const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
 
   useEffect(() => {
@@ -18,9 +18,6 @@ export default function ProductCard({ product, onAddToCart }) {
 
   const handleAddToCart = async () => {
     try {
-      // Update global cart count
-      setCartLength((prev) => (typeof prev === 'number' ? prev + 1 : 1));
-
       const result = await addToCart(product);
 
       if (result?.success) {
@@ -30,11 +27,8 @@ export default function ProductCard({ product, onAddToCart }) {
         setToast({ show: true, type: 'success', message: 'Added to cart' });
         return;
       }
-      // If addTocart failed, rollback optimistic change
-      setCartLength((prev) => Math.max(0, typeof prev === 'number' ? prev - 1 : 0));
       setToast({ show: true, type: 'error', message: result?.error || 'Failed to add to cart' });
     } catch (err) {
-      setCartLength((prev) => Math.max(0, typeof prev === 'number' ? prev - 1 : 0));
       console.error('Error adding product to cart:', err);
       setToast({ show: true, type: 'error', message: 'Failed to add to cart' });
     }
@@ -69,7 +63,7 @@ export default function ProductCard({ product, onAddToCart }) {
           <button
             onClick={handleAddToCart}
             disabled={loading}
-            className="group flex w-full items-center justify-center gap-3 rounded-xl bg-black px-4 py-2 text-base font-medium text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="group flex w-full items-center justify-center gap-3 rounded-xl bg-black px-4 py-2 text-base font-medium text-white transition-colors hover:cursor-pointer hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span>{loading ? 'Adding...' : 'Add to Cart'}</span>
             {!loading && (
