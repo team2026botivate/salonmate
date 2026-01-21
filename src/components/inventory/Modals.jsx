@@ -278,7 +278,7 @@ export const AddProductModal = ({
 
                             {/* Selected Product Info */}
                             {!isNewProduct && selectedProductId && (
-                                <div className="mt-4 p-4 bg-white rounded-lg border-2 border-green-300 bg-green-50">
+                                <div className="mt-4 p-4 rounded-lg border-2 border-green-300 bg-green-50">
                                     <div className="flex items-center gap-3">
                                         <div className="w-12 h-12 rounded-lg overflow-hidden border border-green-200">
                                             <img
@@ -304,7 +304,7 @@ export const AddProductModal = ({
 
                             {/* New Product Info */}
                             {isNewProduct && searchText.trim() && (
-                                <div className="mt-4 p-4 bg-white rounded-lg border-2 border-blue-300 bg-blue-50">
+                                <div className="mt-4 p-4 rounded-lg border-2 border-blue-300 bg-blue-50">
                                     <p className="text-sm font-semibold text-slate-800">
                                         Creating new product: <span className="text-indigo-600">"{searchText}"</span>
                                     </p>

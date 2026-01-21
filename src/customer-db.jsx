@@ -26,7 +26,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useGetCustomerDataFetch } from './hook/dbOperation';
 import { useAppData } from './zustand/appData';
-
+import AddCustomerDrawer from './components/customer/AddCustomerDrawer';
 // Toast Notification Component
 export const Toast = ({ message, type, isVisible, onClose }) => {
   useEffect(() => {
@@ -48,9 +48,8 @@ export const Toast = ({ message, type, isVisible, onClose }) => {
           className="fixed top-4 left-1/2 z-50 transform"
         >
           <div
-            className={`flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg ${
-              type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-            }`}
+            className={`flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+              }`}
           >
             {type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
             <span className="font-medium">{message}</span>
@@ -535,14 +534,14 @@ const MessageModal = ({
                         <div className="text-gray-500">Loading templates...</div>
                       </div>
                     ) : (tpls || []).filter((t) => {
-                        const q = tplQuery.toLowerCase();
-                        return (
-                          t.name?.toLowerCase().includes(q) ||
-                          t.category?.toLowerCase().includes(q) ||
-                          t.status?.toLowerCase().includes(q) ||
-                          extractBodyText(t)?.toLowerCase().includes(q)
-                        );
-                      }).length === 0 ? (
+                      const q = tplQuery.toLowerCase();
+                      return (
+                        t.name?.toLowerCase().includes(q) ||
+                        t.category?.toLowerCase().includes(q) ||
+                        t.status?.toLowerCase().includes(q) ||
+                        extractBodyText(t)?.toLowerCase().includes(q)
+                      );
+                    }).length === 0 ? (
                       <div className="flex items-center justify-center py-10">
                         <div className="text-center">
                           <div className="mb-1 text-gray-400">No templates found</div>
@@ -581,11 +580,10 @@ const MessageModal = ({
                                   {(t.language || '').toUpperCase()}
                                 </span>
                                 <span
-                                  className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-medium ${
-                                    (t.status || '').toUpperCase() === 'APPROVED'
-                                      ? 'border border-green-200 bg-green-50 text-green-700'
-                                      : 'border border-amber-200 bg-amber-50 text-amber-700'
-                                  }`}
+                                  className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-medium ${(t.status || '').toUpperCase() === 'APPROVED'
+                                    ? 'border border-green-200 bg-green-50 text-green-700'
+                                    : 'border border-amber-200 bg-amber-50 text-amber-700'
+                                    }`}
                                 >
                                   {t.status}
                                 </span>
@@ -637,9 +635,8 @@ const MessageModal = ({
                   {message.length}/{maxLength} characters
                 </span>
                 <span
-                  className={`text-xs ${
-                    message.length > maxLength * 0.9 ? 'text-red-500' : 'text-gray-400'
-                  }`}
+                  className={`text-xs ${message.length > maxLength * 0.9 ? 'text-red-500' : 'text-gray-400'
+                    }`}
                 >
                   {maxLength - message.length} remaining
                 </span>
@@ -736,6 +733,7 @@ const CustomerManagement = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
   const [loader, setLoader] = useState(false);
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [toast, setToast] = useState({
     message: '',
     type: 'success',
@@ -961,15 +959,29 @@ const CustomerManagement = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8"
-        >
-          <h1 className="mb-2 text-3xl font-bold text-gray-900">Customer Management</h1>
-          <p className="text-gray-600">Manage your salon customers and their information</p>
-        </motion.div>
+        <div className='md:flex justify-between items-baseline pb-3'>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-8"
+          >
+            <h1 className="mb-2 text-3xl font-bold text-gray-900">Customer Management</h1>
+            <p className="text-gray-600">Manage your salon customers and their information</p>
+          </motion.div>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowAddCustomer(true)}
+            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+          >
+            + Add Customer
+          </motion.button>
+        </div>
+        <AddCustomerDrawer
+          open={showAddCustomer}
+          onClose={() => setShowAddCustomer(false)}
+          storeId={store_id}
+        />
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -999,11 +1011,10 @@ const CustomerManagement = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={toggleSelectAllOnPage}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition-colors ${
-                allSelectedOnPage
-                  ? 'bg-green-600 text-white hover:bg-green-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition-colors ${allSelectedOnPage
+                ? 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               <CheckCircle size={16} />
               {allSelectedOnPage ? 'Clear Selection (Page)' : 'Select All (Page)'}
@@ -1245,11 +1256,10 @@ const CustomerManagement = () => {
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => setCurrentPage(i + 1)}
-                          className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
-                            currentPage === i + 1
-                              ? 'bg-purple-600 text-white'
-                              : 'text-gray-600 hover:bg-gray-100'
-                          }`}
+                          className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${currentPage === i + 1
+                            ? 'bg-purple-600 text-white'
+                            : 'text-gray-600 hover:bg-gray-100'
+                            }`}
                         >
                           {i + 1}
                         </motion.button>
