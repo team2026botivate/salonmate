@@ -1,6 +1,7 @@
 import supabase from '../dataBase/connectdb';
 import { useState, useEffect, useCallback } from 'react';
 import { useAppData } from '../zustand/appData';
+import { useAuth } from '@/Context/AuthContext.jsx';
 
 export const useGetallAppointmentData = () => {
   // const [data, setData] = useState([])
@@ -1026,7 +1027,7 @@ export const useStaffAttendance = (selectedDate) => {
       if (attErr) throw attErr;
 
       const attMap = new Map((attRows || []).map((r) => [r.staff_id, r]));
-      console.log(attMap,"attMap")
+      console.log(attMap, "attMap")
 
       // 3) Merge so every staff member appears
       const merged = (staffList || []).map((s) => {
@@ -1043,7 +1044,7 @@ export const useStaffAttendance = (selectedDate) => {
         };
       });
 
-      console.log(merged,"merged")
+      console.log(merged, "merged")
 
       setAttendance(merged);
     } catch (err) {
@@ -1056,7 +1057,7 @@ export const useStaffAttendance = (selectedDate) => {
 
   // Update staff status
   const updateStatus = async (staffId, newStatus, inTime = null, outTime = null, remark = '') => {
-  
+
     try {
       // Try update first
       const { data: upd, error: updErr } = await supabase
@@ -1095,12 +1096,12 @@ export const useStaffAttendance = (selectedDate) => {
         prev.map((item) =>
           item.staff_id === staffId
             ? {
-                ...item,
-                status: newStatus,
-                in_time: inTime,
-                out_time: outTime,
-                remark,
-              }
+              ...item,
+              status: newStatus,
+              in_time: inTime,
+              out_time: outTime,
+              remark,
+            }
             : item
         )
       );
@@ -1804,7 +1805,455 @@ export const useRecordInventoryUsage = () => {
   return { recordUsage, loading, error };
 };
 
+//* Product section started from here
+export const useProducts = () => {
+  // Check if product exists with same name and unit
+  const checkProductExists = async (productName, unit) => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, product_name, unit")
+        .ilike("product_name", productName)
+        .eq("unit", unit)
+        .single();
+
+      if (error && error.code !== "PGRST116") throw error; // PGRST116 = no rows found
+      return data || null;
+    } catch (err) {
+      console.error("Check product exists error:", err);
+      return null;
+    }
+  };
+
+  // Add new product (only inserts to products table)
+  const addNewProduct = async (product) => {
+    try {
+      const costPrice = Number(product.cost_price) || 0;
+
+      const { data: productData, error: productError } = await supabase
+        .from("products")
+        .insert([{
+          product_name: product.product_name,
+          description: product.description,
+          category: product.category,
+          unit: product.unit,
+          price: costPrice,
+          image: product.image
+        }])
+        .select()
+        .single();
+
+      if (productError) throw productError;
+      return { success: true, productId: productData.id };
+    } catch (err) {
+      console.error("Add new product error:", err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  // Add inventory for existing or new product
+  const addInventoryRecord = async (productId, product, storeId, isNewProduct = true) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const finalStoreId = storeId || user?.user_metadata?.store_id;
+
+      if (!finalStoreId) throw new Error("Store ID is required");
+
+      const costPrice = Number(product.cost_price) || 0;
+      const stockQty = Number(product.stock_quantity) || 0;
+
+      // For existing products, check if inventory record exists and update it
+      if (!isNewProduct) {
+        const { data: existingInventory, error: checkError } = await supabase
+          .from("inventory")
+          .select("prod_id, stock_quantity")
+          .eq("prod_id", productId)
+          .eq("store_id", finalStoreId)
+          .single();
+
+        if (checkError && checkError.code !== "PGRST116") throw checkError;
+
+        // If record exists, update it
+        if (existingInventory) {
+          const newQuantity = Number(existingInventory.stock_quantity) + stockQty;
+          const { error: updateError } = await supabase
+            .from("inventory")
+            .update({
+              stock_quantity: newQuantity,
+              cost_price: costPrice // Update cost price if provided
+            })
+            .eq("prod_id", productId)
+            .eq("store_id", finalStoreId);
+
+          if (updateError) throw updateError;
+          return { success: true };
+        }
+      }
+
+      // For new products or if no existing inventory record, insert
+      const { error: inventoryError } = await supabase
+        .from("inventory")
+        .insert([{
+          product_name: product.product_name,
+          prod_id: productId,
+          stock_quantity: stockQty,
+          cost_price: costPrice,
+          purchase_date: product.purchase_date,
+          stock_status: "available",
+          store_id: finalStoreId
+        }]);
+
+      if (inventoryError) throw inventoryError;
+      return { success: true };
+    } catch (err) {
+      console.error("Add inventory error:", err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  // Add warehouse stock for existing or new product
+  const addWarehouseRecord = async (productId, product, storeId, isNewProduct = true) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const finalStoreId = storeId || user?.user_metadata?.store_id;
+
+      if (!finalStoreId) throw new Error("Store ID is required");
+
+      const costPrice = Number(product.cost_price) || 0;
+      const warehouseQty = Number(product.warehouse_quantity) || 0;
+
+      if (warehouseQty <= 0) return { success: true }; // Skip if no warehouse quantity
+
+      // For existing products, check if warehouse record exists and update it
+      if (!isNewProduct) {
+        const { data: existingWarehouse, error: checkError } = await supabase
+          .from("warehouse")
+          .select("id, stock_quantity")
+          .eq("product_id", productId)
+          .eq("store_id", finalStoreId)
+          .single();
+
+        if (checkError && checkError.code !== "PGRST116") throw checkError;
+
+        // If record exists, update it
+        if (existingWarehouse) {
+          const newQuantity = Number(existingWarehouse.stock_quantity) + warehouseQty;
+          const { error: updateError } = await supabase
+            .from("warehouse")
+            .update({
+              stock_quantity: newQuantity,
+              cost_price: costPrice,
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", existingWarehouse.id);
+
+          if (updateError) throw updateError;
+          return { success: true };
+        }
+      }
+
+      // For new products or if no existing warehouse record, insert
+      const { error: warehouseError } = await supabase
+        .from("warehouse")
+        .insert([{
+          store_id: finalStoreId,
+          product_id: productId,
+          stock_quantity: warehouseQty,
+          cost_price: costPrice,
+          stock_status: "available"
+        }]);
+
+      if (warehouseError) throw warehouseError;
+      return { success: true };
+    } catch (err) {
+      console.error("Add warehouse error:", err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  // Main function to add product or inventory
+  const addProduct = async (product, storeId, isNewProduct = true) => {
+    try {
+      let productId;
+
+      // If creating new product
+      if (isNewProduct) {
+        // Check if product already exists
+        const existing = await checkProductExists(
+          product.product_name,
+          product.unit
+        );
+
+        if (existing) {
+          return {
+            success: false,
+            error: `Product "${product.product_name}" with unit "${product.unit}" already exists. Please select it from the dropdown.`
+          };
+        }
+
+        // Add new product to products table
+        const newProductResult = await addNewProduct(product);
+        if (!newProductResult.success) throw new Error(newProductResult.error);
+
+        productId = newProductResult.productId;
+      } else {
+        // Using existing product
+        productId = product.product_id;
+      }
+
+      // Add or update inventory record
+      const inventoryResult = await addInventoryRecord(productId, product, storeId, isNewProduct);
+      if (!inventoryResult.success) throw new Error(inventoryResult.error);
+
+      // Add or update warehouse record if warehouse quantity > 0
+      const warehouseResult = await addWarehouseRecord(productId, product, storeId, isNewProduct);
+      if (!warehouseResult.success) throw new Error(warehouseResult.error);
+
+      return { success: true, productId };
+    } catch (err) {
+      console.error("Add product error:", err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const getAllProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order(product.product_name, { ascending: true });
+
+      if (error) throw error;
+
+      return { success: true, data: data || [] };
+    } catch (err) {
+      console.error('Error fetching all products:', err);
+      return { success: false, data: [], error: err.message };
+    }
+  };
+
+  return { addProduct, getAllProducts };
+};
+
+export const useWarehouse = () => {
+
+  const getWarehouseData = async (storeId) => {
+    try {
+      // Get store_id if not provided
+      const { data: { user } } = await supabase.auth.getUser();
+      const finalStoreId = storeId || user?.user_metadata?.store_id;
+
+      if (!finalStoreId) {
+        throw new Error("Store ID is required");
+      }
+
+      // Fetch from inventory_view and filter by store_id
+      const { data, error } = await supabase
+        .from("inventory_view")
+        .select("*")
+        .eq("store_id", finalStoreId);
+
+      if (error) throw error;
+
+      return { success: true, data: data || [] };
+    } catch (err) {
+      console.error("Get warehouse data error:", err);
+      return { success: false, data: [], error: err.message };
+    }
+  };
+
+  const addWarehouseStock = async (data, storeId) => {
+    try {
+      // Get store_id if not provided
+      const { data: { user } } = await supabase.auth.getUser();
+      const finalStoreId = storeId || user?.user_metadata?.store_id;
+
+      if (!finalStoreId) {
+        throw new Error("Store ID is required");
+      }
+
+      // First, check if warehouse entry exists for this product
+      const { data: existing } = await supabase
+        .from("warehouse")
+        .select("*")
+        .eq("product_id", data.product_id)
+        .eq("store_id", finalStoreId)
+        .single();
+
+      if (existing) {
+        // Update existing warehouse entry
+        const { error } = await supabase
+          .from("warehouse")
+          .update({
+            stock_quantity: existing.stock_quantity + data.quantity,
+            updated_at: new Date().toISOString()
+          })
+          .eq("product_id", data.product_id)
+          .eq("store_id", finalStoreId);
+
+        if (error) throw error;
+      } else {
+        // Insert new warehouse entry
+        const { error } = await supabase.from("warehouse").insert([{
+          store_id: finalStoreId,
+          product_id: data.product_id,
+          stock_quantity: data.quantity,
+          stock_status: "available"
+        }]);
+
+        if (error) throw error;
+      }
+
+      return { success: true };
+    } catch (err) {
+      console.error("Warehouse operation error:", err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  return { addWarehouseStock, getWarehouseData };
+};
+
+export const useInventory = () => {
+  const fetchInventory = async (storeId) => {
+    try {
+      const { data, error } = await supabase
+        .from("inventory_view")
+        .select("*")
+        .eq("store_id", storeId);
+
+      if (error) throw error;
+
+      return { success: true, data };
+    } catch (err) {
+      console.error("Inventory fetch error:", err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  return { fetchInventory };
+};
+
+// Find the useStockPurchase hook and update the buyStock function:
+export const useStockPurchase = () => {
+  const buyStock = async (data, storeId) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const finalStoreId = storeId || user?.user_metadata?.store_id;
+
+      if (!finalStoreId) {
+        throw new Error("Store ID is required");
+      }
+
+      if (data.add_to === 'salon') {
+        // Step 1: Get current warehouse stock
+        const { data: warehouseData, error: warehouseFetchError } = await supabase
+          .from('warehouse')
+          .select('stock_quantity')
+          .eq('product_id', data.product_id)
+          .eq('store_id', finalStoreId)
+          .single();
+
+        if (warehouseFetchError) throw warehouseFetchError;
+
+        if (!warehouseData) {
+          throw new Error("Warehouse record not found for this product");
+        }
+
+        const currentWarehouseStock = Number(warehouseData.stock_quantity) || 0;
+
+        // Validate sufficient stock
+        if (currentWarehouseStock < data.quantity) {
+          throw new Error(`Insufficient stock. Available: ${currentWarehouseStock}, Requested: ${data.quantity}`);
+        }
+
+        const newWarehouseStock = currentWarehouseStock - data.quantity;
+
+        // Step 2: Decrease warehouse stock ONLY
+        const { error: warehouseError } = await supabase
+          .from('warehouse')
+          .update({
+            stock_quantity: newWarehouseStock,
+            updated_at: new Date().toISOString()
+          })
+          .eq('product_id', data.product_id)
+          .eq('store_id', finalStoreId);
+
+        if (warehouseError) throw warehouseError;
+
+        // Step 3: Get current inventory stock
+        const { data: inventoryData, error: inventoryFetchError } = await supabase
+          .from('inventory')
+          .select('stock_quantity')
+          .eq('prod_id', data.product_id)
+          .eq('store_id', finalStoreId)
+          .single();
+
+        if (inventoryFetchError && inventoryFetchError.code !== 'PGRST116') {
+          throw inventoryFetchError;
+        }
+
+        const currentInventoryStock = Number(inventoryData?.stock_quantity) || 0;
+        const newInventoryStock = currentInventoryStock + data.quantity;
+
+        // Step 4: Update inventory stock (increase by transfer amount)
+        const { error: inventoryError } = await supabase
+          .from('inventory')
+          .update({
+            stock_quantity: newInventoryStock,
+            stock_status: newInventoryStock > 0 ? 'In Stock' : 'Out of Stock',
+            updated_at: new Date().toISOString()
+          })
+          .eq('prod_id', data.product_id)
+          .eq('store_id', finalStoreId);
+
+        if (inventoryError) throw inventoryError;
+
+        return { success: true, message: 'Stock transferred from warehouse to salon' };
+      }
+
+      return { success: false, error: 'Invalid add_to value' };
+    } catch (err) {
+      console.error('Buy stock error:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  return { buyStock };
+};
+
 //* Service section started from here
+export const useGetCategories = () => {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: err } = await supabase
+        .from('service_categories')
+        .select('*')
+        .order('category_name', { ascending: true });
+
+      if (err) throw err;
+
+      setCategories(data);
+    } catch (e) {
+      console.error('fetchCategories error:', e);
+      setError(e.message || 'Failed to fetch categories');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+  return { categories, loading, error, refetch: fetchCategories };
+};
 
 // Get all services from hair_service table
 export const useGetServices = () => {
@@ -1847,23 +2296,27 @@ export const useGetServices = () => {
 
 // Add new service
 export const useAddService = () => {
+  const { user } = useAuth();
+  const store_id = user?.profile?.store_id;
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { store_id } = useAppData();
 
-  const addService = async (serviceData) => {
+  // Add a new service
+  const addService = async ({ name, duration, price, description, category_id }) => {
     try {
       setLoading(true);
       setError(null);
 
       const payload = {
-        service_name: serviceData.name,
-        description: serviceData.description,
-        base_price: parseFloat(serviceData.price),
-        time_duration: serviceData.duration,
+        service_name: name,
+        time_duration: duration,
+        base_price: parseFloat(price),
+        description,
+        category_id,
         delete_flag: false,
         created_at: new Date().toISOString(),
-        store_id: store_id,
+        store_id,
       };
 
       const { data, error: err } = await supabase
@@ -1883,7 +2336,32 @@ export const useAddService = () => {
     }
   };
 
-  return { addService, loading, error };
+  // Add a new category
+  const addCategory = async (category_name) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const slug = category_name.toLowerCase().replace(/\s+/g, '-');
+
+      const { data, error: err } = await supabase
+        .from('service_categories')
+        .insert([{ category_name, slug, is_active: true, store_id }])
+        .select()
+        .single();
+
+      if (err) throw err;
+      return data;
+    } catch (e) {
+      console.error('addCategory error:', e);
+      setError(e.message || 'Failed to add category');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { addService, addCategory, loading, error };
 };
 
 // Dashboard Home hooks
@@ -2250,8 +2728,8 @@ export const useStaffPaymentData = () => {
             const latestPayment =
               paymentRecords.length > 0
                 ? paymentRecords.sort(
-                    (a, b) => new Date(b.payment_date) - new Date(a.payment_date)
-                  )[0]
+                  (a, b) => new Date(b.payment_date) - new Date(a.payment_date)
+                )[0]
                 : null;
 
             // Get attendance count for current month

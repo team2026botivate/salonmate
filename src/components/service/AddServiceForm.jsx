@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { Clock, DollarSign, FileText, Plus } from 'lucide-react';
-import { useState } from 'react';
-
+import { useState, useEffect } from 'react';
+import { useAddService } from '../../hook/dbOperation';
+import { supabase } from "../../lib/supabaseClient";
 
 const durationOptions = [
   '15 min', '30 min', '45 min', '1 hour', '1.5 hours', '2 hours', '2.5 hours', '3 hours'
@@ -17,7 +18,12 @@ export const AddServiceForm = ({ onAddService }) => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [category, setCategory] = useState(''); // input value
+  const [categories, setCategories] = useState([]); // fetched from supabase
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null); // id to link
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const { addService, addCategory, loading } = useAddService();
   const validateForm = () => {
     const newErrors = {};
 
@@ -38,21 +44,45 @@ export const AddServiceForm = ({ onAddService }) => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+  // Fetch categories from Supabase
+  const fetchCategories = async () => {
+    const { data, error } = await supabase
+      .from("service_categories")
+      .select("*")
+      .order("category_name", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching categories:", error);
+    } else {
+      setCategories(data);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
 
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    onAddService(formData);
-    setFormData({ name: '', duration: '30 min', price: '', description: '' });
-    setErrors({});
-    setIsSubmitting(false);
+    if (!selectedCategoryId) {
+      alert('Please select or create a category!');
+      return;
+    }
+
+    const newService = await addService({
+      ...formData,
+      category_id: selectedCategoryId,
+    });
+
+    if (newService) {
+      onAddService(newService); // callback to parent
+      setFormData({ name: '', duration: '30 min', price: '', description: '' });
+      setCategory('');
+      setSelectedCategoryId(null);
+      setErrors({});
+    }
   };
 
   const handleInputChange = (field, value) => {
@@ -76,6 +106,85 @@ export const AddServiceForm = ({ onAddService }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Category *
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setSelectedCategoryId(null);
+              }}
+              onFocus={() => setIsCategoryOpen(true)}
+              onBlur={() => setTimeout(() => setIsCategoryOpen(false), 200)}
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+              placeholder="Search or select category..."
+            />
+
+            {/* Dropdown - Show all categories when focused */}
+            {isCategoryOpen && (
+              <div className="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
+                {/* Filtered categories */}
+                {categories.filter((c) =>
+                  c.category_name.toLowerCase().includes(category.toLowerCase())
+                ).length > 0 ? (
+                  categories
+                    .filter((c) =>
+                      c.category_name.toLowerCase().includes(category.toLowerCase())
+                    )
+                    .map((c) => (
+                      <div
+                        key={c.id}
+                        onClick={() => {
+                          setCategory(c.category_name);
+                          setSelectedCategoryId(c.id);
+                          setIsCategoryOpen(false);
+                        }}
+                        className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 transition-colors border-b border-gray-100 last:border-b-0 ${selectedCategoryId === c.id ? 'bg-indigo-100 text-indigo-900' : ''}`}
+                      >
+                        {c.category_name}
+                      </div>
+                    ))
+                ) : (
+                  category.trim() === "" && (
+                    <div className="px-4 py-2 text-gray-500 text-sm">
+                      No categories found
+                    </div>
+                  )
+                )}
+
+                {/* Create New if no exact match */}
+                {!categories.some(
+                  (c) =>
+                    c.category_name.toLowerCase() === category.trim().toLowerCase()
+                ) && category.trim() !== "" && (
+                  <div
+                    onClick={async () => {
+                      setIsCreating(true);
+                      const newCat = await addCategory(category.trim());
+                      setIsCreating(false);
+
+                      if (newCat) {
+                        setCategories((prev) => [...prev, newCat]);
+                        setSelectedCategoryId(newCat.id);
+                        setCategory(newCat.category_name);
+                        setIsCategoryOpen(false);
+                      }
+                    }}
+                    disabled={isCreating}
+                    className="px-4 py-2 cursor-pointer text-green-600 hover:bg-green-50 transition-colors flex items-center justify-between border-t border-gray-200 font-medium disabled:opacity-50"
+                  >
+                    <span>+ Create "{category.trim()}"</span>
+                    <Plus className="w-4 h-4" />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -85,9 +194,8 @@ export const AddServiceForm = ({ onAddService }) => {
               type="text"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${errors.name ? 'border-red-500' : 'border-gray-300'
+                }`}
               placeholder="e.g., Haircut & Style"
             />
             {errors.name && (
@@ -132,9 +240,8 @@ export const AddServiceForm = ({ onAddService }) => {
                 step="0.01"
                 value={formData.price}
                 onChange={(e) => handleInputChange('price', e.target.value)}
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                  errors.price ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${errors.price ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="0.00"
               />
             </div>
@@ -163,9 +270,8 @@ export const AddServiceForm = ({ onAddService }) => {
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 maxLength={30}
                 rows={2}
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
-                  errors.description ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${errors.description ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Brief description..."
               />
             </div>
@@ -183,12 +289,11 @@ export const AddServiceForm = ({ onAddService }) => {
 
         <motion.button
           type="submit"
-          disabled={isSubmitting}
+          disabled={loading}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className={`w-full md:w-auto px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center space-x-2 ${
-            isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
-          }`}
+          className={`w-full md:w-auto px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center space-x-2 ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
+            }`}
         >
           {isSubmitting ? (
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

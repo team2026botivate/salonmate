@@ -10,6 +10,7 @@ import {
   useAddService,
   useToggleServiceDelete,
   useDeleteService,
+  useGetCategories 
 } from './hook/dbOperation';
 
 const ServicesDashboard = () => {
@@ -18,7 +19,8 @@ const ServicesDashboard = () => {
   const { addService, loading: addLoading } = useAddService();
   const { toggleDelete, loading: toggleLoading } = useToggleServiceDelete();
   const { deleteService, loading: deleteLoading } = useDeleteService();
-
+  const { categories, loading: loadingCategories } = useGetCategories();
+  
   // Transform Supabase data to match UI format
   const services = rawServices.map((service) => ({
     id: service.id,
@@ -28,6 +30,8 @@ const ServicesDashboard = () => {
     description: service.description,
     isDeleted: service.delete_flag,
     createdAt: new Date(service.created_at),
+    categoryId: service.category_id,
+    categoryName: service ? service.category_name : 'Uncategorized',
   }));
   const [confirmationModal, setConfirmationModal] = useState({
     isOpen: false,

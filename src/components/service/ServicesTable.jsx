@@ -1,23 +1,18 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-    ChevronDown,
-    ChevronUp,
-    Download,
-    Filter,
-    MoreHorizontal,
-    Search,
-    Trash2
+  ChevronDown,
+  ChevronUp,
+  Download,
+  Filter,
+  MoreHorizontal,
+  Search,
+  Trash2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { exportToCSV, formatCurrency, formatDate } from '../../utils/formatter';
-
-
-
-
+import { useGetCategories } from '../../hook/dbOperation';
 
 export const ServicesTable = ({
-  
-
   services,
   onToggleDelete,
   onDeletePermanently
@@ -26,22 +21,29 @@ export const ServicesTable = ({
   const [sortField, setSortField] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState('desc');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterCategory, setFilterCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [showActionMenu, setShowActionMenu] = useState(null);
-  
+
   const itemsPerPage = 10;
 
-
+  // Call hook directly in component body
+  const { categories, loading: loadingCategories } = useGetCategories();
   // Filter and search services
   const filteredServices = services.filter(service => {
-    const matchesSearch = service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         service.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesFilter = filterStatus === 'all' || 
-                         (filterStatus === 'active' && !service.isDeleted) ||
-                         (filterStatus === 'deleted' && service.isDeleted);
+    const matchesSearch =
+      service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      service.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesSearch && matchesFilter;
+    const matchesStatus =
+      filterStatus === 'all' ||
+      (filterStatus === 'active' && !service.isDeleted) ||
+      (filterStatus === 'deleted' && service.isDeleted);
+
+    const matchesCategory =
+      filterCategory === 'all' || service.categoryName === filterCategory;
+
+    return matchesSearch && matchesStatus && matchesCategory;
   });
 
   // Sort services
@@ -50,13 +52,13 @@ export const ServicesTable = ({
     let bValue = b[sortField];
 
     if (sortField === 'createdAt') {
-      aValue = new Date(aValue ).getTime();
-      bValue = new Date(bValue ).getTime();
+      aValue = new Date(aValue).getTime();
+      bValue = new Date(bValue).getTime();
     }
 
     if (typeof aValue === 'string') {
       aValue = aValue.toLowerCase();
-      bValue = (bValue ).toLowerCase();
+      bValue = (bValue).toLowerCase();
     }
 
     if (sortDirection === 'asc') {
@@ -71,7 +73,6 @@ export const ServicesTable = ({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -92,8 +93,8 @@ export const ServicesTable = ({
 
   const SortIcon = ({ field }) => {
     if (sortField !== field) return null;
-    return sortDirection === 'asc' ? 
-      <ChevronUp className="w-4 h-4" /> : 
+    return sortDirection === 'asc' ?
+      <ChevronUp className="w-4 h-4" /> :
       <ChevronDown className="w-4 h-4" />;
   };
 
@@ -112,7 +113,7 @@ export const ServicesTable = ({
             </div>
             <h2 className="text-xl font-semibold text-gray-900">Services Management</h2>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
             {/* Search */}
             <div className="relative">
@@ -126,15 +127,30 @@ export const ServicesTable = ({
               />
             </div>
 
-            {/* Filter */}
+            {/* Status Filter */}
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
-              <option value="all">All Services</option>
+              <option value="all">All Status</option>
               <option value="active">Active Only</option>
               <option value="deleted">Deleted Only</option>
+            </select>
+
+            {/* Category Filter */}
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              disabled={loadingCategories}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50"
+            >
+              <option value="all">All Categories</option>
+              {categories?.map((category) => (
+                <option key={category.id} value={category.category_name || category.id}>
+                  {category.category_name || category.id}
+                </option>
+              ))}
             </select>
 
             {/* Export */}
@@ -156,7 +172,7 @@ export const ServicesTable = ({
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th 
+              <th
                 onClick={() => handleSort('name')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
               >
@@ -165,7 +181,10 @@ export const ServicesTable = ({
                   <SortIcon field="name" />
                 </div>
               </th>
-              <th 
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Category
+              </th>
+              <th
                 onClick={() => handleSort('duration')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
               >
@@ -174,7 +193,7 @@ export const ServicesTable = ({
                   <SortIcon field="duration" />
                 </div>
               </th>
-              <th 
+              <th
                 onClick={() => handleSort('price')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
               >
@@ -189,7 +208,7 @@ export const ServicesTable = ({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th 
+              <th
                 onClick={() => handleSort('createdAt')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
               >
@@ -220,6 +239,11 @@ export const ServicesTable = ({
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      {service.categoryName || '--'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                       {service.duration}
                     </span>
@@ -235,11 +259,10 @@ export const ServicesTable = ({
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      service.isDeleted 
-                        ? 'bg-red-100 text-red-800' 
-                        : 'bg-green-100 text-green-800'
-                    }`}>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${service.isDeleted
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-green-100 text-green-800'
+                      }`}>
                       {service.isDeleted ? 'Deleted' : 'Active'}
                     </span>
                   </td>
@@ -254,7 +277,7 @@ export const ServicesTable = ({
                       >
                         <MoreHorizontal className="w-4 h-4" />
                       </button>
-                      
+
                       <AnimatePresence>
                         {showActionMenu === service.id && (
                           <motion.div
@@ -269,9 +292,8 @@ export const ServicesTable = ({
                                   onToggleDelete(service.id);
                                   setShowActionMenu(null);
                                 }}
-                                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center space-x-2 ${
-                                  service.isDeleted ? 'text-green-600' : 'text-amber-600'
-                                }`}
+                                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center space-x-2 ${service.isDeleted ? 'text-green-600' : 'text-amber-600'
+                                  }`}
                               >
                                 <span>{service.isDeleted ? 'Restore' : 'Soft Delete'}</span>
                               </button>
@@ -320,11 +342,10 @@ export const ServicesTable = ({
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-1 text-sm border rounded-md transition-colors ${
-                        page === currentPage
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'border-gray-300 hover:bg-gray-50'
-                      }`}
+                      className={`px-3 py-1 text-sm border rounded-md transition-colors ${page === currentPage
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'border-gray-300 hover:bg-gray-50'
+                        }`}
                     >
                       {page}
                     </button>

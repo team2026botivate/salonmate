@@ -1,202 +1,173 @@
-import { format } from 'date-fns'
-import { motion } from 'framer-motion'
-import { ArrowUpDown, Download, Edit3, Filter, Search } from 'lucide-react'
-import { useState } from 'react'
-import {
-  exportToCSV,
-  filterProducts,
-  getStatusColor,
-  sortProducts,
-} from '../../utils/inventory'
+import React from 'react';
+import { ArrowRightLeft, Store, Warehouse, IndianRupee, ShoppingCart, Package } from 'lucide-react';
 
-const InventoryTable = ({ products, onEditProduct }) => {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [sortField, setSortField] = useState('name')
-  const [sortDirection, setSortDirection] = useState('asc')
+// Stock Status Badge Component
+const StockStatusBadge = ({ salon, min }) => {
+  if (salon === 0)
+    return <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">Out of Stock</span>;
+  if (salon <= min)
+    return <span className="px-2 py-1 rounded-full whitespace-nowrap text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">Low on Floor</span>;
+  return <span className="px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">In Stock</span>;
+};
 
-  
-
-  const handleSort = (field) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(field)
-      setSortDirection('asc')
-    }
-  }
-
-  const filteredProducts = filterProducts(products, searchTerm, statusFilter)
-  const sortedProducts = sortProducts(
-    filteredProducts,
-    sortField,
-    sortDirection
-  )
-
-  const handleExport = () => {
-    exportToCSV(sortedProducts)
-  }
-
+// Stock Visualizer Component
+const StockVisualizer = ({ salon, warehouse, min }) => {
+  const isSalonLow = salon <= min;
+  const isWarehouseEmpty = warehouse === 0;
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white border border-gray-200 shadow-sm rounded-xl "
-    >
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-          <h2 className="text-xl font-bold text-gray-900">
-            Inventory Management
-          </h2>
-
-          <div className="flex flex-col w-full gap-4 sm:flex-row md:w-auto">
-            <div className="relative">
-              <Search className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:w-64"
-              />
-            </div>
-
-            <div className="relative">
-              <Filter className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="py-2 pl-10 pr-8 bg-white border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Status</option>
-                <option value="In Stock">In Stock</option>
-                <option value="Low Stock">Low Stock</option>
-                <option value="Out of Stock">Out of Stock</option>
-              </select>
-            </div>
-
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700"
-            >
-              <Download className="w-4 h-4" />
-              Export CSV
-            </button>
-          </div>
+    <div className="flex items-center gap-3 w-full max-w-xs">
+      <div className={`flex-1 flex flex-col items-center p-2 rounded-lg border ${isSalonLow ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
+        <div className="flex items-center gap-1.5 text-xs uppercase font-semibold text-slate-500 mb-1">
+          <Store size={12} /> Salon
         </div>
+        <span className={`text-xl font-bold ${isSalonLow ? 'text-amber-600' : 'text-slate-700'}`}>
+          {salon}
+        </span>
+        <span className="text-[10px] text-slate-400">Target: {min}+</span>
       </div>
+      <div className="flex flex-col items-center text-slate-300">
+        <div className="h-[1px] w-4 bg-slate-300"></div>
+        {warehouse > 0 && <ArrowRightLeft size={14} className="text-blue-400" />}
+        <div className="h-[1px] w-4 bg-slate-300"></div>
+      </div>
+      <div className={`flex-1 flex flex-col items-center p-2 rounded-lg border ${isWarehouseEmpty ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'}`}>
+        <div className="flex items-center gap-1.5 text-xs uppercase font-semibold text-slate-500 mb-1">
+          <Warehouse size={12} /> Warehouse
+        </div>
+        <span className={`text-xl font-bold ${isWarehouseEmpty ? 'text-red-500' : 'text-slate-600'}`}>
+          {warehouse}
+        </span>
+      </div>
+    </div>
+  );
+};
 
+// List View Component
+export const ProductListView = ({ products, onTransfer, onBuyStock }) => {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left">
-                <button
-                  onClick={() => handleSort('name')}
-                  className="flex items-center gap-1 text-xs font-medium tracking-wider text-gray-500 uppercase hover:text-gray-700"
-                >
-                  Product Name
-                  <ArrowUpDown className="w-3 h-3" />
-                </button>
-              </th>
-              <th className="px-6 py-3 text-left">
-                <button
-                  onClick={() => handleSort('stockQuantity')}
-                  className="flex items-center gap-1 text-xs font-medium tracking-wider text-gray-500 uppercase hover:text-gray-700"
-                >
-                  Stock Quantity
-                  <ArrowUpDown className="w-3 h-3" />
-                </button>
-              </th>
-              <th className="px-6 py-3 text-left">
-                <button
-                  onClick={() => handleSort('purchaseDate')}
-                  className="flex items-center gap-1 text-xs font-medium tracking-wider text-gray-500 uppercase hover:text-gray-700"
-                >
-                  Purchase Date
-                  <ArrowUpDown className="w-3 h-3" />
-                </button>
-              </th>
-              <th className="px-6 py-3 text-left">
-                <button
-                  onClick={() => handleSort('costPrice')}
-                  className="flex items-center gap-1 text-xs font-medium tracking-wider text-gray-500 uppercase hover:text-gray-700"
-                >
-                  Cost Price
-                  <ArrowUpDown className="w-3 h-3" />
-                </button>
-              </th>
-              <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
-                Status
-              </th>
-              <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
-                Actions
-              </th>
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-50 border-b border-slate-200">
+              <th className="py-4 px-6 text-xs font-semibold uppercase text-slate-500 tracking-wider">Product Details</th>
+              <th className="py-4 px-6 text-xs font-semibold uppercase text-slate-500 tracking-wider">Status</th>
+              <th className="py-4 px-6 text-xs font-semibold uppercase text-slate-500 tracking-wider text-center">Stock Distribution</th>
+              <th className="py-4 px-6 text-xs font-semibold uppercase text-slate-500 tracking-wider">Unit / Price</th>
+              <th className="py-4 px-6 text-xs font-semibold uppercase text-slate-500 tracking-wider text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {sortedProducts.map((product, index) => (
-              <motion.tr
-                key={product.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="transition-colors hover:bg-gray-50"
-              >
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="font-medium text-gray-900">
-                    {product.name}
+          <tbody className="divide-y divide-slate-100">
+            {products.map((item) => (
+              <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                <td className="py-4 px-6">
+                  <div className="flex items-start gap-4">
+                    <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover border border-slate-200 shadow-sm" />
+                    <div>
+                      <h4 className="font-semibold text-slate-800 text-sm">{item.name}</h4>
+                      <p className="text-xs text-slate-500 mt-1 line-clamp-1 max-w-[200px]">{item.description}</p>
+                      {item.category && <span className="text-[10px] text-indigo-600 font-medium mt-1 block">{item.category}</span>}
+                    </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-gray-900">{product.stockQuantity}</div>
+                <td className="py-4 px-6">
+                  <StockStatusBadge salon={item.stock.salon} min={item.stock.min_salon} />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-gray-900">
-                    {format(new Date(product.purchaseDate), 'MMM dd, yyyy')}
+                <td className="py-4 px-6">
+                  <StockVisualizer
+                    salon={item.stock.salon}
+                    warehouse={item.stock.warehouse}
+                    min={item.stock.min_salon}
+                  />
+                </td>
+                <td className="py-4 px-6">
+                  <div className="text-sm font-medium text-slate-700">{item.unit}</div>
+                  <div className="text-sm text-slate-500 flex items-center gap-1">
+                    <IndianRupee size={12} />
+                    {item.price.toFixed(2)}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-gray-900">
-                  &#8377; {product.costPrice.toFixed(2)}
+                <td className="py-4 px-6 text-right">
+                  <div className="flex justify-end items-center gap-2">
+                    <button
+                      onClick={() => onBuyStock(item)}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-md text-xs font-semibold transition-colors shadow-sm"
+                    >
+                      Add Product
+                    </button>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                      product.stockStatus
-                    )}`}
-                  >
-                    {product.stockStatus}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <button
-                    onClick={() => onEditProduct(product)}
-                    className="p-2 text-blue-600 transition-colors rounded-lg hover:bg-blue-50"
-                    title="Edit Product"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                </td>
-              </motion.tr>
+              </tr>
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+};
 
-        {sortedProducts.length === 0 && (
-          <div className="py-12 text-center">
-            <div className="text-lg text-gray-500">No products found</div>
-            <div className="mt-1 text-sm text-gray-400">
-              {searchTerm || statusFilter !== 'all'
-                ? 'Try adjusting your search or filters'
-                : 'Start by adding your first product'}
+// Grid View Component
+export const ProductGridView = ({ products, onTransfer, onBuyStock }) => {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {products.map((item) => (
+        <div key={item.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
+          <div className="relative h-48 w-full bg-slate-100">
+            <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-t-xl" />
+            <div className="absolute top-3 right-3">
+              <StockStatusBadge salon={item.stock.salon} min={item.stock.min_salon} />
             </div>
           </div>
-        )}
-      </div>
-    </motion.div>
-  )
-}
+          <div className="p-5 flex-1 flex flex-col">
+            <div className="flex justify-between items-start mb-2">
+              <div className="flex-1">
+                <h3 className="font-bold text-slate-800 text-base line-clamp-1">{item.name}</h3>
+                {item.category && <p className="text-xs text-indigo-600 font-medium">{item.category}</p>}
+              </div>
+              <span className="font-bold text-slate-900 flex items-center gap-1 ml-2">
+                <IndianRupee size={14} />
+                {item.price}
+              </span>
+            </div>
+            <p className="text-sm text-slate-500 mb-6 line-clamp-2 flex-1">{item.description}</p>
+            <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 mb-4">
+              <div className="flex justify-between items-center mb-2 text-xs font-semibold text-slate-500 uppercase">
+                <span>In Salon</span>
+                <span>Warehouse</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={`flex-1 h-8 rounded flex items-center justify-center font-bold text-sm ${item.stock.salon <= item.stock.min_salon ? 'bg-amber-100 text-amber-700' : 'bg-white border border-slate-200 text-slate-700'}`}>
+                  {item.stock.salon}
+                </div>
+                <ArrowRightLeft size={14} className="text-slate-300" />
+                <div className={`flex-1 h-8 rounded flex items-center justify-center font-bold text-sm ${item.stock.warehouse === 0 ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-600'}`}>
+                  {item.stock.warehouse}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => item.stock.salon <= item.stock.min_salon && item.stock.warehouse > 0 ? onTransfer(item) : onBuyStock(item)}
+              className="w-full py-2.5 bg-slate-900 text-white rounded-lg font-medium text-sm hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 shadow-sm"
+            >
+              {item.stock.salon <= item.stock.min_salon && item.stock.warehouse > 0 ? (
+                <> <ArrowRightLeft size={16} /> Restock from Back </>
+              ) : (
+                <> <ShoppingCart size={16} /> Add Product </>
+              )}
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 
-export default InventoryTable
+// Empty State Component
+export const EmptyState = () => {
+  return (
+    <div className="text-center py-12">
+      <Package size={48} className="mx-auto text-slate-300 mb-4" />
+      <p className="text-slate-500">No products found</p>
+    </div>
+  );
+};
