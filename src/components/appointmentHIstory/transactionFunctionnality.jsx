@@ -8,6 +8,7 @@ import {
   Receipt,
   Smartphone,
   X,
+  Plus
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { generateTransactionId } from '../../utils/generateTransactionId';
@@ -31,7 +32,7 @@ const TransactionFunctionality = ({
   setIsEditModalOpen,
   extraServices,
 }) => {
-  
+
   const [selectedExtras, setSelectedExtras] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -41,6 +42,7 @@ const TransactionFunctionality = ({
   const [transactionId, setTransactionId] = useState('');
   const [notes, setNotes] = useState('');
   const [discountError, setDiscountError] = useState('');
+  const [cashAmount, setCashAmount] = useState(0);
   const { data: promoCardData, loading: promoCardLoading } = useGetPromoCardData();
 
 
@@ -50,19 +52,30 @@ const TransactionFunctionality = ({
     }
   }, [extraServices]);
 
+  useEffect(() => {
+    if (paymentMethod !== 'hybrid') {
+      setCashAmount(0);
+    }
+  }, [paymentMethod]);
 
   const subtotal =
     baseService?.price + selectedExtras.reduce((sum, extra) => sum + extra?.base_price, 0);
   const discountAmount = Math.min((subtotal * discountPercent) / 100, subtotal);
-  
+
   const taxableAmount = Math.max(0, subtotal - discountAmount);
   const GST_PERCENT = 18;
   const gstAmount = +(taxableAmount * (GST_PERCENT / 100)).toFixed(2);
   const totalDue = Math.max(0, taxableAmount + gstAmount);
+  const hybridCash = Math.min(Number(cashAmount) || 0, totalDue);
+  const hybridOnline = Math.max(0, totalDue - hybridCash);
 
   const isFormValid = () => {
     if (!paymentMethod) return false;
-    if (paymentMethod !== 'cash' && !transactionId.trim()) return false;
+    if (paymentMethod === 'hybrid') {
+      if (hybridCash < 0 || hybridCash > totalDue) return false;
+      if (hybridOnline > 0 && !transactionId.trim()) return false;
+    }
+    if (paymentMethod !== 'cash' && paymentMethod !== 'hybrid' && !transactionId.trim()) return false;
     if (discountError) return false;
     return true;
   };
@@ -105,12 +118,20 @@ const TransactionFunctionality = ({
       transactionStatus: 'paid',
       totalDue,
       gst_amount: gstAmount,
-      payment: {
-        method: paymentMethod,
-        ...(paymentMethod !== 'cash' && {
-          transactionId: transactionId.trim(),
-        }),
-      },
+      payment:
+        paymentMethod === 'hybrid'
+          ? {
+            method: 'hybrid',
+            cashAmount: hybridCash,
+            onlineAmount: hybridOnline,
+            transactionId: hybridOnline > 0 ? transactionId.trim() : null,
+          }
+          : {
+            method: paymentMethod,
+            ...(paymentMethod !== 'cash' && {
+              transactionId: transactionId.trim(),
+            }),
+          },
 
       ...(notes.trim() && { notes: notes.trim() }),
     };
@@ -124,15 +145,21 @@ const TransactionFunctionality = ({
   );
 
   const paymentMethods = [
-    { id: 'cash', name: 'Cash', icon: Banknote, isAvtive: true },
-    { id: 'online', name: 'Online', icon: Smartphone, isAvtive: false },
+    { id: 'cash', name: 'Cash', icon: ({ className }) => <Banknote className={className} />, isAvtive: true },
     {
-      id: 'credit_card',
-      name: 'Credit Card',
-      icon: CreditCard,
-      isAvtive: false,
+      id: 'hybrid',
+      name: 'Hybrid',
+      icon: ({ className }) => (
+        <div className="flex items-center">
+          <Banknote className={className} />
+          <Plus className={className} />
+          <Smartphone className={className} />
+        </div>
+      ),
+      isAvtive: true,
     },
-    { id: 'debit_card', name: 'Debit Card', icon: CreditCard, isAvtive: false },
+    { id: 'online', name: 'Online', icon: ({ className }) => <Smartphone className={className} />, isAvtive: false },
+    { id: 'card', name: 'Card', icon: ({ className }) => <CreditCard className={className} />, isAvtive: false },
   ];
 
   return (
@@ -189,11 +216,10 @@ const TransactionFunctionality = ({
                       return (
                         <label
                           key={extra.service_name || `${extra.service_name}-${extra.base_price}`}
-                          className={`flex cursor-pointer items-center rounded-xl border-2 p-4 transition-all duration-200 hover:shadow-md ${
-                            isSelected
-                              ? 'border-blue-500 bg-blue-50 shadow-sm'
-                              : 'border-gray-200 bg-white hover:border-gray-300'
-                          }`}
+                          className={`flex cursor-pointer items-center rounded-xl border-2 p-4 transition-all duration-200 hover:shadow-md ${isSelected
+                            ? 'border-blue-500 bg-blue-50 shadow-sm'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                            }`}
                         >
                           <div className="relative">
                             <input
@@ -203,11 +229,10 @@ const TransactionFunctionality = ({
                               className="sr-only"
                             />
                             <div
-                              className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all duration-200 ${
-                                isSelected
-                                  ? 'border-blue-500 bg-blue-500'
-                                  : 'border-gray-300 bg-white'
-                              }`}
+                              className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all duration-200 ${isSelected
+                                ? 'border-blue-500 bg-blue-500'
+                                : 'border-gray-300 bg-white'
+                                }`}
                             >
                               {isSelected && <Check className="w-3 h-3 text-white" />}
                             </div>
@@ -215,16 +240,14 @@ const TransactionFunctionality = ({
 
                           <div className="flex items-center justify-between flex-1 ml-4">
                             <span
-                              className={`font-medium ${
-                                isSelected ? 'text-blue-900' : 'text-gray-800'
-                              }`}
+                              className={`font-medium ${isSelected ? 'text-blue-900' : 'text-gray-800'
+                                }`}
                             >
                               {extra.service_name}
                             </span>
                             <span
-                              className={`font-semibold ${
-                                isSelected ? 'text-blue-700' : 'text-gray-600'
-                              }`}
+                              className={`font-semibold ${isSelected ? 'text-blue-700' : 'text-gray-600'
+                                }`}
                             >
                               {formatCurrency(extra.base_price)}
                             </span>
@@ -300,9 +323,8 @@ const TransactionFunctionality = ({
                       step="0.1"
                       value={discountPercent}
                       onChange={(e) => handleDiscountChange(e.target.value)}
-                      className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
-                        discountError ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${discountError ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       placeholder="0"
                     >
                       {promoCardLoading ? (
@@ -354,7 +376,7 @@ const TransactionFunctionality = ({
                   <h4 className="mb-3 text-sm font-medium text-gray-700">Payment Method</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {paymentMethods.map((method) => {
-                      const IconComponent = method.icon;
+                      const Icon = method.icon;
                       const isSelected = paymentMethod === method.id && method.isAvtive;
 
                       return (
@@ -376,10 +398,11 @@ const TransactionFunctionality = ({
                             onChange={(e) => setPaymentMethod(e.target.value)}
                             className="sr-only"
                           />
-                          <IconComponent
-                            className={`mr-2 h-4 w-4 ${
+                          <Icon
+                            className={cn(
+                              'mr-2 h-4 w-4',
                               isSelected ? 'text-blue-600' : 'text-gray-500'
-                            }`}
+                            )}
                           />
                           <span
                             className={cn(
@@ -398,22 +421,57 @@ const TransactionFunctionality = ({
                     })}
                   </div>
 
-                  {/* Transaction ID for non-cash payments */}
-                  {paymentMethod && paymentMethod !== 'cash' && (
-                    <div className="mt-3">
-                      <label className="block mb-1 text-sm font-medium text-gray-700">
-                        Transaction ID *
-                      </label>
-                      <input
-                        type="text"
-                        value={transactionId}
-                        onChange={(e) => setTransactionId(e.target.value)}
-                        placeholder="Enter transaction ID"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-transparent focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
+                  {/* Hybrid Payment Split */}
+                  {paymentMethod === 'hybrid' && (
+                    <div className="mt-4 space-y-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                      <h5 className="text-sm font-semibold text-blue-900">
+                        Hybrid Payment Split
+                      </h5>
+
+                      {/* Cash Input */}
+                      <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          Cash Amount
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          max={totalDue}
+                          value={cashAmount}
+                          onChange={(e) => setCashAmount(e.target.value)}
+                          className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                          placeholder="Enter cash paid"
+                        />
+                      </div>
+
+                      {/* Calculated Online */}
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-700">Online Amount</span>
+                        <span className="font-semibold text-blue-700">
+                          {formatCurrency(hybridOnline)}
+                        </span>
+                      </div>
                     </div>
                   )}
+
+                  {/* Transaction ID for non-cash payments */}
+                  {((paymentMethod === 'online') ||
+                    (paymentMethod === 'card') ||
+                    (paymentMethod === 'hybrid' && hybridOnline > 0)) && (
+                      <div className="mt-3">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          Transaction ID *
+                        </label>
+                        <input
+                          type="text"
+                          value={transactionId}
+                          onChange={(e) => setTransactionId(e.target.value)}
+                          placeholder="Enter transaction ID"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                          required
+                        />
+                      </div>
+                    )}
                 </div>
 
                 {/* Notes */}
@@ -436,11 +494,10 @@ const TransactionFunctionality = ({
                 <button
                   onClick={handleSubmit}
                   disabled={!isFormValid()}
-                  className={`w-full rounded-xl px-6 py-3 font-semibold transition-all duration-200 ${
-                    isFormValid()
-                      ? 'transform bg-blue-600 text-white shadow-lg hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-xl'
-                      : 'cursor-not-allowed bg-gray-300 text-gray-500'
-                  }`}
+                  className={`w-full rounded-xl px-6 py-3 font-semibold transition-all duration-200 ${isFormValid()
+                    ? 'transform bg-blue-600 text-white shadow-lg hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-xl'
+                    : 'cursor-not-allowed bg-gray-300 text-gray-500'
+                    }`}
                 >
                   {loadingForSubmit ? 'Submitting...' : 'Submit Payment'}
                 </button>

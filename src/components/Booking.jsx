@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { Calendar, History, Plus, Search, X } from 'lucide-react';
+import { Calendar, History, Plus, Search, X, Phone, MapPin } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   useGetallAppointmentData,
@@ -423,7 +423,7 @@ const Booking = ({ hideHistoryButton = false }) => {
                   aria-label="Create new appointment"
                 >
                   <Plus
-                    
+
                     className="transition-transform duration-300 group-hover:rotate-90 size-4 md:size-6"
                   />
                   <span className="text-sm whitespace-nowrap">New Appointment</span>
@@ -439,7 +439,7 @@ const Booking = ({ hideHistoryButton = false }) => {
                   aria-label="View appointment history"
                 >
                   <History
-                    
+
                     className="text-gray-500 transition-colors duration-300 group-hover:text-gray-700 size-4 md:size-6"
                   />
                   <span className="text-sm whitespace-nowrap">History</span>
@@ -480,10 +480,49 @@ const Booking = ({ hideHistoryButton = false }) => {
             <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.6)] backdrop-blur-sm md:p-4">
               <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg bg-white shadow-xl">
                 <div className="p-6 border-b">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-black">Add New Appointment</h3>
+                  <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+                    {/* Left: Title + Contact Info */}
+                    <div className="flex flex-col gap-2">
+                      <h3 className="text-xl font-bold text-black">
+                        Add New Appointment
+                      </h3>
+
+                      {(user?.profile?.phone_number || user?.profile?.address) && (
+                        <div
+                          className="
+            flex flex-col gap-2 text-sm text-gray-700
+            sm:flex-row sm:items-center sm:gap-6
+          "
+                        >
+                          {user?.profile?.phone_number && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4 shrink-0 text-blue-600" />
+                              <span className="font-medium">
+                                {user.profile.phone_number}
+                              </span>
+                            </div>
+                          )}
+
+                          {user?.profile?.address && (
+                            <div className="flex items-start gap-2 sm:items-center">
+                              <MapPin className="h-4 w-4 shrink-0 text-green-600 mt-0.5 sm:mt-0" />
+                              <span className="font-medium leading-snug">
+                                {user.profile.address}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Close Button */}
                     <button
-                      className="text-red-500 transition-colors duration-200 hover:cursor-pointer hover:text-red-700"
+                      className="
+        absolute right-0 top-0
+        text-red-500 transition-colors duration-200 hover:text-red-700
+        sm:static
+      "
                       onClick={() => updateUiState({ showNewAppointmentForm: false })}
                     >
                       <X />
