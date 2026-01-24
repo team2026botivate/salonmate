@@ -91,7 +91,7 @@ export default function AddCustomerDrawer({ open, onClose, storeId }) {
     setToast({ show: true, message: msg, type });
     setTimeout(() => {
       setToast({ show: false, message: "", type: "error" });
-    }, 3000);
+    }, 9000);
   };
 
   const handleCloseModal = () => {
@@ -165,7 +165,7 @@ export default function AddCustomerDrawer({ open, onClose, storeId }) {
 
         if (missingRequired.length > 0) {
           showToast(
-            `Missing required columns: ${missingRequired.join(", ")}`,
+            "CSV upload failed. Required headers: customer_name, mobile_number. Please rename your CSV columns and try again.",
             "error"
           );
           return;
@@ -359,10 +359,11 @@ export default function AddCustomerDrawer({ open, onClose, storeId }) {
 
           {/* CSV Upload */}
           <div>
-            <h3 className="mb-3 text-sm font-semibold text-gray-700">
+            <h3 className="mb-3 text-center text-sm font-semibold text-gray-700">
               Bulk Upload (CSV)
             </h3>
-
+            <p className=" text-sm text-red-500">Required</p>
+            <p className=" pb-2 text-sm">The header name should be <strong>customer_name</strong> and <strong>mobile_number</strong> in the csv file</p>
             <label className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer hover:bg-gray-50">
               <Upload className="mb-2 text-gray-500" />
               <span className="text-sm text-gray-600">
