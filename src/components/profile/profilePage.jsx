@@ -11,12 +11,14 @@ import SkillsSection from './skillSection';
 import EditableField from './editableFiled';
 import StaffPermissions from './givePermition.profile';
 
+const DEFAULT_PROFILE_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23f0f0f0'/%3E%3Ccircle cx='75' cy='60' r='30' fill='%23d1d1d1'/%3E%3Ccircle cx='75' cy='150' r='60' fill='%23d1d1d1'/%3E%3C/svg%3E";
+
 const ProfilePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [previewImage, setPreviewImage] = useState(null);
 
@@ -25,8 +27,7 @@ const ProfilePage = () => {
     email: authUser?.email || '',
     phone: '',
     address: '',
-    profileImage:
-      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23f0f0f0'/%3E%3Ccircle cx='75' cy='60' r='30' fill='%23d1d1d1'/%3E%3Ccircle cx='75' cy='150' r='60' fill='%23d1d1d1'/%3E%3C/svg%3E",
+    profile_image: DEFAULT_PROFILE_IMAGE,
     role: '',
     joinDate: '',
     bio: '',
@@ -35,7 +36,13 @@ const ProfilePage = () => {
 
   const [staffGivePermission, setStaffGivePermission] = useState(false);
 
-  // If authUser name arrives later, sync it to local state when name is empty
+  const getSafeProfileImage = (imageUrl) => {
+    if (!imageUrl || imageUrl === 'null' || imageUrl === 'undefined' || imageUrl === null) {
+      return DEFAULT_PROFILE_IMAGE;
+    }
+    return imageUrl;
+  };
+
   useEffect(() => {
     if (authUser?.user_metadata?.name) {
       setProfileData((prev) => (prev.name ? prev : { ...prev, name: authUser.user_metadata.name }));
@@ -48,24 +55,32 @@ const ProfilePage = () => {
         setIsLoading(true);
         setError('');
 
-        // Use the authenticated user's ID or the route param ID
         const profileId = id || authUser?.id;
         if (!profileId) {
           setError('No user ID found');
+          setIsLoading(false);
           return;
         }
 
         const { data, error: dbError } = await supabase
           .from('profiles')
-          .select('id, full_name, email, phone_number, address, bio, skills, profile_image, role')
+          .select('id, full_name, email, phone_number, address, bio, skills, profile_image, role, join_date')
           .eq('id', profileId)
           .single();
 
-        if (dbError) throw dbError;
+        if (dbError) {
+          if (dbError.code === 'PGRST116') {
+            console.log('Profile not found');
+            setIsLoading(false);
+            return;
+          }
+          throw dbError;
+        }
 
-        setProfileData((prev) => ({
-          ...prev,
-          name: data?.full_name || authUser?.user_metadata?.name || prev.name,
+        const safeProfileImage = getSafeProfileImage(data?.profile_image);
+
+        setProfileData({
+          name: data?.full_name || authUser?.user_metadata?.name || '',
           email: data?.email || '',
           phone: data?.phone_number || '',
           address: data?.address || '',
@@ -73,12 +88,12 @@ const ProfilePage = () => {
           skills: data?.skills
             ? Array.isArray(data.skills)
               ? data.skills
-              : data.skills.split(',').map((s) => s.trim())
+              : data.skills.split(',').map((s) => s.trim()).filter(s => s)
             : [],
-          profileImage: data?.profile_image || prev.profileImage,
+          profile_image: safeProfileImage,
           role: data?.role || '',
           joinDate: data?.join_date || '',
-        }));
+        });
       } catch (e) {
         console.error('Error fetching profile from DB:', e);
         setError('Failed to load profile data');
@@ -107,18 +122,18 @@ const ProfilePage = () => {
     const imageUrl = URL.createObjectURL(file);
     setPreviewImage(imageUrl);
 
-    // Store the file for upload during save
     setProfileData((prev) => ({
       ...prev,
       imageFile: file,
-      profileImage: imageUrl, // Show preview
+      profile_image: imageUrl,
     }));
   };
 
   const handleAddSkill = (skill) => {
+    if (!skill.trim()) return;
     setProfileData((prev) => ({
       ...prev,
-      skills: [...prev.skills, skill],
+      skills: [...prev.skills.filter(s => s !== skill.trim()), skill.trim()], // Avoid duplicates
     }));
   };
 
@@ -136,7 +151,6 @@ const ProfilePage = () => {
     setIsLoading(true);
     setError('');
     try {
-      // Build payload with only non-empty fields (optional fields)
       const payload = { id: profileId, updated_at: new Date().toISOString() };
       const addIfPresent = (key, value) => {
         if (value !== undefined && value !== null && String(value).trim() !== '') {
@@ -144,8 +158,8 @@ const ProfilePage = () => {
         }
       };
 
-      // Handle image upload if new image is selected
-      let imageUrl = profileData.profileImage;
+      let imageUrl = profileData.profile_image;
+
       if (profileData.imageFile) {
         const uploadResult = await uploadProfileImage(profileData.imageFile, profileId);
         if (uploadResult.success) {
@@ -172,9 +186,13 @@ const ProfilePage = () => {
         .from('profiles')
         .upsert(payload, { onConflict: 'id' });
 
-      if (upsertError) throw upsertError;
+      if (upsertError) {
+        if (upsertError.code === '23505') {
+          throw new Error('Duplicate entry. This profile already exists.');
+        }
+        throw upsertError;
+      }
 
-      // Re-fetch to sync UI with DB state
       const { data: fresh } = await supabase
         .from('profiles')
         .select('id, full_name, email, phone_number, address, bio, skills, profile_image, role')
@@ -182,9 +200,10 @@ const ProfilePage = () => {
         .single();
 
       if (fresh) {
-        setProfileData((prev) => ({
-          ...prev,
-          name: fresh?.full_name || authUser?.user_metadata?.name || prev.name,
+        const safeProfileImage = getSafeProfileImage(fresh?.profile_image);
+        
+        setProfileData({
+          name: fresh?.full_name || authUser?.user_metadata?.name || '',
           email: fresh?.email || '',
           phone: fresh?.phone_number || '',
           address: fresh?.address || '',
@@ -192,12 +211,12 @@ const ProfilePage = () => {
           skills: fresh?.skills
             ? Array.isArray(fresh.skills)
               ? fresh.skills
-              : fresh.skills.split(',').map((s) => s.trim())
+              : fresh.skills.split(',').map((s) => s.trim()).filter(s => s)
             : [],
-          profileImage: fresh?.profile_image || prev.profileImage,
+          profile_image: safeProfileImage,
           role: fresh?.role || '',
-          imageFile: null, // Clear file after successful save
-        }));
+          joinDate: fresh?.join_date || profileData.joinDate,
+        });
       }
 
       alert('Profile updated successfully!');
@@ -205,7 +224,7 @@ const ProfilePage = () => {
       setPreviewImage(null);
     } catch (e) {
       console.error('Error updating profile:', e);
-      setError('Failed to update profile. Please try again.');
+      setError('Failed to update profile. Please try again. ' + e.message);
     } finally {
       setIsLoading(false);
     }
@@ -219,26 +238,31 @@ const ProfilePage = () => {
           setIsLoading(true);
           const { data } = await supabase
             .from('profiles')
-            .select('id, full_name, email, phone_number, address, bio, skills, profile_image, role')
+            .select('id, full_name, email, phone_number, address, bio, skills, profile_image, role, join_date')
             .eq('id', profileId)
             .single();
-          setProfileData((prev) => ({
-            ...prev,
-            name: data?.full_name || authUser?.user_metadata?.name || prev.name,
-            email: data?.email || '',
-            phone: data?.phone_number || '',
-            address: data?.address || '',
-            bio: data?.bio || '',
-            skills: data?.skills
-              ? Array.isArray(data.skills)
-                ? data.skills
-                : data.skills.split(',').map((s) => s.trim())
-              : [],
-            profileImage: data?.profile_image || prev.profileImage,
-            role: data?.role || '',
-            joinDate: data?.join_date || '',
-          }));
-        } catch {
+          
+          if (data) {
+            const safeProfileImage = getSafeProfileImage(data?.profile_image);
+            
+            setProfileData({
+              name: data?.full_name || authUser?.user_metadata?.name || '',
+              email: data?.email || '',
+              phone: data?.phone_number || '',
+              address: data?.address || '',
+              bio: data?.bio || '',
+              skills: data?.skills
+                ? Array.isArray(data.skills)
+                  ? data.skills
+                  : data.skills.split(',').map((s) => s.trim()).filter(s => s)
+                : [],
+              profile_image: safeProfileImage,
+              role: data?.role || '',
+              joinDate: data?.join_date || '',
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching profile on cancel:', error);
         } finally {
           setIsLoading(false);
         }
@@ -248,6 +272,17 @@ const ProfilePage = () => {
     setIsEditing(false);
     setError('');
   };
+
+  if (isLoading) {
+    return (
+      <div className="relative min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-gray-50">
@@ -269,16 +304,13 @@ const ProfilePage = () => {
       )}
 
       <div className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
-        {/* Error Display */}
         {error && (
           <div className="px-4 py-3 mb-6 text-sm text-red-700 border border-red-200 rounded-lg bg-red-50">
             {error}
           </div>
         )}
 
-        {/* Main Content Grid */}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-          {/* Left Sidebar - Profile Card */}
           <div className="lg:col-span-1">
             <ProfileCard
               profileData={profileData}
@@ -288,9 +320,7 @@ const ProfilePage = () => {
             />
           </div>
 
-          {/* Main Content Area */}
           <div className="space-y-6 lg:col-span-3">
-            {/* About Section */}
             <div className="bg-white border border-gray-200 rounded-xl">
               <div className="p-6">
                 <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-900">
@@ -300,7 +330,7 @@ const ProfilePage = () => {
                 <EditableField
                   label="Bio"
                   name="bio"
-                  value={profileData.bio}
+                  value={profileData.bio || ''}
                   onChange={handleChange}
                   isEditing={isEditing}
                   rows={4}
@@ -308,15 +338,13 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            {/* Skills Section */}
             <SkillsSection
-              skills={profileData.skills}
+              skills={profileData.skills || []}
               isEditing={isEditing}
               onAddSkill={handleAddSkill}
               onRemoveSkill={handleRemoveSkill}
             />
 
-            {/* Personal Information */}
             <div className="bg-white border border-gray-200 rounded-xl">
               <div className="p-6">
                 <h3 className="mb-6 text-lg font-semibold text-gray-900">Personal Information</h3>
@@ -325,7 +353,7 @@ const ProfilePage = () => {
                   <EditableField
                     label="Full Name"
                     name="name"
-                    value={profileData.name}
+                    value={profileData.name || ''}
                     onChange={handleChange}
                     isEditing={isEditing}
                   />
@@ -333,7 +361,7 @@ const ProfilePage = () => {
                   <EditableField
                     label="Email Address"
                     name="email"
-                    value={profileData.email}
+                    value={profileData.email || ''}
                     onChange={handleChange}
                     isEditing={isEditing}
                     type="email"
@@ -342,7 +370,7 @@ const ProfilePage = () => {
                   <EditableField
                     label="Phone Number"
                     name="phone"
-                    value={profileData.phone}
+                    value={profileData.phone || ''}
                     onChange={handleChange}
                     maxLength={10}
                     isEditing={isEditing}
@@ -352,7 +380,7 @@ const ProfilePage = () => {
                   <EditableField
                     label="Role"
                     name="role"
-                    value={profileData.role}
+                    value={profileData.role || ''}
                     onChange={handleChange}
                     isEditing={false}
                     readOnly
@@ -362,7 +390,7 @@ const ProfilePage = () => {
                     <EditableField
                       label="Address"
                       name="address"
-                      value={profileData.address}
+                      value={profileData.address || ''}
                       onChange={handleChange}
                       isEditing={isEditing}
                       rows={2}
@@ -374,7 +402,6 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="pt-8 mt-16 border-t border-gray-200">
           <div className="text-center">
             <a

@@ -19,6 +19,28 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     navigate(`/profile/${user?.id}`);
   };
 
+  // Safely get profile image URL
+  const getProfileImage = () => {
+    try {
+      // Try to get image from multiple possible locations
+      const imageUrl = 
+        user?.profile?.profile_image || 
+        user?.profile_image ||
+        user?.user_metadata?.profile_image ||
+        user?.user_metadata?.avatar_url ||
+        '';
+      
+      // Return null if it's invalid
+      if (!imageUrl || imageUrl === 'null' || imageUrl === 'undefined') {
+        return null;
+      }
+      
+      return imageUrl;
+    } catch (_) {
+      return null;
+    }
+  };
+
   // Safely derive user initials for avatar fallback
   const getUserInitials = () => {
     try {
@@ -161,6 +183,9 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     }
   };
 
+  // Get profile image safely
+  const profileImage = getProfileImage();
+
   return (
     <>
       <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
@@ -211,12 +236,20 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
               >
                 {/* Profile Avatar */}
                 <div className="flex-shrink-0 w-6 h-6 mr-2 overflow-hidden bg-gray-100 rounded-full">
-                  {user?.profile.profile_image ? (
+                  {profileImage ? (
                     <img
-                      src={user.profile.profile_image}
-                      alt=""
+                      src={profileImage}
+                      alt="Profile"
                       className="object-cover w-full h-full"
                       loading="lazy"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = `
+                          <div class="flex items-center justify-center w-full h-full text-xs font-semibold text-gray-600 bg-gradient-to-br from-blue-100 to-blue-200">
+                            ${getUserInitials()}
+                          </div>
+                        `;
+                      }}
                     />
                   ) : (
                     <div className="flex items-center justify-center w-full h-full text-xs font-semibold text-gray-600 bg-gradient-to-br from-blue-100 to-blue-200">

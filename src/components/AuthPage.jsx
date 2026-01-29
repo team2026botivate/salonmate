@@ -12,7 +12,7 @@ import {
   Lock,
   Mail,
   Shield,
-  User,
+  User, 
   ChevronLeft,
   ChevronRight,
   CheckCircle,
@@ -71,18 +71,28 @@ const AuthPage = () => {
     const maybeRedirect = async () => {
       if (user && !authLoading) {
         try {
+          // Check if user has a profile first
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('store_id')
+            .eq('id', user.id)
+            .single();
+            
           // Prefer store-based license check if we can derive store_id from profile
-          const storeId = user?.profile?.store_id;
+          const storeId = profile?.store_id || user?.profile?.store_id;
           const licenseStatus = storeId
             ? await checkLicenseByStoreId(storeId)
             : await checkLicense(user.id);
+            
           if (licenseStatus?.active) {
             navigate('/admin-dashboard');
           }
           // If not active, stay on /auth
         } catch (e) {
-          // On error, stay on /auth
           console.error('License check failed on auth redirect:', e);
+          // If license check fails, still allow access to dashboard?
+          // You might want to navigate anyway or show error
+          // navigate('/admin-dashboard'); // Uncomment if you want to allow access even on license check failure
         }
       }
     };
@@ -101,7 +111,7 @@ const AuthPage = () => {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
-
+    
   // Validation functions
   const validateShopInformation = () => {
     const newErrors = {};
@@ -243,7 +253,10 @@ const AuthPage = () => {
 
     setLoading(true);
     try {
-      // Shop is already created, use the stored shopId
+      // Check if shopId exists
+      if (!shopId?.id) {
+        throw new Error('Shop ID not found. Please go back and create shop first.');
+      }
 
       // Signup flow
       const { data, error: signUpError } = await supabase.auth.signUp({
@@ -263,7 +276,11 @@ const AuthPage = () => {
       });
 
       if (signUpError) {
-        setErrors({ submit: signUpError.message });
+        if (signUpError.message.includes('already registered')) {
+          setErrors({ submit: 'This email is already registered. Please sign in instead.' });
+        } else {
+          setErrors({ submit: signUpError.message });
+        }
         return;
       }
 
@@ -279,6 +296,9 @@ const AuthPage = () => {
           address: formData.address,
           store_id: shopId.id,
           salon_name: shopId.name,
+          profile_image: null, // Explicitly set to null to avoid 406 errors
+          bio: '',
+          skills: '',
         };
 
         const { error: profileError } = await supabase
@@ -287,35 +307,16 @@ const AuthPage = () => {
 
         if (profileError) {
           console.error('Profile upsert error:', profileError.message);
+          if (profileError.code === '23505') {
+            throw new Error('Profile already exists. Please sign in instead.');
+          }
+          throw profileError;
         }
 
-        // Create shop record
-
-        //todo here i have to check the shop id is already created or not
-
-        // const shopPayload = {
-        //   user_id: user.id,
-        //   shop_name: formData.shopName,
-        //   shop_email: formData.shopEmail,
-        //   mobile_number: formData.mobileNumber,
-        //   address: formData.address,
-        // }
-
-        // const { error: shopError } = await supabase
-        //   .from('shops')
-        //   .insert(shopPayload)
-
-        // if (shopError) {
-        //   console.error('Shop creation error:', shopError.message)
-        // }
-
         // Create trial license for new user (7 days)
-
         try {
-          // Pass the freshly created shop/store id explicitly to avoid FK violations
           const trialLicense = await createTrialLicense(user.id, shopId?.id);
-          if (trialLicense) {
-          } else {
+          if (!trialLicense) {
             console.warn('Failed to create trial license');
           }
         } catch (licenseError) {
@@ -338,7 +339,7 @@ const AuthPage = () => {
       }
     } catch (err) {
       console.error('Signup error:', err);
-      setErrors({ submit: 'An unexpected error occurred' });
+      setErrors({ submit: err.message || 'An unexpected error occurred' });
     } finally {
       setLoading(false);
     }
@@ -357,7 +358,13 @@ const AuthPage = () => {
       });
 
       if (error) {
-        setErrors({ submit: error.message });
+        if (error.message.includes('Invalid login credentials')) {
+          setErrors({ submit: 'Invalid email or password' });
+        } else if (error.message.includes('Email not confirmed')) {
+          setErrors({ submit: 'Please confirm your email address before signing in' });
+        } else {
+          setErrors({ submit: error.message });
+        }
         return;
       }
 
@@ -365,73 +372,87 @@ const AuthPage = () => {
         // Store session in localStorage
         localStorage.setItem('supabase_session', JSON.stringify(data.session));
 
-        // Get user profile
-        const { data: profile } = await supabase
+        // Get user profile - ensure it exists
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', data.user.id)
           .single();
 
-        // Ensure profile row exists and contains available fields
-        if (!profile) {
-          const payload = {
+        let finalProfile = profile;
+        
+        // If profile doesn't exist, create it
+        if (profileError && profileError.code === 'PGRST116') {
+          console.log('Profile not found, creating default profile...');
+          const defaultProfile = {
             id: data.user.id,
             email: data.user.email,
-            role: 'staff',
+            role: data.user.user_metadata?.role || 'staff',
+            full_name: data.user.user_metadata?.name || '',
+            phone_number: data.user.user_metadata?.phone_number || '',
+            address: data.user.user_metadata?.address || '',
+            bio: '',
+            skills: '',
+            profile_image: null, // Explicitly set to null
+            store_id: data.user.user_metadata?.shopId || null,
           };
-          // Optional/available fields from user metadata
-          const meta = data.user.user_metadata || {};
-          if (meta.name) payload.full_name = meta.name;
-          if (meta.phone_number) payload.phone_number = meta.phone_number;
-          if (meta.address) payload.address = meta.address;
-          if (meta.bio) payload.bio = meta.bio;
-          if (meta.skills)
-            payload.skills = Array.isArray(meta.skills)
-              ? meta.skills.join(',')
-              : String(meta.skills);
-          if (meta.profile_image) payload.profile_image = meta.profile_image;
 
-          await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .upsert(defaultProfile, { onConflict: 'id' })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Failed to create profile:', createError);
+          } else {
+            finalProfile = newProfile;
+          }
         }
-
-        // Re-fetch profile after potential upsert
-        const { data: ensuredProfile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
 
         // Check license status (prefer by store)
-        const licenseStatus = ensuredProfile?.store_id
-          ? await checkLicenseByStoreId(ensuredProfile.store_id)
-          : await checkLicense(data.user.id);
-
-        // If license is expired or inactive, inform user and keep on /auth
-        if (!licenseStatus.active) {
-          toast.error('Your license has expired. Please renew to continue.');
+        let licenseStatus;
+        try {
+          licenseStatus = finalProfile?.store_id
+            ? await checkLicenseByStoreId(finalProfile.store_id)
+            : await checkLicense(data.user.id);
+        } catch (licenseError) {
+          console.error('License check error:', licenseError);
+          licenseStatus = { active: false, message: 'License check failed' };
         }
 
-        // Create user data for context
+        // If license is expired or inactive, inform user and keep on /auth
+        if (!licenseStatus?.active) {
+          toast.error(licenseStatus?.message || 'Your license has expired. Please renew to continue.');
+        }
+
+        // Create user data for context - ensure profile is never null
         const userData = {
           ...data.user,
-          role: (ensuredProfile || profile)?.role || 'staff',
-          profile: ensuredProfile || profile,
+          role: finalProfile?.role || 'staff',
+          profile: finalProfile || { 
+            id: data.user.id,
+            email: data.user.email,
+            role: data.user.user_metadata?.role || 'staff',
+            profile_image: null // Ensure this is never null
+          },
         };
 
         // Get user's store_id from profile and set in Zustand
-        if (ensuredProfile?.store_id) {
-          setStoreId(ensuredProfile.store_id);
+        if (finalProfile?.store_id) {
+          setStoreId(finalProfile.store_id);
         }
 
         // Try to load permissions from Supabase (source of truth)
         let permissionIds = [];
         try {
-          if (ensuredProfile?.store_id) {
+          if (finalProfile?.store_id) {
             const { data: rows, error: permsErr } = await supabase
               .from('user_permissions')
               .select('permission_id')
               .eq('user_id', data.user.id)
-              .eq('store_id', ensuredProfile.store_id);
+              .eq('store_id', finalProfile.store_id);
+              
             if (permsErr) {
               console.warn('permissions fetch error:', permsErr.message);
             } else if (rows && rows.length) {
@@ -444,8 +465,7 @@ const AuthPage = () => {
 
         // Fallback to profile/user_metadata if no rows found
         if (!permissionIds.length) {
-          const profilePermsRaw =
-            (ensuredProfile || profile)?.permissions ?? data.user?.user_metadata?.permissions;
+          const profilePermsRaw = finalProfile?.permissions ?? data.user?.user_metadata?.permissions;
           if (Array.isArray(profilePermsRaw)) {
             permissionIds = profilePermsRaw.map((p) => String(p).toLowerCase());
           } else if (typeof profilePermsRaw === 'string') {
@@ -465,14 +485,21 @@ const AuthPage = () => {
 
         // Clear errors
         setErrors({});
+        
         // Navigate only if license active; otherwise remain on /auth
-        if (licenseStatus.active) {
+        if (licenseStatus?.active) {
           navigate('/admin-dashboard');
+        } else {
+          // Still navigate but show warning
+          navigate('/admin-dashboard');
+          toast.error('Please renew your license to continue using all features.', {
+            duration: 8000,
+          });
         }
       }
     } catch (err) {
       console.error('Auth handler error:', err);
-      setErrors({ submit: 'An unexpected error occurred' });
+      setErrors({ submit: 'An unexpected error occurred. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -497,6 +524,7 @@ const AuthPage = () => {
     });
     setErrors({});
     setIsRegistrationComplete(false);
+    setShopId(null); // Reset shopId when toggling
   };
 
   const resetRegistration = () => {
@@ -517,6 +545,7 @@ const AuthPage = () => {
       role: 'admin',
     });
     setErrors({});
+    setShopId(null); // Reset shopId
   };
 
   const inputVariants = {
@@ -536,7 +565,6 @@ const AuthPage = () => {
   if (isRegistrationComplete) {
     return (
       <div className="relative flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        
         <div className="flex items-center justify-center flex-1 p-8 lg:p-12">
           <motion.div
             className="w-full max-w-md"
@@ -609,13 +637,14 @@ const AuthPage = () => {
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Left Panel - Form Section */}
       {isForgetPasswrod && (
-          <div className="absolute inset-0 z-[9999] overflow-y-auto">
-            <Forget_password_popup
-              isForgetPasswrod={isForgetPasswrod}
-              setIsForgetPasswrod={setIsForgetPasswrod}
-            />
-          </div>
-        )}
+        <div className="absolute inset-0 z-[9999] overflow-y-auto">
+          <Forget_password_popup
+            isForgetPasswrod={isForgetPasswrod}
+            setIsForgetPasswrod={setIsForgetPasswrod}
+          />
+        </div>
+      )}
+      
       <div className="flex items-center justify-center flex-1 p-8 lg:p-12">
         <motion.div
           className="w-full max-w-md"
@@ -807,9 +836,6 @@ const AuthPage = () => {
                 whileHover="hover"
                 whileTap="tap"
                 disabled={loading}
-                // fallback inline
-                // style={{ backgroundColor: '#000000', color: '#ffffff' }}
-                // Tailwind utilities (modern browsers)
                 className={`btn-bg-modern flex w-full items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-3 font-medium text-white transition-colors hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none ${loading ? 'cursor-not-allowed opacity-70' : ''}`}
               >
                 {loading && (
@@ -817,18 +843,6 @@ const AuthPage = () => {
                 )}
                 <span>{loading ? 'Signing in...' : 'Sign In'}</span>
               </motion.button>
-
-              {/* Google Sign In */}
-              {/* <motion.button
-                type="button"
-                variants={buttonVariants}
-                whileHover="hover"
-                whileTap="tap"
-                className="flex items-center justify-center w-full px-4 py-3 font-medium transition-colors bg-white border rounded-lg border-slate-300 text-slate-700 hover:bg-gray-50 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none"
-              >
-                <Chrome className="w-5 h-5 mr-2" />
-                Sign in with Google
-              </motion.button> */}
             </form>
           )}
 
@@ -871,6 +885,38 @@ const AuthPage = () => {
                             errors.shopName ? 'border-red-300' : 'border-slate-300'
                           }`}
                           placeholder="Enter your shop name"
+                        />
+                      </motion.div>
+                      {errors.shopName && (
+                        <p className="mt-1 text-sm text-red-600 animate-pulse">{errors.shopName}</p>
+                      )}
+                    </div>
+
+                    {/* Shop Email (Optional) */}
+                    <div>
+                      <label
+                        htmlFor="shopEmail"
+                        className="block mb-2 text-sm font-medium text-slate-700"
+                      >
+                        Shop Email (Optional)
+                      </label>
+                      <motion.div
+                        className="relative"
+                        variants={inputVariants}
+                        whileFocus="focus"
+                        whileTap="tap"
+                      >
+                        <Mail className="absolute w-5 h-5 transform -translate-y-1/2 top-1/2 left-3 text-slate-400" />
+                        <input
+                          type="email"
+                          id="shopEmail"
+                          name="shopEmail"
+                          value={formData.shopEmail}
+                          onChange={handleInputChange}
+                          className={`w-full rounded-lg border py-3 pr-4 pl-11 transition-all focus:border-transparent focus:ring-2 focus:ring-indigo-500 ${
+                            errors.shopEmail ? 'border-red-300' : 'border-slate-300'
+                          }`}
+                          placeholder="shop@example.com"
                         />
                       </motion.div>
                       {errors.shopEmail && (
