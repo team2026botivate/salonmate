@@ -13,7 +13,7 @@ import { exportToCSV, formatCurrency, formatDate } from '../../utils/formatter';
 import { useGetCategories } from '../../hook/dbOperation';
 
 export const ServicesTable = ({
-  services,
+  services = [], // Add default value
   onToggleDelete,
   onDeletePermanently
 }) => {
@@ -29,11 +29,22 @@ export const ServicesTable = ({
 
   // Call hook directly in component body
   const { categories, loading: loadingCategories } = useGetCategories();
-  // Filter and search services
-  const filteredServices = services.filter(service => {
-    const matchesSearch =
-      service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.description?.toLowerCase().includes(searchQuery.toLowerCase());
+  
+  // Ensure services is always an array
+  const safeServices = Array.isArray(services) ? services : [];
+
+  // Filter and search services - FIXED VERSION
+  const filteredServices = safeServices.filter(service => {
+    if (!service) return false;
+    
+    // Safely get values with defaults
+    const serviceName = service.name || '';
+    const serviceDescription = service.description || '';
+    const serviceCategoryName = service.categoryName || '';
+    
+    const matchesSearch = searchQuery === '' || 
+      serviceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      serviceDescription.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus =
       filterStatus === 'all' ||
@@ -41,15 +52,19 @@ export const ServicesTable = ({
       (filterStatus === 'deleted' && service.isDeleted);
 
     const matchesCategory =
-      filterCategory === 'all' || service.categoryName === filterCategory;
+      filterCategory === 'all' || serviceCategoryName === filterCategory;
 
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  // Sort services
+  // Sort services - FIXED VERSION
   const sortedServices = [...filteredServices].sort((a, b) => {
     let aValue = a[sortField];
     let bValue = b[sortField];
+
+    // Handle null/undefined values
+    if (aValue === null || aValue === undefined) aValue = '';
+    if (bValue === null || bValue === undefined) bValue = '';
 
     if (sortField === 'createdAt') {
       aValue = new Date(aValue).getTime();
@@ -58,7 +73,7 @@ export const ServicesTable = ({
 
     if (typeof aValue === 'string') {
       aValue = aValue.toLowerCase();
-      bValue = (bValue).toLowerCase();
+      bValue = String(bValue).toLowerCase();
     }
 
     if (sortDirection === 'asc') {
@@ -86,7 +101,7 @@ export const ServicesTable = ({
   const handleExport = () => {
     const exportData = filteredServices.map(service => ({
       ...service,
-      price: formatCurrency(service.price).replace('₹', '')
+      price: formatCurrency(service.price || 0).replace('₹', '')
     }));
     exportToCSV(exportData, `services-${new Date().toISOString().split('T')[0]}.csv`);
   };
@@ -146,7 +161,7 @@ export const ServicesTable = ({
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50"
             >
               <option value="all">All Categories</option>
-              {categories?.map((category) => (
+              {Array.isArray(categories) && categories.map((category) => (
                 <option key={category.id} value={category.category_name || category.id}>
                   {category.category_name || category.id}
                 </option>
@@ -224,97 +239,106 @@ export const ServicesTable = ({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             <AnimatePresence>
-              {paginatedServices.map((service, index) => (
-                <motion.tr
-                  key={service.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`hover:bg-gray-50 transition-colors ${service.isDeleted ? 'bg-red-50' : ''}`}
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {service.name}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      {service.categoryName || '--'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {service.duration}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-semibold text-gray-900">
-                      {formatCurrency(service.price)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-600 max-w-xs truncate">
-                      {service.description || 'No description'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${service.isDeleted
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-green-100 text-green-800'
-                      }`}>
-                      {service.isDeleted ? 'Deleted' : 'Active'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(service.createdAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowActionMenu(showActionMenu === service.id ? null : service.id)}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
+              {paginatedServices.length > 0 ? (
+                paginatedServices.map((service, index) => (
+                  <motion.tr
+                    key={service.id || index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ delay: index * 0.05 }}
+                    className={`hover:bg-gray-50 transition-colors ${service.isDeleted ? 'bg-red-50' : ''}`}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {service.name || '--'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        {service.categoryName || '--'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {service.duration || '--'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-semibold text-gray-900">
+                        {formatCurrency(service.price || 0)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-600 max-w-xs truncate">
+                        {service.description || 'No description'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${service.isDeleted
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-green-100 text-green-800'
+                        }`}>
+                        {service.isDeleted ? 'Deleted' : 'Active'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {service.createdAt ? formatDate(service.createdAt) : '--'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowActionMenu(showActionMenu === service.id ? null : service.id)}
+                          className="text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
 
-                      <AnimatePresence>
-                        {showActionMenu === service.id && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                            className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
-                          >
-                            <div className="py-1">
-                              <button
-                                onClick={() => {
-                                  onToggleDelete(service.id);
-                                  setShowActionMenu(null);
-                                }}
-                                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center space-x-2 ${service.isDeleted ? 'text-green-600' : 'text-amber-600'
-                                  }`}
-                              >
-                                <span>{service.isDeleted ? 'Restore' : 'Soft Delete'}</span>
-                              </button>
-                              <button
-                                onClick={() => {
-                                  onDeletePermanently(service.id);
-                                  setShowActionMenu(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition-colors flex items-center space-x-2"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                <span>Delete Permanently</span>
-                              </button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                        <AnimatePresence>
+                          {showActionMenu === service.id && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                              className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
+                            >
+                              <div className="py-1">
+                                <button
+                                  onClick={() => {
+                                    onToggleDelete(service.id);
+                                    setShowActionMenu(null);
+                                  }}
+                                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center space-x-2 ${service.isDeleted ? 'text-green-600' : 'text-amber-600'
+                                    }`}
+                                >
+                                  <span>{service.isDeleted ? 'Restore' : 'Soft Delete'}</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    onDeletePermanently(service.id);
+                                    setShowActionMenu(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition-colors flex items-center space-x-2"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span>Delete Permanently</span>
+                                </button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="px-6 py-12 text-center">
+                    <div className="text-gray-400 text-lg mb-2">No services found</div>
+                    <div className="text-gray-500 text-sm">Try adjusting your search or filter criteria</div>
                   </td>
-                </motion.tr>
-              ))}
+                </tr>
+              )}
             </AnimatePresence>
           </tbody>
         </table>
@@ -364,14 +388,6 @@ export const ServicesTable = ({
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {filteredServices.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-gray-400 text-lg mb-2">No services found</div>
-          <div className="text-gray-500 text-sm">Try adjusting your search or filter criteria</div>
         </div>
       )}
     </motion.div>
