@@ -9,6 +9,12 @@ const durationOptions = [
   '15 min', '30 min', '45 min', '1 hour', '1.5 hours', '2 hours', '2.5 hours', '3 hours'
 ];
 
+const categoryServices = {
+  waxing: ['Full Arms', 'Half Arms', 'Full Legs', 'Half Legs', 'Underarms', 'Full Body', 'Face Waxing'],
+  honey: ['Full Arms (Honey)', 'Half Arms (Honey)', 'Full Legs (Honey)', 'Half Legs (Honey)', 'Underarms (Honey)', 'Full Body (Honey)', 'Face Honey Waxing'],
+  rica: ['Full Arms (Rica)', 'Half Arms (Rica)', 'Full Legs (Rica)', 'Half Legs (Rica)', 'Underarms (Rica)', 'Full Body (Rica)', 'Face Rica Waxing']
+};
+
 export const AddServiceForm = ({ onAddService }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -30,7 +36,7 @@ export const AddServiceForm = ({ onAddService }) => {
   const [isProcessingCsv, setIsProcessingCsv] = useState(false);
   const [showCsvModal, setShowCsvModal] = useState(false);
   const [storeId, setStoreId] = useState(null); // Local state for store ID
-  
+
   const fileInputRef = useRef(null);
   const { addService, addCategory, loading } = useAddService();
 
@@ -85,7 +91,7 @@ export const AddServiceForm = ({ onAddService }) => {
       console.log('No store ID found in localStorage');
       return;
     }
-    
+
     const { data, error } = await supabase
       .from("service_categories")
       .select("*")
@@ -172,12 +178,12 @@ export const AddServiceForm = ({ onAddService }) => {
         }
 
         const data = results.data;
-        
+
         // Validate CSV structure - Only category, service_name, and price are required
         const requiredColumns = ['category', 'service_name', 'price'];
         const firstRow = data[0] || {};
         const missingColumns = requiredColumns.filter(col => !firstRow.hasOwnProperty(col));
-        
+
         if (missingColumns.length > 0) {
           setCsvError(`Missing required columns: ${missingColumns.join(', ')}`);
           return;
@@ -186,31 +192,31 @@ export const AddServiceForm = ({ onAddService }) => {
         // Validate data
         const errors = [];
         const validData = [];
-        
+
         data.forEach((row, index) => {
           const rowErrors = [];
-          
+
           if (!row.category || !row.category.trim()) {
             rowErrors.push('Category is required');
           }
-          
+
           if (!row.service_name || !row.service_name.trim()) {
             rowErrors.push('Service name is required');
           }
-          
+
           // Duration is optional, but if provided, validate it
           if (row.duration && !durationOptions.includes(row.duration.trim())) {
             rowErrors.push(`Duration must be one of: ${durationOptions.join(', ')} or left empty`);
           }
-          
+
           if (!row.price || isNaN(Number(row.price)) || Number(row.price) <= 0) {
             rowErrors.push('Valid price is required');
           }
-          
+
           if (row.description && row.description.length > 30) {
             rowErrors.push('Description must be 30 characters or less');
           }
-          
+
           if (rowErrors.length === 0) {
             validData.push({
               category: row.category.trim(),
@@ -286,8 +292,8 @@ export const AddServiceForm = ({ onAddService }) => {
         // Find or create category - check for current store only
         let categoryId = null;
         const existingCategory = categories.find(
-          c => c.category_name.toLowerCase() === service.category.toLowerCase() && 
-               c.store_id === service.store_id // Use the store_id from CSV data
+          c => c.category_name.toLowerCase() === service.category.toLowerCase() &&
+            c.store_id === service.store_id // Use the store_id from CSV data
         );
 
         if (existingCategory) {
@@ -340,11 +346,11 @@ export const AddServiceForm = ({ onAddService }) => {
     }
 
     setIsProcessingCsv(false);
-    
+
     if (errorCount > 0) {
       setCsvError(`Failed to import ${errorCount} service(s): ${errorMessages.join('; ')}`);
     }
-    
+
     if (successCount > 0) {
       setCsvSuccess(`Successfully imported ${successCount} service(s) for your store`);
       setShowCsvModal(false);
@@ -352,7 +358,7 @@ export const AddServiceForm = ({ onAddService }) => {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-      
+
       // Refresh categories list for current store
       fetchCategories();
     }
@@ -382,7 +388,7 @@ export const AddServiceForm = ({ onAddService }) => {
   const getCategoriesForCurrentStore = () => {
     const currentStoreId = getStoreIdFromLocalStorage();
     if (!currentStoreId) return [];
-    
+
     return categories.filter(category => category.store_id === currentStoreId);
   };
 
@@ -403,7 +409,7 @@ export const AddServiceForm = ({ onAddService }) => {
             </div>
             <h2 className="text-xl font-semibold text-gray-900">Add New Service</h2>
           </div>
-          
+
           <motion.label
             htmlFor="csv-upload"
             whileHover={{ scale: 1.02 }}
@@ -424,7 +430,7 @@ export const AddServiceForm = ({ onAddService }) => {
         </div>
 
         {/* Store ID Info */}
-        {currentStoreId ? (
+        {/* {currentStoreId ? (
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-700">
               Store ID: <span className="font-mono">{currentStoreId.substring(0, 8)}...</span>
@@ -444,7 +450,7 @@ export const AddServiceForm = ({ onAddService }) => {
               Expected location: localStorage → app-storage.state.store_id
             </p>
           </div>
-        )}
+        )} */}
 
         {/* CSV Status Messages */}
         {(csvError || csvSuccess) && (
@@ -513,33 +519,47 @@ export const AddServiceForm = ({ onAddService }) => {
                     (c) =>
                       c.category_name.toLowerCase() === category.trim().toLowerCase()
                   ) && category.trim() !== "" && (
-                    <div
-                      onClick={handleManualCategoryCreate}
-                      disabled={isCreating || !currentStoreId}
-                      className="px-4 py-2 cursor-pointer text-green-600 hover:bg-green-50 transition-colors flex items-center justify-between border-t border-gray-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <span>+ Create "{category.trim()}" for your store</span>
-                      <Plus className="w-4 h-4" />
-                    </div>
-                  )}
+                      <div
+                        onClick={handleManualCategoryCreate}
+                        disabled={isCreating || !currentStoreId}
+                        className="px-4 py-2 cursor-pointer text-green-600 hover:bg-green-50 transition-colors flex items-center justify-between border-t border-gray-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span>+ Create "{category.trim()}" for your store</span>
+                        <Plus className="w-4 h-4" />
+                      </div>
+                    )}
                 </div>
               )}
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Service Name *
               </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${errors.name ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                placeholder="e.g., Haircut & Style"
-              />
+              {categoryServices[category.toLowerCase()] ? (
+                <select
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${errors.name ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                >
+                  <option value="">Select a service...</option>
+                  {categoryServices[category.toLowerCase()].map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${errors.name ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  placeholder="e.g., Haircut & Style"
+                />
+              )}
               {errors.name && (
                 <motion.p
                   initial={{ opacity: 0, y: -10 }}
@@ -687,7 +707,7 @@ export const AddServiceForm = ({ onAddService }) => {
 
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-700">
-                  All {csvData.length} services will be imported for your store. 
+                  All {csvData.length} services will be imported for your store.
                   Each service will be linked to store ID from localStorage.
                 </p>
               </div>
@@ -696,21 +716,11 @@ export const AddServiceForm = ({ onAddService }) => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Category
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Service Name
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Duration
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Price
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Store ID
-                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store ID</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -720,7 +730,33 @@ export const AddServiceForm = ({ onAddService }) => {
                           {service.category}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {service.name}
+                          {categoryServices[service.category?.toLowerCase()] ? (
+                            <select
+                              value={service.name}
+                              onChange={(e) => {
+                                const newData = [...csvData];
+                                newData[index].name = e.target.value;
+                                setCsvData(newData);
+                              }}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                              <option value="">Select service...</option>
+                              {categoryServices[service.category.toLowerCase()].map(s => (
+                                <option key={s} value={s}>{s}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type="text"
+                              value={service.name}
+                              onChange={(e) => {
+                                const newData = [...csvData];
+                                newData[index].name = e.target.value;
+                                setCsvData(newData);
+                              }}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
                           {service.duration}
