@@ -2,6 +2,7 @@ import supabase from '../dataBase/connectdb';
 import { useState, useEffect, useCallback } from 'react';
 import { useAppData } from '../zustand/appData';
 import { useAuth } from '@/Context/AuthContext.jsx';
+import { CloudCog } from 'lucide-react';
 
 export const useGetallAppointmentData = () => {
   // const [data, setData] = useState([])
@@ -2238,6 +2239,8 @@ export const useGetCategories = () => {
         .select('*')
         .order('category_name', { ascending: true });
 
+
+
       if (err) throw err;
 
       setCategories(data);
@@ -2255,13 +2258,14 @@ export const useGetCategories = () => {
   return { categories, loading, error, refetch: fetchCategories };
 };
 
-// Get all services from hair_service table
+// Get all services from hair_service table with category name
 export const useGetServices = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { store_id } = useAppData();
 
+  console.log("store_id", store_id) 
   const fetchServices = useCallback(async () => {
     if (!store_id) {
       console.warn('No store_id available, skipping services fetch');
@@ -2271,21 +2275,40 @@ export const useGetServices = () => {
     try {
       setLoading(true);
       setError(null);
+      // Join with service_categories to get category_name
       const { data, error: err } = await supabase
         .from('hair_service')
-        .select('*')
+        .select(`
+          *,
+          service_categories (
+            id,
+            category_name
+          )
+        `)
         .eq('store_id', store_id)
         .order('created_at', { ascending: false });
 
       if (err) throw err;
-      setServices(data || []);
+
+
+      console.log("data", data)
+
+      // Flatten the data to include category_name at root level
+      const servicesWithCategory = (data || []).map(service => ({
+        ...service,
+        category_name: service.service_categories?.category_name || 'Uncategorized'
+      }));
+      console.log("servicesWithCategory", servicesWithCategory)
+
+
+      setServices(servicesWithCategory);
     } catch (e) {
       console.error('fetchServices error:', e);
       setError(e.message || 'Failed to fetch services');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [store_id]);
 
   useEffect(() => {
     fetchServices();
@@ -2342,7 +2365,15 @@ export const useAddService = () => {
       setLoading(true);
       setError(null);
 
+      // Check if store_id is available
+      if (!store_id) {
+        console.error('addCategory: store_id is missing');
+        throw new Error('Store ID is required to create a category');
+      }
+
       const slug = category_name.toLowerCase().replace(/\s+/g, '-');
+
+      console.log('Adding category:', { category_name, slug, store_id });
 
       const { data, error: err } = await supabase
         .from('service_categories')
@@ -2351,6 +2382,8 @@ export const useAddService = () => {
         .single();
 
       if (err) throw err;
+
+      console.log('Category added successfully:', data);
       return data;
     } catch (e) {
       console.error('addCategory error:', e);

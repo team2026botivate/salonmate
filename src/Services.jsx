@@ -3,14 +3,14 @@ import { Scissors } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { AddServiceForm } from './components/service/AddServiceForm';
 import { ConfirmationModal } from './components/service/conformationModel';
-import { ServicesTable } from './components/service/ServicesTable';
+import  ServicesTable  from './components/service/ServicesTable';
 import { SummaryStats } from './components/service/SummaryStats';
 import {
   useGetServices,
   useAddService,
   useToggleServiceDelete,
   useDeleteService,
-  useGetCategories 
+  useGetCategories
 } from './hook/dbOperation';
 
 const ServicesDashboard = () => {
@@ -20,7 +20,7 @@ const ServicesDashboard = () => {
   const { toggleDelete, loading: toggleLoading } = useToggleServiceDelete();
   const { deleteService, loading: deleteLoading } = useDeleteService();
   const { categories, loading: loadingCategories } = useGetCategories();
-  
+
   // Transform Supabase data to match UI format
   const services = rawServices.map((service) => ({
     id: service.id,
@@ -31,7 +31,7 @@ const ServicesDashboard = () => {
     isDeleted: service.delete_flag,
     createdAt: new Date(service.created_at),
     categoryId: service.category_id,
-    categoryName: service ? service.category_name : 'Uncategorized',
+    categoryName: service.category_name || 'Uncategorized',
   }));
   const [confirmationModal, setConfirmationModal] = useState({
     isOpen: false,
@@ -40,11 +40,13 @@ const ServicesDashboard = () => {
     serviceName: '',
   });
 
-  const handleAddService = async (data) => {
-    const result = await addService(data);
-    if (result) {
-      refetch(); // Refresh the services list
-    }
+  // Trigger to refresh ServicesTable
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handleAddService = (newService) => {
+    // Service is already added by AddServiceForm, trigger refresh
+    console.log('New service added:', newService);
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const handleToggleDelete = (id) => {
@@ -79,20 +81,20 @@ const ServicesDashboard = () => {
         // Permanent delete
         const result = await deleteService(confirmationModal.serviceId);
         if (result) {
-          refetch();
+          setRefreshTrigger(prev => prev + 1);
         }
       } else {
         // Soft delete
         const result = await toggleDelete(confirmationModal.serviceId, true);
         if (result) {
-          refetch();
+          setRefreshTrigger(prev => prev + 1);
         }
       }
     } else {
       // Restore
       const result = await toggleDelete(confirmationModal.serviceId, false);
       if (result) {
-        refetch();
+        setRefreshTrigger(prev => prev + 1);
       }
     }
 
@@ -166,10 +168,9 @@ const ServicesDashboard = () => {
 
         {/* Services Table */}
         <ServicesTable
-          services={services}
           onToggleDelete={handleToggleDelete}
           onDeletePermanently={handleDeletePermanently}
-          loading={toggleLoading || deleteLoading}
+          refreshTrigger={refreshTrigger}
         />
       </div>
 

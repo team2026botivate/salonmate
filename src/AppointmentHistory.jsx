@@ -67,18 +67,9 @@ const DailyEntry = ({ hideHistoryButton = false }) => {
   })
 
   const [selectedExtraServices, setSelectedExtraServices] = useState([])
-
- 
-
-
-
-
-
-
-
-const handleAddDiscountClick = () => {
+  const handleAddDiscountClick = () => {
     setShowDiscountForm(true)
-    fetchPromoCards() 
+    fetchPromoCards()
   }
   const handleSelectPromo = (promo) => {
     setSelectedPromo(promo)
@@ -392,7 +383,7 @@ const handleAddDiscountClick = () => {
       !currentHeader.label.toLowerCase().includes('extra')
     ) {
       console.log('Service price field detected, recalculating total')
-      
+
       // Find the total amount and extra service price fields
       const totalAmountHeader = tableHeaders.find(
         (h) =>
@@ -492,7 +483,7 @@ const handleAddDiscountClick = () => {
           }
         }
 
-        if (    
+        if (
           header.label.toLowerCase().includes('timestamp') ||
           (header.id === 'col0' &&
             (header.label.toLowerCase().includes('date') ||
@@ -530,9 +521,9 @@ const handleAddDiscountClick = () => {
 
       console.log('Submitting data with preserved date formats:', rowData)
 
-      
 
-    
+
+
 
       const uiTransaction = { ...editingTransaction }
 
@@ -664,15 +655,15 @@ const handleAddDiscountClick = () => {
 
   const filteredHistoryTransactions = historySearchTerm
     ? allTransactions.filter((transaction) =>
-        Object.values(transaction).some(
-          (value) =>
-            value &&
-            value
-              .toString()
-              .toLowerCase()
-              .includes(historySearchTerm.toLowerCase())
-        )
+      Object.values(transaction).some(
+        (value) =>
+          value &&
+          value
+            .toString()
+            .toLowerCase()
+            .includes(historySearchTerm.toLowerCase())
       )
+    )
     : allTransactions
 
   const formatDateForDisplay = (dateValue) => {
@@ -788,9 +779,8 @@ const handleAddDiscountClick = () => {
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
-            className={`fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50 flex items-center ${
-              notification.type === 'success' ? 'bg-green-100' : 'bg-red-100'
-            }`}
+            className={`fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50 flex items-center ${notification.type === 'success' ? 'bg-green-100' : 'bg-red-100'
+              }`}
           >
             {notification.type === 'success' ? (
               <CheckCircle2 className="mr-3 text-green-600" size={20} />
@@ -798,11 +788,10 @@ const handleAddDiscountClick = () => {
               <AlertCircle className="mr-3 text-red-600" size={20} />
             )}
             <p
-              className={`font-medium ${
-                notification.type === 'success'
+              className={`font-medium ${notification.type === 'success'
                   ? 'text-green-800'
                   : 'text-red-800'
-              }`}
+                }`}
             >
               {notification.message}
             </p>
@@ -993,11 +982,10 @@ const handleAddDiscountClick = () => {
                   <div
                     key={promo.id}
                     onClick={() => handleSelectPromo(promo)}
-                    className={`p-3 border rounded-md cursor-pointer transition-all ${
-                      selectedPromo?.id === promo.id
+                    className={`p-3 border rounded-md cursor-pointer transition-all ${selectedPromo?.id === promo.id
                         ? 'border-pink-500 bg-pink-50'
                         : 'border-gray-200 hover:border-pink-300'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-gray-800">
